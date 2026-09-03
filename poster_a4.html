@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2026 JA Korea One JA Retreat in Jeju - 홍보 포스터 (A4)</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ja: {
+              navy: '#133B5C',
+              sky: '#1E3A8A',
+              orange: '#EA580C',
+              tangerine: '#FF6B00',
+              gold: '#F59E0B'
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            title: ['Black Han Sans', 'GmarketSansBold', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Web Fonts -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Do+Hyeon&family=Jua&family=Noto+Serif+KR:wght@900&display=swap" rel="stylesheet">
+  
+  <!-- html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <!-- Inline Base64 Assets -->
+  <script src="js/poster_assets.js"></script>
+
+  <style>
+    @font-face {
+      font-family: 'GmarketSansBold';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b132b;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Ultra-Legible Modern Poster Typography */
+    .font-poster-title {
+      font-family: 'Pretendard', 'GmarketSansBold', -apple-system, sans-serif;
+      letter-spacing: -0.02em;
+      word-break: keep-all;
+    }
+
+    /* A4 Poster Standard Canvas (210mm x 297mm at 96-300DPI equivalent) */
+    .a4-container {
+      width: 794px;
+      min-height: 1123px;
+      height: 1123px;
+      max-width: 100%;
+      margin: 0 auto;
+      position: relative;
+      background: #ffffff;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    /* Ultra-Clean High-Contrast Text Glow Effect */
+    .poster-glow-navy {
+      color: #0F283C;
+      text-shadow: 
+        0 0 10px #ffffff,
+        0 0 20px #ffffff,
+        0 0 30px #ffffff,
+        0 2px 4px rgba(255, 255, 255, 0.95),
+        0 3px 10px rgba(15, 40, 60, 0.25);
+    }
+
+    .poster-glow-orange {
+      color: #E65100;
+      text-shadow: 
+        0 0 10px #ffffff,
+        0 0 20px #ffffff,
+        0 0 30px #ffffff,
+        0 2px 4px rgba(255, 255, 255, 0.95),
+        0 3px 10px rgba(230, 81, 0, 0.25);
+    }
+
+    .poster-glow-date {
+      color: #0F283C;
+      text-shadow: 
+        0 0 8px #ffffff,
+        0 0 16px #ffffff,
+        0 0 24px #ffffff,
+        0 2px 4px rgba(255, 255, 255, 0.95),
+        0 2px 6px rgba(15, 40, 60, 0.2);
+    }
+
+    .poster-glow-venue {
+      color: #0F283C;
+      text-shadow: 
+        0 0 8px #ffffff,
+        0 0 16px #ffffff,
+        0 0 24px #ffffff,
+        0 2px 4px rgba(255, 255, 255, 0.95),
+        0 2px 6px rgba(15, 40, 60, 0.2);
+    }
+
+    /* Print Stylesheet for exact A4 full bleed */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+      body {
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .a4-container {
+        width: 100vw !important;
+        height: 100vh !important;
+        min-height: 100vh !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        page-break-after: avoid;
+        page-break-inside: avoid;
+        border-radius: 0 !important;
+      }
+    }
+
+    .editable:focus {
+      outline: 2px dashed #EA580C;
+      background-color: rgba(255, 255, 255, 0.7);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+
+    /* Toast animation */
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-anim {
+      animation: slideUp 0.3s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="py-8 px-4 flex flex-col items-center justify-center min-h-screen">
+
+  <!-- TOP TOOLBAR & CONTROLS (No Print) -->
+  <aside class="no-print max-w-4xl w-full bg-slate-800/95 backdrop-blur-md rounded-2xl p-4 mb-6 text-white border border-slate-700 shadow-xl">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Left: Title & Concept -->
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl">🍖</span>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold flex items-center gap-2">
+            One JA Retreat in Jeju 홍보 포스터 (A4)
+            <span class="text-xs bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-normal border border-amber-300/30">헤르멘하우스 가든 BBQ &amp; 아기 고양이</span>
+          </h1>
+          <p class="text-xs text-slate-300">헤르멘하우스 실물 빌라 배경, 고기 굽는 돌하르방 셰프와 귀여운 아기 고양이 3마리를 담았습니다.</p>
+        </div>
+      </div>
+
+      <!-- Right: Action Buttons -->
+      <div class="flex flex-wrap items-center gap-2">
+        
+        <!-- Style Variations Dropdown/Buttons -->
+        <div class="flex items-center bg-slate-700/80 p-1 rounded-xl border border-slate-600 text-xs">
+          <button onclick="switchStyle('rich')" id="btn-rich" class="px-3 py-1.5 rounded-lg font-bold bg-[#EA580C] text-white shadow transition-all cursor-pointer">
+            🍖 헤르멘하우스 BBQ &amp; 냥이 (추천)
+          </button>
+          <button onclick="switchStyle('healing')" id="btn-healing" class="px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition-all cursor-pointer">
+            🌴 선베드 반바지형
+          </button>
+          <button onclick="switchStyle('popart')" id="btn-popart" class="px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition-all cursor-pointer">
+            🚀 팝아트 액티브형
+          </button>
+        </div>
+
+        <!-- Download Button -->
+        <button onclick="captureAndDownloadPoster()" id="download-btn" class="flex items-center space-x-2 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg transition-all transform hover:scale-105 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          <span id="btn-text">📥 포스터 이미지 다운로드</span>
+        </button>
+
+        <!-- Print / PDF Button -->
+        <button onclick="window.print()" class="flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-md transition-all cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+          </svg>
+          <span>🖨️ A4 인쇄 / PDF</span>
+        </button>
+
+        <!-- Back to Invitation -->
+        <a href="index.html" class="flex items-center space-x-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all">
+          <span>초대장 보기 ↗</span>
+        </a>
+
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =========================================================================
+       POSTER MAIN CONTAINER (A4 STANDARD RATIO 794px x 1123px)
+       ========================================================================= -->
+  <main id="poster-capture" class="a4-container rounded-none sm:rounded-2xl flex flex-col justify-between p-8 text-slate-800 select-none relative">
+    
+    <!-- BACKGROUND ARTWORK LAYER -->
+    <div class="absolute inset-0 z-0 pointer-events-none">
+      <img 
+        id="poster-bg-img" 
+        src="assets/images/jeju_rich_poster_bg.jpg" 
+        alt="헤르멘하우스 제주 리트릿 하르방 배경" 
+        class="w-full h-full object-cover object-center"
+      />
+    </div>
+
+    <!-- =======================================================================
+         1. TOP GRAPHIC TYPOGRAPHY (제목 + 일시 + 장소 전체가 포스터 그림과 100% 자연스럽게 조화)
+         ======================================================================= -->
+    <header class="relative z-10 w-full text-center pt-14 sm:pt-16 space-y-3">
+      
+      <!-- Big Poster Title -->
+      <div class="space-y-1">
+        <h1 class="text-5xl sm:text-6xl md:text-[68px] font-poster-title font-black tracking-tight leading-none poster-glow-navy">
+          <span class="editable" contenteditable="true">ONE JA RETREAT</span>
+        </h1>
+        <div class="text-3xl sm:text-4xl md:text-[46px] font-poster-title font-black tracking-wide poster-glow-orange flex items-center justify-center space-x-2 pt-1">
+          <span class="text-2xl text-amber-500">✦</span>
+          <span class="editable" contenteditable="true">in JEJU</span>
+          <span class="text-2xl text-amber-500">✦</span>
+        </div>
+      </div>
+
+      <!-- Natural Date & Venue (박스/캡슐 없이 배경과 자연스럽게 조화되는 포스터 타이포) -->
+      <div class="pt-2 space-y-1">
+        <!-- Date -->
+        <p class="text-xl sm:text-2xl md:text-[26px] font-poster-title font-black poster-glow-date tracking-tight">
+          <span class="editable" contenteditable="true">2026. 10. 29 (목) - 10. 31 (토)</span>
+        </p>
+        
+        <!-- Venue -->
+        <p class="text-xl sm:text-2xl md:text-[26px] font-poster-title font-black poster-glow-venue tracking-tight flex items-center justify-center space-x-1.5">
+          <span class="text-xl sm:text-2xl text-[#EA580C]">📍</span>
+          <span class="editable" contenteditable="true">서귀포 헤르멘하우스</span>
+        </p>
+      </div>
+
+    </header>
+
+    <!-- =======================================================================
+         2. MIDDLE SECTION (돌하르방과 아름다운 제주 힐링 자연 풍경 100% 온전 노출)
+         ======================================================================= -->
+    <div class="relative z-10 flex-1 my-auto pointer-events-none w-full">
+      <!-- Unobstructed visual area for the joyful Dolhareubang in shorts and sunny beach -->
+    </div>
+
+    <!-- =======================================================================
+         3. BOTTOM EDGE
+         ======================================================================= -->
+    <footer class="relative z-10 w-full h-4 pointer-events-none">
+      <!-- Clean bottom edge -->
+    </footer>
+
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast" class="no-print fixed bottom-6 bg-slate-900/95 text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center space-x-2 text-xs font-bold hidden toast-anim z-50">
+    <span class="text-emerald-400 text-base">✓</span>
+    <span id="toast-msg">포스터 이미지가 다운로드되었습니다!</span>
+  </div>
+
+  <!-- =========================================================================
+       JAVASCRIPT FOR STYLE SWITCHER, 100% WYSIWYG HTML2CANVAS EXPORT
+       ========================================================================= -->
+  <script>
+    let currentStyle = 'rich';
+
+    // Set Base64 assets on load to guarantee 0% taint error
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.POSTER_ASSETS) {
+        const bgImg = document.getElementById('poster-bg-img');
+        if (bgImg && window.POSTER_ASSETS.bg_rich) {
+          bgImg.src = window.POSTER_ASSETS.bg_rich;
+        }
+      }
+    });
+
+    // Style Switcher
+    function switchStyle(type) {
+      currentStyle = type;
+      const bgImg = document.getElementById('poster-bg-img');
+      
+      document.querySelectorAll('#btn-healing, #btn-rich, #btn-popart').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-lg font-bold text-slate-300 hover:text-white transition-all cursor-pointer';
+      });
+
+      if (type === 'healing') {
+        bgImg.src = (window.POSTER_ASSETS && window.POSTER_ASSETS.bg_healing) ? window.POSTER_ASSETS.bg_healing : 'assets/images/jeju_poster_bg.jpg';
+        document.getElementById('btn-healing').className = 'px-3 py-1.5 rounded-lg font-bold bg-[#0097A7] text-white shadow transition-all cursor-pointer';
+      } else if (type === 'rich') {
+        bgImg.src = (window.POSTER_ASSETS && window.POSTER_ASSETS.bg_rich) ? window.POSTER_ASSETS.bg_rich : 'assets/images/jeju_rich_poster_bg.jpg';
+        document.getElementById('btn-rich').className = 'px-3 py-1.5 rounded-lg font-bold bg-[#EA580C] text-white shadow transition-all cursor-pointer';
+      } else if (type === 'popart') {
+        bgImg.src = (window.POSTER_ASSETS && window.POSTER_ASSETS.bg_popart) ? window.POSTER_ASSETS.bg_popart : 'assets/images/poster_popart.jpg';
+        document.getElementById('btn-popart').className = 'px-3 py-1.5 rounded-lg font-bold bg-[#0284C7] text-white shadow transition-all cursor-pointer';
+      }
+    }
+
+    // 100% WYSIWYG DOM Capture & Download
+    async function captureAndDownloadPoster() {
+      const btn = document.getElementById('download-btn');
+      const btnText = document.getElementById('btn-text');
+      const originalText = btnText.innerText;
+      btnText.innerText = '⏳ 고화질 렌더링 중...';
+      btn.disabled = true;
+
+      try {
+        const posterEl = document.getElementById('poster-capture');
+        
+        // Render canvas at 2x crisp A4 resolution (1588 x 2246 px)
+        const canvas = await html2canvas(posterEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          logging: false,
+          scrollX: 0,
+          scrollY: 0
+        });
+
+        // Convert canvas to Blob
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            throw new Error('Canvas blob conversion failed');
+          }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = '2026_One_JA_Retreat_Jeju_A4_Poster.png';
+          document.body.appendChild(a);
+          a.click();
+          
+          setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 1000);
+
+          showToast('포스터 이미지가 다운로드되었습니다!');
+        }, 'image/png');
+
+      } catch (err) {
+        console.error('Canvas capture failed:', err);
+        alert('이미지 캡처 중 오류가 발생했습니다. 상단의 [🖨️ A4 인쇄 / PDF]를 이용해주세요.');
+      } finally {
+        setTimeout(() => {
+          btnText.innerText = originalText;
+          btn.disabled = false;
+        }, 800);
+      }
+    }
+
+    // Show Toast
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      toastMsg.innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 4000);
+    }
+  </script>
+
+</body>
+</html>

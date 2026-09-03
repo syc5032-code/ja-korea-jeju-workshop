@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ko" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>2026 JA Korea One JA Retreat in Jeju | 제주 리트릿 초대장</title>
+  
+  <!-- Open Graph / Meta for KakaoTalk & Mobile Sharing -->
+  <meta name="description" content="존경하는 이사님들을 2026 JA Korea 제주 리트릿에 초대합니다." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="2026 JA Korea One JA Retreat in Jeju" />
+  <meta property="og:description" content="존경하는 이사님들을 2026 JA Korea 제주 리트릿에 초대합니다." />
+  <meta property="og:image" content="assets/images/ja_korea_logo.png" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="2026 JA Korea One JA Retreat in Jeju" />
+  <meta name="twitter:description" content="존경하는 이사님들을 2026 JA Korea 제주 리트릿에 초대합니다." />
+  
+  <!-- Favicon (Browser Tab Icon) -->
+  <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+  <link rel="shortcut icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/images/favicon.png" />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ja: {
+              primary: '#1D5266',      // JA Korea Deep Teal / Marine Slate
+              'primary-dark': '#123746',
+              teal: '#0097A7',         // JA Korea Signature Teal
+              'teal-hover': '#00838F',
+              'teal-light': '#E0F7FA',
+              cyan: '#0EA5E9',
+              slate: '#2C4957',
+            },
+            jeju: {
+              ocean: '#0097A7',
+              sky: '#38BDF8',
+              tangerine: '#EA580C',
+              gold: '#F59E0B',
+              coral: '#FB7185',
+              peach: '#FFE4E6'
+            }
+          },
+          fontFamily: {
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            serif: ['Cormorant Garamond', 'Noto Serif KR', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Pretendard & Cormorant Garamond & Noto Serif KR -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body class="relative bg-gradient-to-b from-[#F0F9FA] via-[#F4FBFC] to-[#F8FAFC] min-h-screen text-slate-800 antialiased selection:bg-[#0097A7] selection:text-white w-full overflow-x-hidden">
+
+  <!-- Interactive Jeju Sparkle & Floating Flower Petals Canvas -->
+  <canvas id="sparkle-canvas"></canvas>
+
+  <!-- Top Sticky Header Navigation Bar with Integrated Controls -->
+  <header class="sticky top-0 z-30 bg-white/85 backdrop-blur-lg border-b border-slate-200/60 shadow-xs transition-all duration-300 w-full">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+      
+      <!-- JA Korea Official Logo Component -->
+      <a href="#" class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+        <img 
+          src="assets/images/ja_korea_logo.png" 
+          alt="JA Korea | Member of JA Worldwide" 
+          class="h-7 sm:h-9 w-auto object-contain"
+        />
+        <span class="hidden lg:inline-flex text-[11px] uppercase font-bold tracking-wider bg-[#E0F7FA] text-[#00838F] px-2 py-0.5 rounded-full border border-[#0097A7]/20">
+          One JA Retreat
+        </span>
+      </a>
+
+      <!-- Right Header Actions (Sound, Share, Quick RSVP) -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+        <!-- Ambient Sound Toggle -->
+        <button id="sound-toggle-btn" class="flex items-center space-x-1 bg-slate-50 hover:bg-[#E0F7FA] px-2.5 sm:px-3 py-1.5 rounded-full border border-slate-200/80 shadow-xs transition-colors cursor-pointer text-slate-600 hover:text-[#0097A7]" title="제주 파도 소리 토글">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+          </svg>
+          <span class="text-[11px] font-medium hidden xs:inline">배경음</span>
+        </button>
+
+        <!-- A4 Poster Link -->
+        <a href="poster_a4.html" class="flex items-center space-x-1 bg-amber-50 hover:bg-amber-100 text-amber-800 px-2.5 sm:px-3 py-1.5 rounded-full border border-amber-300/80 shadow-xs transition-colors text-[11px] font-bold" title="A4 홍보포스터 보기">
+          <span>🍊</span>
+          <span class="hidden sm:inline">홍보포스터</span>
+        </a>
+
+        <!-- Share Button -->
+        <button onclick="shareInvitation()" class="p-1.5 sm:p-2 bg-slate-50 hover:bg-[#E0F7FA] rounded-full border border-slate-200/80 shadow-xs transition-colors text-slate-600 hover:text-[#0097A7]" title="초대장 링크 공유">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+          </svg>
+        </button>
+
+        <!-- Quick CTA Button (Header) -->
+        <a 
+          href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=yrY3Sjkqn0eYu8nkVhEJsPX9pil_ti1HvCnbE0M58fBUNDRDWFE4Sk4zWDYwVUdVM0hYSVE4RjZaNy4u" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="inline-flex items-center space-x-1 bg-[#1D5266] hover:bg-[#123746] text-white text-[11px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-sm shadow-[#1D5266]/20 transition-all hover:scale-105"
+        >
+          <svg class="w-3 h-3 text-[#00E5FF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+          </svg>
+          <span>설문 제출</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ======================================================================
+       1. HERO SECTION (2026 JA Korea Retreat in Jeju | One JA Retreat)
+       ====================================================================== -->
+  <section id="hero-section" class="relative pt-10 pb-14 sm:pt-16 sm:pb-20 overflow-hidden text-center w-full">
+    
+    <!-- Safely Clipped Background Glows -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+      <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-[90vw] max-w-[700px] h-[400px] bg-gradient-to-tr from-[#0097A7]/20 via-[#38BDF8]/15 to-[#F59E0B]/15 rounded-full blur-3xl animate-pulse-glow"></div>
+      <div class="absolute top-1/2 -left-20 w-60 h-60 bg-[#0097A7]/15 rounded-full blur-3xl animate-float"></div>
+      <div class="absolute top-1/3 -right-20 w-60 h-60 bg-[#F59E0B]/15 rounded-full blur-3xl animate-float-delayed"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 w-full">
+      
+      <!-- Top Sub-badge -->
+      <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/85 border border-[#0097A7]/30 shadow-xs backdrop-blur-md mb-5 animate-float">
+        <span class="flex h-2 w-2 relative">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0097A7] opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-[#1D5266]"></span>
+        </span>
+        <span class="text-[11px] sm:text-xs font-bold text-[#1D5266] tracking-wider">2026 JA KOREA RETREAT IN JEJU</span>
+      </div>
+
+      <!-- Main Title: One JA Retreat -->
+      <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-[#1D5266] leading-[1.25] mb-5">
+        <span class="bg-gradient-to-r from-[#1D5266] via-[#0097A7] to-[#0EA5E9] bg-clip-text text-transparent font-serif-luxury font-medium">
+          One JA Retreat
+        </span>
+      </h1>
+
+      <!-- Requested Hero Subtitle -->
+      <p class="text-sm sm:text-base md:text-lg text-slate-700 font-medium max-w-2xl mx-auto leading-relaxed mb-7">
+        청소년 교육 현장에서 뜨겁게 달려온 구성원들을 격려하고,<br class="hidden sm:inline" />
+        이사진과 임직원이 한 자리에 모여 마음을 나누는<br class="hidden sm:inline" />
+        <span class="text-[#1D5266] font-bold underline decoration-[#0097A7]/50 decoration-2 underline-offset-4">'2026 One JA Retreat'</span>에 정중히 모십니다.
+      </p>
+
+      <!-- Key Date & Venue Info Pills -->
+      <div class="flex flex-col xs:flex-row items-center justify-center gap-2.5 sm:gap-4 mb-7 text-xs sm:text-sm font-semibold w-full">
+        <div class="flex items-center space-x-2 px-3.5 py-2.5 rounded-2xl bg-white/90 backdrop-blur-md border border-[#0097A7]/20 shadow-xs text-[#1D5266] w-full xs:w-auto justify-center">
+          <span>🗓</span>
+          <span>2026. 10. 29.(목) ~ 10. 31.(토) <span class="text-[#00838F] text-[11px] font-bold px-1.5 py-0.5 bg-[#E0F7FA] rounded-md">2박 3일</span></span>
+        </div>
+        <a 
+          href="https://map.naver.com/p/entry/place/1691843099?lng=126.2865166&lat=33.2569689&placePath=%2Fhome&entry=plt&searchType=place" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          class="flex items-center space-x-2 px-3.5 py-2.5 rounded-2xl bg-white/90 hover:bg-[#E0F7FA] backdrop-blur-md border border-[#0097A7]/20 shadow-xs text-[#1D5266] hover:text-[#00838F] transition-colors group w-full xs:w-auto justify-center"
+        >
+          <span>📍</span>
+          <span class="font-bold">헤르멘하우스 제주</span>
+          <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 group-hover:bg-emerald-100">네이버지도 ↗</span>
+        </a>
+      </div>
+
+      <!-- Live D-Day Countdown Card -->
+      <div class="max-w-md mx-auto glass-card rounded-3xl p-4 sm:p-6 mb-7 border border-white/90 shadow-xl w-full">
+        <div class="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[#1D5266]/70 mb-3 flex items-center justify-center space-x-1.5">
+          <span>✨</span>
+          <span>리트릿 시작(10월 29일)까지 남은 시간</span>
+          <span>✨</span>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-center">
+          <div class="bg-white/95 rounded-2xl py-2 shadow-xs border border-[#E0F7FA]">
+            <span id="cd-days" class="block text-xl sm:text-3xl font-extrabold text-[#1D5266] font-serif-luxury">--</span>
+            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">DAYS</span>
+          </div>
+          <div class="bg-white/95 rounded-2xl py-2 shadow-xs border border-[#E0F7FA]">
+            <span id="cd-hours" class="block text-xl sm:text-3xl font-extrabold text-slate-800 font-serif-luxury">--</span>
+            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">HOURS</span>
+          </div>
+          <div class="bg-white/95 rounded-2xl py-2 shadow-xs border border-[#E0F7FA]">
+            <span id="cd-mins" class="block text-xl sm:text-3xl font-extrabold text-slate-800 font-serif-luxury">--</span>
+            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">MINUTES</span>
+          </div>
+          <div class="bg-white/95 rounded-2xl py-2 shadow-xs border border-[#E0F7FA]">
+            <span id="cd-secs" class="block text-xl sm:text-3xl font-extrabold text-[#0097A7] font-serif-luxury">--</span>
+            <span class="text-[10px] sm:text-[11px] font-semibold text-slate-400">SECONDS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- =======================================================
+           PRIMARY PROMINENT CTA BLOCK (상단 배치된 설문폼 제출 영역)
+           ======================================================= -->
+      <div class="max-w-md mx-auto mb-8 space-y-3 w-full">
+        <!-- Deadline Notice Badge -->
+        <div class="inline-flex items-center space-x-1.5 px-3.5 py-1 rounded-full bg-amber-400/20 border border-amber-400/40 backdrop-blur-md">
+          <span class="text-amber-600 font-bold text-xs">⏰</span>
+          <span class="text-[11px] sm:text-xs font-bold tracking-wider text-amber-900">설문 제출 마감: 9월 8일 (화)까지</span>
+        </div>
+
+        <!-- Main Big CTA Button -->
+        <div>
+          <a 
+            href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=yrY3Sjkqn0eYu8nkVhEJsPX9pil_ti1HvCnbE0M58fBUNDRDWFE4Sk4zWDYwVUdVM0hYSVE4RjZaNy4u" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="shine-button w-full py-4 px-8 rounded-full bg-gradient-to-r from-[#0097A7] via-[#0EA5E9] to-[#0097A7] text-white font-bold text-base sm:text-lg shadow-xl shadow-[#0097A7]/35 hover:scale-102 active:scale-98 transition-all duration-300 flex items-center justify-center space-x-2.5 cursor-pointer group"
+          >
+            <svg class="w-5 sm:w-6 h-5 sm:h-6 text-white group-hover:rotate-12 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+            <span>설문폼 제출하기</span>
+            <svg class="w-4 sm:w-5 h-4 sm:h-5 text-[#E0F7FA] group-hover:translate-x-1 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+          </a>
+        </div>
+
+        <p class="text-[11px] text-slate-500 flex items-center justify-center space-x-1">
+          <svg class="w-3.5 h-3.5 text-[#0097A7] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>클릭 시 Microsoft Forms 설문 페이지로 연결됩니다</span>
+        </p>
+      </div>
+
+      <!-- Quick Scroll Anchor -->
+      <a href="#letter-section" class="inline-flex items-center space-x-1 text-xs font-semibold text-[#1D5266] hover:text-[#0097A7] transition-colors animate-bounce pt-1">
+        <span>초대의 글 읽어보기</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+        </svg>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       2. INVITATION LETTER SECTION (자연스럽고 품격 있게 정돈된 초대의 글)
+       ====================================================================== -->
+  <section id="letter-section" class="py-12 sm:py-20 relative w-full">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 w-full">
+      
+      <div class="reveal-on-scroll glass-card rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 md:p-14 relative shadow-2xl border border-white w-full">
+        
+        <!-- Wax Seal Ornament -->
+        <div class="absolute -top-6 sm:-top-7 left-1/2 -translate-x-1/2 w-12 sm:w-14 h-12 sm:h-14 rounded-full wax-seal flex items-center justify-center text-white text-xs font-bold font-serif-luxury tracking-widest border-2 border-white/60 shadow-lg">
+          JA
+        </div>
+
+        <div class="text-center pt-2 sm:pt-3 pb-6 sm:pb-8 border-b border-slate-200/80">
+          <span class="text-xs font-bold tracking-widest text-[#0097A7] uppercase block mb-1">Invitation Letter</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-[#1D5266] font-serif-luxury">초 대 의 &nbsp;글</h2>
+        </div>
+
+        <div class="pt-6 sm:pt-8 space-y-5 text-slate-700 leading-relaxed text-sm sm:text-base text-justify sm:text-left font-light">
+          
+          <p class="font-bold text-[#1D5266] text-base sm:text-lg">
+            존경하는 이사님들께,
+          </p>
+
+          <p>
+            늘 따뜻한 관심과 든든한 지지로 JA Korea의 발걸음에 함께해 주시는 이사님들께 깊은 감사의 인사를 드립니다.
+          </p>
+
+          <p>
+            청소년 교육 현장에서 쉼 없이 달려온 직원들을 격려하고, 이사님들과 임직원이 한자리에 모여 서로의 마음을 나누고자 
+            <strong>'2026 JA Korea One JA Retreat in Jeju'</strong>를 정성껏 마련하였습니다.
+          </p>
+
+          <p>
+            제주의 편안한 자연 속에서 그간의 여정을 돌아보고 진솔한 대화를 나누며, 서로의 유대와 신뢰를 더욱 깊이 다지는 뜻깊은 시간이 되기를 기대합니다.
+          </p>
+
+          <p>
+            바쁘신 일정 중에도 부디 참석하시어 자리를 빛내주시고, 따뜻한 격려와 뜻깊은 시간을 함께 나누어 주시면 감사하겠습니다.
+          </p>
+
+          <!-- Signature block -->
+          <div class="pt-6 sm:pt-8 text-right space-y-1">
+            <p class="text-xs text-slate-500 font-normal">2026년 가을</p>
+            <p class="text-base sm:text-lg font-bold text-[#1D5266]">
+              JA Korea 임직원 일동
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       3. RETREAT CORE MEANINGS (One JA Retreat의 3가지 의미)
+       ====================================================================== -->
+  <section class="py-12 sm:py-20 bg-gradient-to-b from-transparent via-[#E0F7FA]/35 to-transparent w-full">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 w-full">
+      
+      <div class="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+        <span class="text-xs font-bold tracking-widest text-[#0097A7] uppercase block mb-1 sm:mb-2">Our Purpose</span>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1D5266]">One JA Retreat이 전하는 의미</h2>
+        <p class="text-slate-600 text-xs sm:text-sm mt-2">서로를 향한 격려와 깊은 유대로 하나 되는 시간</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-8 w-full">
+        
+        <!-- Card 1: Encouragement & Rest -->
+        <div class="reveal-on-scroll glass-card rounded-3xl p-6 sm:p-7 hover:-translate-y-2 transition-all duration-300 group border border-white">
+          <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-2xl bg-[#E0F7FA] text-[#00838F] flex items-center justify-center mb-5 group-hover:bg-[#0097A7] group-hover:text-white transition-colors shadow-xs">
+            <svg class="w-5 sm:w-6 h-5 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <span class="text-[11px] font-bold text-[#00838F] uppercase tracking-wider block mb-1">Theme 01</span>
+          <h3 class="text-base sm:text-lg font-bold text-[#1D5266] mb-2 group-hover:text-[#0097A7] transition-colors">격려와 온전한 쉼</h3>
+          <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+            청소년 교육 현장을 뜨겁게 일궈온 직원들을 격려하고, 제주의 자연 속에서 온전한 재충전을 누립니다.
+          </p>
+        </div>
+
+        <!-- Card 2: Connection & Fellowship -->
+        <div class="reveal-on-scroll glass-card rounded-3xl p-6 sm:p-7 hover:-translate-y-2 transition-all duration-300 group border border-white">
+          <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-2xl bg-[#E0F7FA] text-[#1D5266] flex items-center justify-center mb-5 group-hover:bg-[#1D5266] group-hover:text-white transition-colors shadow-xs">
+            <svg class="w-5 sm:w-6 h-5 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <span class="text-[11px] font-bold text-[#1D5266] uppercase tracking-wider block mb-1">Theme 02</span>
+          <h3 class="text-base sm:text-lg font-bold text-[#1D5266] mb-2 group-hover:text-[#0097A7] transition-colors">소통과 깊은 연대</h3>
+          <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+            이사님들과 임직원이 함께 걷고 대화하며 서로의 생각과 온기를 나누고 더 깊은 유대감을 형성합니다.
+          </p>
+        </div>
+
+        <!-- Card 3: One Team & Next Chapter -->
+        <div class="reveal-on-scroll glass-card rounded-3xl p-6 sm:p-7 hover:-translate-y-2 transition-all duration-300 group border border-white">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mb-5 group-hover:bg-[#EA580C] group-hover:text-white transition-colors shadow-xs">
+            <svg class="w-5 sm:w-6 h-5 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <span class="text-[11px] font-bold text-amber-800 uppercase tracking-wider block mb-1">Theme 03</span>
+          <h3 class="text-base sm:text-lg font-bold text-[#1D5266] mb-2 group-hover:text-[#EA580C] transition-colors">함께 만드는 내일 (One JA)</h3>
+          <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+            하나 된 팀워크로 더욱 가치 있는 교육 결과물을 만들어가기 위한 영감과 에너지를 함께 채워갑니다.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+
+  <!-- ======================================================================
+       5. VENUE & ACCOMMODATION (동일 스위트 라인의 거실 & 침실 완벽 매칭)
+       ====================================================================== -->
+  <section class="py-12 sm:py-20 bg-gradient-to-b from-transparent via-[#E0F7FA]/30 to-transparent w-full">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 w-full">
+      
+      <div class="text-center max-w-xl mx-auto mb-8 sm:mb-12">
+        <span class="text-xs font-bold tracking-widest text-[#0097A7] uppercase block mb-1 sm:mb-2">Accommodation</span>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-[#1D5266]">숙소 안내 — 헤르멘하우스</h2>
+        <p class="text-slate-600 text-xs sm:text-sm mt-2">1,400평 규모의 자연 속 프리미엄 힐링 타운하우스 리조트</p>
+      </div>
+
+      <!-- Clean Photo Gallery Cards (동일 스위트 객실의 거실 & 침실 실제 사진) -->
+      <div class="space-y-4 reveal-on-scroll w-full max-w-4xl mx-auto">
+        
+        <!-- Main Resort Exterior Photo -->
+        <div class="relative rounded-3xl overflow-hidden shadow-xl group border border-white/60 aspect-[16/9] w-full bg-slate-100">
+          <img 
+            src="assets/images/hermen/A173829868416.jpg" 
+            alt="헤르멘하우스 제주 공식 타운하우스 전경" 
+            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent"></div>
+          <div class="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 text-white flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+            <div>
+              <span class="px-2.5 py-1 bg-[#0097A7]/90 backdrop-blur-md rounded-lg text-xs font-bold">Hermen House Jeju</span>
+              <h3 class="text-lg sm:text-2xl font-bold mt-1.5 sm:mt-2">헤르멘하우스 (Hermen House)</h3>
+              <p class="text-xs sm:text-sm text-slate-200 mt-0.5">제주 서귀포시 대정읍 평화로 85</p>
+            </div>
+            <button onclick="copyTextToClipboard('제주특별자치도 서귀포시 대정읍 평화로 85 헤르멘하우스', '📍 헤르멘하우스 주소가 복사되었습니다.')" class="self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-md text-white text-xs font-semibold border border-white/30 transition-colors">
+              주소 복사
+            </button>
+          </div>
+        </div>
+
+        <!-- Secondary Matched Official Photos: Genuine Living Room & Bedroom -->
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+          <div class="relative rounded-2xl overflow-hidden shadow-md group aspect-[4/3] bg-slate-100">
+            <img 
+              src="assets/images/hermen/D173829912241.jpg" 
+              alt="헤르멘하우스 넓고 아늑한 거실 공간" 
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <span class="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 text-[11px] sm:text-xs font-bold text-white">넓고 아늑한 거실 공간</span>
+          </div>
+          <div class="relative rounded-2xl overflow-hidden shadow-md group aspect-[4/3] bg-slate-100">
+            <img 
+              src="assets/images/hermen/y173829912661.jpg" 
+              alt="헤르멘하우스 편안하고 아늑한 침실 객실" 
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <span class="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 text-[11px] sm:text-xs font-bold text-white">편안하고 아늑한 침실 객실</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       6. GUIDANCE & CONTACT (리트릿 안내 및 문의)
+       ====================================================================== -->
+  <section class="py-12 sm:py-20 relative w-full">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 w-full">
+      
+      <div class="reveal-on-scroll glass-card-teal rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 relative overflow-hidden shadow-xl w-full">
+        
+        <div class="relative z-10 w-full">
+          <div class="pb-5 sm:pb-6 border-b border-[#0097A7]/25">
+            <span class="text-xs font-bold tracking-widest text-[#00838F] uppercase block mb-1">Information &amp; Contact</span>
+            <h3 class="text-lg sm:text-2xl font-bold text-[#1D5266]">리트릿 안내 및 문의 사항</h3>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-5 sm:pt-6 text-xs sm:text-sm">
+            
+            <div class="space-y-1.5">
+              <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5">
+                <span>✈️</span>
+                <span>출발 일정 및 이동 안내</span>
+              </h4>
+              <p class="text-slate-600 leading-relaxed">
+                세부 출발 일정 및 공항 집결 장소는 <strong>항공권 확정 후 별도로 재안내</strong> 드릴 예정입니다.
+              </p>
+              <p class="text-slate-600 leading-relaxed text-xs">
+                ※ 일정상 공항 집결 시간에 함께 이동이 어려우신 경우, <strong>도착 시간에 맞추어 해당 일정 장소(식당 또는 숙소 등)로 개별 이동하여 합류 부탁드립니다.</strong>
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5">
+                <span>👗</span>
+                <span>복장 안내</span>
+              </h4>
+              <p class="text-slate-600 leading-relaxed">
+                편안하고 활동하기 좋은 <strong>리조트 룩</strong>을 권장하며, 야외 산책을 위한 편한 신발을 준비해 주세요.
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5">
+                <span>🎁</span>
+                <span>선물 및 기념품</span>
+              </h4>
+              <p class="text-slate-600 leading-relaxed">
+                참여하시는 모든 분들을 위해 <strong>다양한 선물과 기념품</strong>이 정성껏 준비되어 있습니다.
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5">
+                <span>📞</span>
+                <span>문의처</span>
+              </h4>
+              <ul class="text-slate-600 leading-relaxed space-y-1">
+                <li>• <strong>이선아 사무국장</strong>: <a href="tel:010-7642-2456" class="text-[#00838F] font-semibold hover:underline">010-7642-2456</a></li>
+                <li>• <strong>박희진 과장</strong>: <a href="tel:010-5819-5694" class="text-[#00838F] font-semibold hover:underline">010-5819-5694</a></li>
+                <li>• <strong>이사회 카카오톡 단체 채팅방 메시지</strong></li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       7. SECONDARY BOTTOM CTA (하단 다시 제출하기 섹션)
+       ====================================================================== -->
+  <section id="rsvp-section" class="py-16 sm:py-24 relative text-center w-full">
+    
+    <!-- Safely Clipped Background Glow Effect -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#E0F7FA]/60 via-transparent to-transparent"></div>
+      <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-[80vw] max-w-[500px] h-[300px] bg-[#0097A7]/25 rounded-full blur-3xl animate-pulse-glow"></div>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 w-full">
+      
+      <div class="reveal-on-scroll glass-card-dark rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-14 text-white relative shadow-2xl border border-white/20 w-full">
+        
+        <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-amber-400/20 border border-amber-300/30 backdrop-blur-md mb-5">
+          <span class="text-amber-300">⏰</span>
+          <span class="text-[11px] sm:text-xs font-bold tracking-wider text-amber-200">설문 제출 마감: 9월 8일 (화)까지</span>
+        </div>
+
+        <h2 class="text-xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 sm:mb-4">
+          참석 여부 및 설문폼 제출
+        </h2>
+
+        <p class="text-xs sm:text-sm md:text-base text-slate-200 max-w-lg mx-auto leading-relaxed mb-8 sm:mb-10 font-light">
+          원활한 항공권 예약과 숙소 배정을 위해<br class="hidden sm:inline" />
+          <strong class="text-amber-300 font-bold">9월 8일(화)</strong>까지 하단의 <strong>설문폼 제출하기</strong> 버튼을 눌러 회신해 주시기 바랍니다.
+        </p>
+
+        <div class="flex flex-col items-center justify-center space-y-3 sm:space-y-4 w-full">
+          
+          <a 
+            href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=yrY3Sjkqn0eYu8nkVhEJsPX9pil_ti1HvCnbE0M58fBUNDRDWFE4Sk4zWDYwVUdVM0hYSVE4RjZaNy4u" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            class="shine-button w-full sm:w-auto px-6 sm:px-12 py-3.5 sm:py-5 rounded-full bg-gradient-to-r from-[#0097A7] via-[#0EA5E9] to-[#0097A7] text-white font-bold text-sm sm:text-lg shadow-2xl shadow-[#0097A7]/50 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center space-x-2.5 cursor-pointer group"
+          >
+            <svg class="w-5 sm:w-6 h-5 sm:h-6 text-white group-hover:rotate-12 transition-transform duration-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+            </svg>
+            <span>설문폼 제출하기</span>
+            <svg class="w-4 sm:w-5 h-4 sm:h-5 text-[#E0F7FA] group-hover:translate-x-1 transition-transform shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+          </a>
+
+          <span class="text-[10px] sm:text-xs text-slate-300 flex items-center space-x-1 pt-1">
+            <svg class="w-3.5 h-3.5 text-[#00E5FF] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            <span>클릭 시 Microsoft Forms 설문 페이지로 연결됩니다</span>
+          </span>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       CLEAN FOOTER (심플하고 정돈된 푸터)
+       ====================================================================== -->
+  <footer class="py-10 sm:py-12 bg-white/70 border-t border-slate-200/80 text-center text-slate-500 text-xs w-full">
+    <div class="max-w-4xl mx-auto px-4 space-y-3 w-full">
+      
+      <!-- Footer Logo -->
+      <div class="flex items-center justify-center">
+        <img 
+          src="assets/images/ja_korea_logo.png" 
+          alt="JA Korea Logo" 
+          class="h-6 sm:h-7 w-auto object-contain opacity-90"
+        />
+      </div>
+
+      <div class="flex items-center justify-center space-x-3 pt-1 text-[11px] sm:text-xs">
+        <a href="https://www.jakorea.org" target="_blank" rel="noopener noreferrer" class="hover:text-[#0097A7] underline underline-offset-2">JA Korea 공식 홈페이지</a>
+        <span>•</span>
+        <button onclick="shareInvitation()" class="hover:text-[#0097A7] underline underline-offset-2">초대장 링크 공유하기</button>
+      </div>
+      <p class="text-[10px] sm:text-[11px] text-slate-400 pt-1">© 2026 JA Korea. Member of JA Worldwide. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- ======================================================================
+       FLOATING BOTTOM BAR (Mobile & Desktop Dynamic CTA)
+       ====================================================================== -->
+  <div id="floating-cta-bar" class="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] max-w-lg transition-all duration-300 transform translate-y-32 opacity-0 pointer-events-auto">
+    <div class="bg-[#123746]/95 backdrop-blur-xl border border-white/20 rounded-full p-1.5 sm:p-2 pl-4 sm:pl-5 shadow-2xl flex items-center justify-between w-full">
+      <div class="flex flex-col pr-2">
+        <span class="text-[10px] sm:text-[11px] text-amber-300 font-semibold">마감: 9월 8일(화)까지</span>
+        <span class="text-[11px] sm:text-xs font-bold text-white truncate">One JA Retreat 참석 회신</span>
+      </div>
+      <a 
+        href="https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=yrY3Sjkqn0eYu8nkVhEJsPX9pil_ti1HvCnbE0M58fBUNDRDWFE4Sk4zWDYwVUdVM0hYSVE4RjZaNy4u" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        class="shine-button bg-[#0097A7] hover:bg-[#00838F] text-white text-[11px] sm:text-xs font-bold px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-lg shadow-[#0097A7]/40 transition-all flex items-center space-x-1 cursor-pointer shrink-0"
+      >
+        <span>설문 제출</span>
+        <svg class="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#E0F7FA]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- ======================================================================
+       SURVEY FORM MODAL (Fallback)
+       ====================================================================== -->
+  <div id="survey-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop animate-fadeIn">
+    <div class="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/60 flex flex-col max-h-[90vh]">
+      <div class="bg-gradient-to-r from-[#1D5266] via-[#0097A7] to-[#123746] p-6 text-white relative">
+        <button type="button" class="js-close-survey-modal absolute top-5 right-5 text-white/70 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+        <span class="text-[10px] font-bold tracking-widest uppercase bg-white/20 text-[#E0F7FA] px-2 py-0.5 rounded border border-white/25">JA Korea Retreat Survey</span>
+        <h3 class="text-xl font-bold mt-2">One JA Retreat 참석 여부 회신</h3>
+        <p class="text-xs text-[#E0F7FA] mt-1">원활한 항공권 예약과 숙소 배정을 위한 사전 설문입니다.</p>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-5 text-slate-800 text-sm">
+        <form id="rsvp-form" class="space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="rsvp-name" class="block text-xs font-bold text-slate-700 mb-1.5">성함 <span class="text-rose-500">*</span></label>
+              <input type="text" id="rsvp-name" required placeholder="예: 홍길동" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0097A7] text-sm bg-slate-50/50" />
+            </div>
+            <div>
+              <label for="rsvp-role" class="block text-xs font-bold text-slate-700 mb-1.5">구분 <span class="text-rose-500">*</span></label>
+              <select id="rsvp-role" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0097A7] text-sm bg-slate-50/50">
+                <option value="이사 / 감사">이사 / 감사</option>
+                <option value="임직원" selected>임직원</option>
+                <option value="자문위원/게스트">자문위원 / 게스트</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="rsvp-phone" class="block text-xs font-bold text-slate-700 mb-1.5">휴대전화 번호 <span class="text-rose-500">*</span></label>
+            <input type="tel" id="rsvp-phone" required placeholder="010-0000-0000" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0097A7] text-sm bg-slate-50/50" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-2">참석 여부 <span class="text-rose-500">*</span></label>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="flex items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-[#0097A7] cursor-pointer transition-all has-[:checked]:border-[#0097A7] has-[:checked]:bg-[#E0F7FA]/70 font-semibold text-xs text-center">
+                <input type="radio" name="attendance" value="참석" checked class="sr-only" />
+                <span>참석 (2박 3일)</span>
+              </label>
+              <label class="flex items-center justify-center p-3 rounded-xl border border-slate-200 bg-white hover:border-rose-400 cursor-pointer transition-all has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50 font-semibold text-xs text-center">
+                <input type="radio" name="attendance" value="불참" class="sr-only" />
+                <span>일정상 불참</span>
+              </label>
+            </div>
+          </div>
+          <div>
+            <label for="rsvp-notes" class="block text-xs font-bold text-slate-700 mb-1.5">기타 메모 / 식이 선호 사항 (선택)</label>
+            <textarea id="rsvp-notes" rows="3" placeholder="예: 특정 음식 알레르기 등" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0097A7] text-xs bg-slate-50/50"></textarea>
+          </div>
+          <div class="pt-2">
+            <button type="submit" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#0097A7] to-[#1D5266] text-white font-bold text-sm shadow-lg">설문 제출 완료하기</button>
+          </div>
+        </form>
+
+        <div id="form-success-view" class="hidden text-center py-8 space-y-4">
+          <div class="w-16 h-16 bg-[#E0F7FA] text-[#00838F] rounded-full flex items-center justify-center mx-auto shadow-sm">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h4 class="text-xl font-bold text-[#1D5266]">설문 제출이 완료되었습니다!</h4>
+          <p class="text-xs sm:text-sm text-slate-600">
+            <span id="success-attendee-name" class="font-bold text-[#00838F]">회신자</span> 님의 소중한 응답이 정상 접수되었습니다.
+          </p>
+          <div class="pt-4">
+            <button type="button" class="js-close-survey-modal px-6 py-2.5 bg-[#1D5266] text-white text-xs font-semibold rounded-full">닫기</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/particles.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

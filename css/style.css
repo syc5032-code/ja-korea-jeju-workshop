@@ -1,0 +1,189 @@
+@charset "UTF-8";
+
+/* ==========================================================================
+   JA Korea One JA Retreat in Jeju - Mobile Optimized Stylesheet
+   Prevents any horizontal overflow & ensures 100% full width on mobile
+   ========================================================================== */
+
+:root {
+  /* JA Korea Official Brand Colors */
+  --ja-primary: #1D5266;       /* JA Deep Teal / Marine Slate */
+  --ja-primary-dark: #123746;
+  --ja-teal: #0097A7;          /* JA Vibrant Teal */
+  --ja-teal-hover: #00838F;
+  --ja-teal-light: #E0F7FA;
+  --ja-cyan: #0EA5E9;
+  
+  /* Jeju Island Harmony Accents */
+  --jeju-ocean: #0097A7;
+  --jeju-sky: #38BDF8;
+  --jeju-gold: #F59E0B;
+  --jeju-tangerine: #EA580C;
+  --jeju-peach: #FFE4E6;
+  
+  /* Glassmorphism Surface Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-shadow: 0 20px 45px -12px rgba(29, 82, 102, 0.1), 0 0 1px 1px rgba(255, 255, 255, 0.95) inset;
+}
+
+/* Universal box-sizing & zero overflow */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+body {
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  color: #1E293B;
+  background-color: #F8FAFC;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.font-serif-luxury {
+  font-family: 'Cormorant Garamond', 'Noto Serif KR', serif;
+}
+
+/* Sparkling Canvas - Full Screen without scrollbar offset */
+#sparkle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Glassmorphism Custom Classes */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-card-dark {
+  background: linear-gradient(135deg, rgba(29, 82, 102, 0.96) 0%, rgba(18, 55, 70, 0.98) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 30px 60px -15px rgba(18, 55, 70, 0.45), 0 0 1px 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.glass-card-teal {
+  background: linear-gradient(135deg, rgba(224, 247, 250, 0.92) 0%, rgba(240, 253, 250, 0.85) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 151, 167, 0.22);
+  box-shadow: 0 18px 40px -10px rgba(0, 151, 167, 0.14);
+}
+
+/* Animations */
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+.animate-float {
+  animation: gentleFloat 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: gentleFloat 7s ease-in-out 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4.5s ease-in-out infinite;
+}
+
+/* Luxury Shine CTA Button */
+.shine-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shine-button::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 80%
+  );
+  transform: rotate(30deg) translateY(-100%);
+  transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.shine-button:hover::after {
+  transform: rotate(30deg) translateY(100%);
+}
+
+.shine-button:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 35px -10px rgba(0, 151, 167, 0.45), 0 0 20px rgba(245, 158, 11, 0.25);
+}
+
+/* Scroll reveal helper */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-on-scroll.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Wax Seal */
+.wax-seal {
+  background: radial-gradient(circle at 35% 35%, #0097A7, #1D5266);
+  box-shadow: 0 6px 16px rgba(29, 82, 102, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.45), inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+  background: rgba(18, 55, 70, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
