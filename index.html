@@ -447,44 +447,43 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6 pt-5 sm:pt-6 text-xs sm:text-sm">
             
-            <div class="space-y-2.5">
+            <!-- 공항 집결 및 항공편 안내 (웹 화면에서는 시원하게 1줄로 표시) -->
+            <div class="space-y-2.5 sm:col-span-2">
               <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5 text-sm sm:text-base">
                 <span>✈️</span>
                 <span>공항 집결 및 항공편 안내</span>
               </h4>
               <div class="space-y-2.5 bg-white/85 rounded-2xl p-3.5 sm:p-4 border border-[#0097A7]/20 shadow-xs">
                 <!-- 서울 집결 -->
-                <div class="flex items-start space-x-2.5">
-                  <span class="inline-flex items-center justify-center w-[68px] py-1 rounded-md text-[11px] font-bold bg-[#E0F7FA] text-[#00838F] border border-[#0097A7]/30 shrink-0 mt-0.5">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                  <span class="inline-flex items-center justify-center w-[68px] py-1 rounded-md text-[11px] font-bold bg-[#E0F7FA] text-[#00838F] border border-[#0097A7]/30 shrink-0">
                     서울 집결
                   </span>
-                  <div class="text-xs sm:text-[13px] text-slate-800 leading-snug">
-                    <strong class="text-[#1D5266]">10월 29일 (목) 13:30</strong>
-                    <span class="text-slate-400 mx-1">|</span>
-                    <span>김포공항 국내선 출국장</span>
+                  <div class="text-xs sm:text-[13px] text-slate-800 leading-snug break-keep flex items-center">
+                    <strong class="text-[#1D5266] whitespace-nowrap">10월 29일 (목) 13:30</strong>
+                    <span class="text-slate-400 mx-1.5">|</span>
+                    <span class="whitespace-nowrap">김포공항 국내선 출국장</span>
                   </div>
                 </div>
 
                 <div class="border-t border-slate-200/70"></div>
 
                 <!-- 제주 출발 -->
-                <div class="flex items-start space-x-2.5">
-                  <span class="inline-flex items-center justify-center w-[68px] py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300/80 shrink-0 mt-0.5">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                  <span class="inline-flex items-center justify-center w-[68px] py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300/80 shrink-0">
                     제주 출발
                   </span>
-                  <div class="text-xs sm:text-[13px] text-slate-800 leading-snug">
-                    <div>
-                      <strong class="text-[#1D5266]">10월 31일 (토) 14:00</strong>
-                      <span class="text-slate-400 mx-1">|</span>
-                      <span>제주공항 국내선 출국장</span>
-                    </div>
-                    <p class="text-[11px] text-slate-500 font-normal mt-0.5">
+                  <div class="text-xs sm:text-[13px] text-slate-800 leading-snug break-keep flex flex-wrap items-center">
+                    <strong class="text-[#1D5266] whitespace-nowrap">10월 31일 (토) 14:00</strong>
+                    <span class="text-slate-400 mx-1.5">|</span>
+                    <span class="whitespace-nowrap">제주공항 국내선 출국장</span>
+                    <span class="text-[11px] sm:text-xs text-slate-500 font-normal sm:ml-2 mt-0.5 sm:mt-0 block sm:inline whitespace-nowrap">
                       (15시 경 출발 항공편으로 예매 예정)
-                    </p>
+                    </span>
                   </div>
                 </div>
               </div>
-              <p class="text-slate-600 leading-relaxed text-xs pt-0.5">
+              <p class="text-slate-600 leading-relaxed text-xs pt-0.5 break-keep">
                 ※ 일정상 공항 집결 시간에 함께 이동이 어려우신 경우, <strong>도착 시간에 맞추어 해당 일정 장소(식당 또는 숙소 등)로 개별 이동하여 합류 부탁드립니다.</strong>
               </p>
             </div>
@@ -494,7 +493,7 @@
                 <span>👗</span>
                 <span>복장 안내</span>
               </h4>
-              <p class="text-slate-600 leading-relaxed">
+              <p class="text-slate-600 leading-relaxed break-keep">
                 편안하고 활동하기 좋은 <strong>리조트 룩</strong>을 권장하며, 야외 산책을 위한 편한 신발을 준비해 주세요.
               </p>
             </div>
@@ -504,21 +503,21 @@
                 <span>🎁</span>
                 <span>선물 및 기념품</span>
               </h4>
-              <p class="text-slate-600 leading-relaxed">
+              <p class="text-slate-600 leading-relaxed break-keep">
                 참여하시는 모든 분들을 위해 <strong>다양한 선물과 기념품</strong>이 정성껏 준비되어 있습니다.
               </p>
             </div>
 
-            <div class="space-y-1.5">
+            <div class="space-y-1.5 sm:col-span-2 pt-2 border-t border-[#0097A7]/20">
               <h4 class="font-bold text-[#1D5266] flex items-center space-x-1.5">
                 <span>📞</span>
                 <span>문의처</span>
               </h4>
-              <ul class="text-slate-600 leading-relaxed space-y-1">
-                <li>• <strong>이선아 사무국장</strong>: <a href="tel:010-7642-2456" class="text-[#00838F] font-semibold hover:underline">010-7642-2456</a></li>
-                <li>• <strong>박희진 과장</strong>: <a href="tel:010-5819-5694" class="text-[#00838F] font-semibold hover:underline">010-5819-5694</a></li>
-                <li>• <strong>이사회 카카오톡 단체 채팅방 메시지</strong></li>
-              </ul>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-1 sm:space-y-0 text-slate-600 text-xs sm:text-sm">
+                <div>• <strong>이선아 사무국장</strong>: <a href="tel:010-7642-2456" class="text-[#00838F] font-semibold hover:underline">010-7642-2456</a></div>
+                <div>• <strong>박희진 과장</strong>: <a href="tel:010-5819-5694" class="text-[#00838F] font-semibold hover:underline">010-5819-5694</a></div>
+                <div>• <strong>이사회 카카오톡 단체 채팅방 메시지</strong></div>
+              </div>
             </div>
 
           </div>
