@@ -129,6 +129,8 @@ function loadState() {
     return {
       ...base,
       ...parsed,
+      mode: 'participant',
+      tfUnlocked: false,
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
       settings: { ...base.settings, ...(parsed.settings || {}) },
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
@@ -1714,6 +1716,13 @@ function renderCeremonyView() {
 }
 
 function switchMode(newMode) {
+  if (newMode === 'participant') {
+    appState.mode = 'participant';
+    appState.tfUnlocked = false;
+    saveState(true);
+    renderAll();
+    return;
+  }
   if ((newMode === 'tf' || newMode === 'ceremony') && !appState.tfUnlocked) {
     openPinModal();
     return;
@@ -1724,8 +1733,8 @@ function switchMode(newMode) {
 }
 
 function handleTfAccess() {
-  if (appState.tfUnlocked) {
-    switchMode(appState.mode === 'tf' ? 'participant' : 'tf');
+  if (appState.tfUnlocked && appState.mode !== 'participant') {
+    switchMode('participant');
   } else {
     openPinModal();
   }
@@ -1917,29 +1926,31 @@ function renderAll() {
   vParticipant.classList.add('hidden');
   vTf.classList.add('hidden');
   vCeremony.classList.add('hidden');
+  btnP.classList.add('hidden');
+  btnC.classList.add('hidden');
+  btnS.classList.add('hidden');
 
-  if (appState.tfUnlocked) {
+  if (appState.mode === 'tf' && appState.tfUnlocked) {
     btnP.classList.remove('hidden');
     btnC.classList.remove('hidden');
     btnS.classList.remove('hidden');
-  }
-
-  if (appState.mode === 'tf' && appState.tfUnlocked) {
     vTf.classList.remove('hidden');
     badge.textContent = '🔒 TF 운영진 비공개 대시보드';
-    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300';
-    tfLabel.textContent = '참가자 화면 전환';
+    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF3E8] text-[#F27A24] border border-[#F27A24]/30';
+    tfLabel.textContent = '🔒 잠그고 나가기';
     renderTfDashboardView();
   } else if (appState.mode === 'ceremony' && appState.tfUnlocked) {
+    btnP.classList.remove('hidden');
+    btnS.classList.remove('hidden');
     vCeremony.classList.remove('hidden');
-    badge.textContent = '🌅 다음날 아침 시상식 발표 모드';
-    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-300';
-    tfLabel.textContent = 'TF 대시보드로';
+    badge.textContent = '🌅 다음날 아침 시상식 발표 모드 (TF 전용)';
+    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF3E8] text-[#F27A24] border border-[#F27A24]/30';
+    tfLabel.textContent = '🔒 잠그고 나가기';
     renderCeremonyView();
   } else {
     vParticipant.classList.remove('hidden');
-    badge.textContent = '참가자 제출 모드 (점수 비공개)';
-    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E0F7FA] text-[#00838F] border border-[#0097A7]/20';
+    badge.textContent = '참가자 제출 모드';
+    badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9F0EC] text-[#1D3C34] border border-[#1D3C34]/20';
     tfLabel.textContent = 'TF 대시보드';
     renderParticipantView();
   }
