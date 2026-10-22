@@ -1014,9 +1014,6 @@ function renderParticipantView() {
         </div>
       </div>
     `);
-        </div>
-      </div>
-    `);
   }
 
   // Mission 4 (10/30 15:30 오픈)
