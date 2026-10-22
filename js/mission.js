@@ -413,7 +413,7 @@ function getSortedM6Submissions() {
    IMAGE UPLOAD & RESIZE HELPER
    ========================================================================== */
 
-function compressImageFile(file, maxWidth = 1024, quality = 0.8) {
+function compressImageFile(file, maxWidth = 1600, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -547,7 +547,7 @@ async function runAiGradeMission(teamId, missionNum) {
             role: 'user',
             content: [
               { type: 'text', text: `${team.name}의 ${cfg.title} 제출 사진입니다. 기준에 맞춰 채점하고 한 줄 근거를 작성해 주세요.` },
-              { type: 'image_url', image_url: { url: mData.photo, detail: 'low' } }
+              { type: 'image_url', image_url: { url: mData.photo, detail: 'high' } }
             ]
           }
         ],
