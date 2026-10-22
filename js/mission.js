@@ -2,7 +2,7 @@
    2026 JA Korea One JA Retreat in Jeju - 6 Missions & AI Grading Engine
    ========================================================================== */
 
-const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V2';
+const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V3';
 
 // 10/30(금) 미션별 자동 오픈 스케줄 (KST 기준)
 const MISSION_OPEN_SCHEDULE = {
@@ -78,6 +78,39 @@ function createDefaultTeamData(id, name) {
   };
 }
 
+function sanitizeTeams(teamsObj) {
+  const result = {
+    1: createDefaultTeamData(1, '1팀'),
+    2: createDefaultTeamData(2, '2팀'),
+    3: createDefaultTeamData(3, '3팀')
+  };
+  if (!teamsObj || typeof teamsObj !== 'object') return result;
+  [1, 2, 3].forEach(id => {
+    const raw = teamsObj[id] || teamsObj[String(id)];
+    if (raw && typeof raw === 'object') {
+      result[id] = {
+        id,
+        name: raw.name || `${id}팀`,
+        m1: typeof raw.m1 === 'object' ? { ...result[id].m1, ...raw.m1 } : result[id].m1,
+        m2: typeof raw.m2 === 'object' ? { ...result[id].m2, ...raw.m2, commonChecked: Array.isArray(raw.m2?.commonChecked) ? raw.m2.commonChecked : [], photos: Array.isArray(raw.m2?.photos) ? raw.m2.photos : [] } : result[id].m2,
+        m3: typeof raw.m3 === 'object' ? { ...result[id].m3, ...raw.m3 } : result[id].m3,
+        m4: typeof raw.m4 === 'object' ? { ...result[id].m4, ...raw.m4 } : result[id].m4,
+        m5: typeof raw.m5 === 'object' ? { ...result[id].m5, ...raw.m5 } : result[id].m5
+      };
+    }
+  });
+  return result;
+}
+
+function getTeam(teamId) {
+  const tid = Number(teamId) || 1;
+  if (!appState.teams) appState.teams = sanitizeTeams({});
+  if (!appState.teams[tid]) {
+    appState.teams[tid] = createDefaultTeamData(tid, `${tid}팀`);
+  }
+  return appState.teams[tid];
+}
+
 function getInitialState() {
   return {
     updatedAt: 0,
@@ -135,7 +168,7 @@ function loadState() {
       settings: { ...base.settings, ...(parsed.settings || {}) },
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
       m6Config: { ...base.m6Config, ...(parsed.m6Config || {}) },
-      teams: { ...base.teams, ...(parsed.teams || {}) }
+      teams: sanitizeTeams(parsed.teams || base.teams)
     };
   } catch (e) {
     return getInitialState();
@@ -278,7 +311,7 @@ async function pullFromCloudDb() {
       if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
       if (remote.m3Config) appState.m3Config = remote.m3Config;
       if (remote.m6Config) appState.m6Config = remote.m6Config;
-      if (remote.teams) appState.teams = remote.teams;
+      if (remote.teams) appState.teams = sanitizeTeams(remote.teams);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
       renderAll();
     }
@@ -762,17 +795,18 @@ function renderLockedMissionCard(missionNum) {
 }
 
 function renderParticipantView() {
-  const tid = appState.selectedTeamId;
-  const team = appState.teams[tid];
+  try {
+    const tid = Number(appState.selectedTeamId || 1);
+    const team = getTeam(tid);
 
-  const tabsEl = document.getElementById('participant-team-tabs');
-  if (tabsEl) {
-    tabsEl.innerHTML = [1, 2, 3].map(id => {
-      const t = appState.teams[id];
-      const active = (id === tid) ? 'tab-active' : 'text-[#4A5255] hover:bg-white';
-      return `<button onclick="selectParticipantTeam(${id})" class="px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${active}">${t.name}</button>`;
-    }).join('');
-  }
+    const tabsEl = document.getElementById('participant-team-tabs');
+    if (tabsEl) {
+      tabsEl.innerHTML = [1, 2, 3].map(id => {
+        const t = getTeam(id);
+        const active = (id === tid) ? 'tab-active' : 'text-[#4A5255] hover:bg-white';
+        return `<button onclick="selectParticipantTeam(${id})" class="px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${active}">${t.name}</button>`;
+      }).join('');
+    }
 
   const nameSpan = document.getElementById('participant-current-team-name');
   if (nameSpan) nameSpan.textContent = team.name;
@@ -1104,6 +1138,9 @@ function renderParticipantView() {
   }
 
   container.innerHTML = cards.join('');
+  } catch (err) {
+    console.error('renderParticipantView error:', err);
+  }
 }
 
 /* ==========================================================================
