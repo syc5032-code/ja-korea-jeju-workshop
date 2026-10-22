@@ -80,7 +80,7 @@ function createDefaultTeamData(id, name) {
 
 function getInitialState() {
   return {
-    updatedAt: Date.now(),
+    updatedAt: 0,
     mode: 'participant',
     selectedTeamId: 1,
     tfUnlocked: false,
@@ -215,33 +215,39 @@ function toggleMissionManualOpen(missionNum) {
 }
 
 /* ==========================================================================
-   CLOUD REAL-TIME SYNC (Firebase Realtime Database REST 연동)
+   SUPABASE CLOUD REAL-TIME SYNC (모든 기기 자동 저장 & 실시간 공유)
    ========================================================================== */
 
-function getCleanCloudEndpoint() {
-  const raw = (appState.settings?.cloudDbUrl || '').trim().replace(/\/+$/, '');
-  if (!raw || !raw.startsWith('http')) return '';
-  return `${raw}/ja_jeju_2026_state.json`;
-}
+const SUPABASE_URL = 'https://nsrzhqcxmejnstlfjhed.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xkn_YhxEOR0kn7coRE9faA_0LH2lD56';
+const SUPABASE_TABLE = 'jeju_mission_state';
 
 async function pushToCloudDb() {
-  const endpoint = getCleanCloudEndpoint();
-  if (!endpoint || isSyncingCloud) return;
+  if (isSyncingCloud) return;
   try {
     isSyncingCloud = true;
     const payload = {
-      updatedAt: appState.updatedAt,
-      scheduleConfig: appState.scheduleConfig,
-      m3Config: appState.m3Config,
-      m6Config: appState.m6Config,
-      teams: appState.teams
+      id: 'main_board',
+      updated_at: appState.updatedAt,
+      data: {
+        updatedAt: appState.updatedAt,
+        scheduleConfig: appState.scheduleConfig,
+        m3Config: appState.m3Config,
+        m6Config: appState.m6Config,
+        teams: appState.teams
+      }
     };
-    await fetch(endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
       body: JSON.stringify(payload)
     });
-    updateCloudBadge(true);
+    updateCloudBadge(res.ok);
   } catch (e) {
     updateCloudBadge(false);
   } finally {
@@ -250,14 +256,23 @@ async function pushToCloudDb() {
 }
 
 async function pullFromCloudDb() {
-  const endpoint = getCleanCloudEndpoint();
-  if (!endpoint || isSyncingCloud) return;
+  if (isSyncingCloud) return;
   try {
-    const res = await fetch(endpoint);
-    if (!res.ok) return;
-    const remote = await res.json();
-    if (remote && remote.updatedAt && remote.updatedAt > (appState.updatedAt || 0)) {
-      appState.updatedAt = remote.updatedAt;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=*`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if (!res.ok) {
+      updateCloudBadge(false);
+      return;
+    }
+    const rows = await res.json();
+    const row = rows?.[0];
+    if (row && row.data && row.updated_at > (appState.updatedAt || 0)) {
+      const remote = row.data;
+      appState.updatedAt = row.updated_at;
       if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
       if (remote.m3Config) appState.m3Config = remote.m3Config;
       if (remote.m6Config) appState.m6Config = remote.m6Config;
@@ -274,22 +289,18 @@ async function pullFromCloudDb() {
 function updateCloudBadge(connected) {
   const badge = document.getElementById('cloud-sync-badge');
   if (!badge) return;
-  if (!getCleanCloudEndpoint()) {
-    badge.textContent = '☁️ 로컬 저장 모드';
-    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 text-slate-300 border border-white/15';
-  } else if (connected) {
-    badge.textContent = '🟢 실시간 클라우드 동기화 중';
+  if (connected) {
+    badge.textContent = '🟢 Supabase 실시간 동기화 중';
     badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 border border-emerald-400/40';
   } else {
-    badge.textContent = '🔴 클라우드 연결 확인 필요';
-    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-200 border border-rose-400/40';
+    badge.textContent = '🟠 Supabase 테이블 생성 대기중';
+    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 border border-amber-400/40';
   }
 }
 
 function copyShareLinkWithDb(forTf = false) {
-  const dbInput = document.getElementById('setting-cloud-url')?.value?.trim() || appState.settings.cloudDbUrl || '';
   const url = new URL(window.location.href);
-  if (dbInput) url.searchParams.set('db', dbInput);
+  url.searchParams.delete('db');
   if (forTf) url.searchParams.set('tf', '1');
   else url.searchParams.delete('tf');
   navigator.clipboard.writeText(url.toString());
