@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>2026 JA Korea 제주 워크숍 | 6대 미션 & AI 채점 보드</title>
+  <title>JA RETREAT in JEJU (OCT 29-31, 2026) | 제주 워크숍 미션 보드</title>
 
-  <meta name="description" content="2026 JA Korea One JA Retreat in Jeju 팀 미션 제출 및 AI 채점 시스템" />
+  <meta name="description" content="JA RETREAT in JEJU (OCT 29-31, 2026) 미션 제출 및 AI 채점 보드" />
+  <meta property="og:title" content="JA RETREAT in JEJU | 미션 보드" />
+  <meta property="og:image" content="assets/images/jeju_retreat_banner.png" />
   <link rel="icon" type="image/png" href="assets/images/favicon.png" />
   <link rel="shortcut icon" href="favicon.ico" />
 
@@ -16,27 +18,22 @@
       theme: {
         extend: {
           colors: {
-            ja: {
-              primary: '#1D5266',
-              'primary-dark': '#123746',
-              teal: '#0097A7',
-              'teal-hover': '#00838F',
-              'teal-light': '#E0F7FA',
-              cyan: '#0EA5E9',
-              slate: '#2C4957',
-            },
-            jeju: {
-              ocean: '#0097A7',
-              sky: '#38BDF8',
-              tangerine: '#EA580C',
-              gold: '#F59E0B',
-              coral: '#FB7185',
-              peach: '#FFE4E6'
+            retreat: {
+              ivory: '#FCFBF7',
+              cream: '#F5F2E8',
+              sand: '#E6E1D3',
+              forest: '#1D3C34',
+              'forest-dark': '#142B25',
+              'forest-light': '#E9F0EC',
+              meadow: '#789D4A',
+              tangerine: '#F27A24',
+              'tangerine-light': '#FFF3E8',
+              halla: '#2A6F97',
+              stone: '#4A5255'
             }
           },
           fontFamily: {
-            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-            serif: ['Cormorant Garamond', 'Noto Serif KR', 'serif']
+            sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
           }
         }
       }
@@ -48,61 +45,82 @@
   <link rel="stylesheet" href="css/style.css" />
 
   <style>
+    body {
+      background-color: #FCFBF7;
+      color: #1D3C34;
+    }
+    .retreat-card {
+      background: #FFFFFF;
+      border: 1.5px solid #E6E1D3;
+      box-shadow: 0 12px 30px -10px rgba(29, 60, 52, 0.07);
+    }
+    .retreat-card-locked {
+      background: linear-gradient(180deg, #FAF8F1 0%, #F3EFE4 100%);
+      border: 1.5px dashed #D5CEBC;
+    }
+    .retreat-card-dark {
+      background: linear-gradient(135deg, #1D3C34 0%, #142B25 100%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 24px 48px -12px rgba(20, 43, 37, 0.35);
+    }
     .tab-active {
-      background: linear-gradient(135deg, #1D5266 0%, #0097A7 100%);
+      background: #1D3C34;
       color: #ffffff;
-      box-shadow: 0 8px 20px -4px rgba(0, 151, 167, 0.35);
+      box-shadow: 0 6px 16px -3px rgba(29, 60, 52, 0.3);
     }
     .mission-num-badge {
-      background: linear-gradient(135deg, #1D5266 0%, #0097A7 100%);
+      background: #1D3C34;
+      color: #FFFFFF;
+    }
+    .tangerine-badge {
+      background: #F27A24;
+      color: #FFFFFF;
     }
     .winner-glow {
-      box-shadow: 0 0 0 2px #F59E0B, 0 12px 30px -6px rgba(245, 158, 11, 0.35);
-      background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+      box-shadow: 0 0 0 2px #F27A24, 0 12px 30px -6px rgba(242, 122, 36, 0.28);
+      background: linear-gradient(135deg, #FFFDF9 0%, #FFF3E8 100%);
     }
     .custom-scrollbar::-webkit-scrollbar {
       height: 6px;
       width: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #CBD5E1;
+      background: #D5CEBC;
       border-radius: 9999px;
     }
   </style>
 </head>
-<body class="relative bg-gradient-to-b from-[#F0F9FA] via-[#F4FBFC] to-[#F8FAFC] min-h-screen text-slate-800 antialiased selection:bg-[#0097A7] selection:text-white w-full overflow-x-hidden pb-24">
+<body class="relative bg-[#FCFBF7] min-h-screen text-[#1D3C34] antialiased selection:bg-[#F27A24] selection:text-white w-full overflow-x-hidden pb-24">
 
   <!-- Top Sticky Header -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-lg border-b border-slate-200/70 shadow-xs w-full">
-    <div class="max-w-6xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
+  <header class="sticky top-0 z-40 bg-[#FCFBF7]/95 backdrop-blur-md border-b border-[#E6E1D3] w-full">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
       <!-- Logo & Title -->
       <div class="flex items-center space-x-2.5 shrink-0">
-        <a href="index.html" class="flex items-center space-x-2" title="초대장 메인으로">
-          <img src="assets/images/ja_korea_logo.png" alt="JA Korea" class="h-7 sm:h-8 w-auto object-contain" onerror="this.style.display='none'" />
-        </a>
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-[#1D3C34] text-white font-black text-xs tracking-tighter">JA</span>
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5">
-            <span class="text-xs sm:text-sm font-extrabold text-[#1D5266] tracking-tight">제주 워크숍 6대 미션</span>
-            <span id="current-mode-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E0F7FA] text-[#00838F] border border-[#0097A7]/20">
+            <span class="text-xs sm:text-sm font-black text-[#1D3C34] tracking-tight">JA RETREAT in JEJU</span>
+            <span id="current-mode-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#E9F0EC] text-[#1D3C34] border border-[#1D3C34]/20">
               참가자 제출 모드
             </span>
           </div>
-          <span class="text-[10px] text-slate-400 hidden sm:inline">One JA Retreat in Jeju · 결과는 다음날 아침 시상식에서 공개됩니다</span>
+          <span class="text-[10px] text-[#4A5255] hidden sm:inline">OCT 29-31, 2026 · 미션은 지정된 시간에 순차 공개됩니다</span>
         </div>
       </div>
 
       <!-- Mode Switcher Actions -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <button id="btn-participant-mode" onclick="switchMode('participant')" class="hidden text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-          📱 참가자 화면 보기
+        <button id="btn-participant-mode" onclick="switchMode('participant')" class="hidden text-xs font-bold px-3 py-1.5 rounded-full bg-[#F5F2E8] hover:bg-[#E6E1D3] text-[#1D3C34] transition">
+          📱 참가자 화면
         </button>
-        <button id="btn-ceremony-mode" onclick="switchMode('ceremony')" class="hidden text-xs font-bold px-3 py-1.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition">
-          🌅 아침 시상식 발표 뷰
+        <button id="btn-ceremony-mode" onclick="switchMode('ceremony')" class="hidden text-xs font-bold px-3 py-1.5 rounded-full bg-[#F27A24] hover:bg-[#d96514] text-white shadow-xs transition">
+          🌅 아침 시상식 뷰
         </button>
-        <button id="btn-tf-settings" onclick="openSettingsModal()" class="hidden p-2 rounded-full bg-slate-100 hover:bg-[#E0F7FA] text-slate-600 hover:text-[#0097A7] transition" title="API 키 및 팀 설정">
+        <button id="btn-tf-settings" onclick="openSettingsModal()" class="hidden p-2 rounded-full bg-[#F5F2E8] hover:bg-[#E6E1D3] text-[#1D3C34] transition" title="API 키 및 팀 설정">
           ⚙️
         </button>
-        <button id="btn-tf-login" onclick="handleTfAccess()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#1D5266] hover:bg-[#123746] text-white shadow-sm transition">
+        <button id="btn-tf-login" onclick="handleTfAccess()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-xs transition">
           <span>🔒</span>
           <span id="tf-btn-label">TF 대시보드</span>
         </button>
@@ -111,59 +129,64 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-6xl mx-auto px-3 sm:px-6 pt-5 sm:pt-8">
+  <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
 
     <!-- ===================================================================
-         1. PARTICIPANT VIEW (참가자 미션 제출 화면 - 점수/순위 완벽 비공개)
+         1. PARTICIPANT VIEW (참가자 미션 제출 화면 - 미션 내용/점수/순위 비공개)
          =================================================================== -->
-    <section id="view-participant" class="space-y-6">
-      <!-- Hero Banner & Team Selection -->
-      <div class="glass-card rounded-3xl p-5 sm:p-7 border border-[#0097A7]/20 relative overflow-hidden">
-        <div class="absolute -right-10 -top-10 w-40 h-40 bg-[#0097A7]/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <span class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-[#00838F] bg-[#E0F7FA] px-2.5 py-0.5 rounded-full mb-2">
-              🌴 2026 One JA Retreat Mission
-            </span>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-[#1D5266]">우리 팀 미션 제출 보드</h1>
-            <p class="text-xs sm:text-sm text-slate-600 mt-1">
-              소속 팀을 선택한 뒤 순서대로 미션을 제출해 주세요. <strong class="text-[#00838F]">AI 채점 점수와 최종 순위는 내일 아침 시상식에서 공개됩니다!</strong>
-            </p>
+    <section id="view-participant" class="space-y-5">
+
+      <!-- Official JA RETREAT in JEJU Key Visual Banner -->
+      <div class="retreat-card rounded-3xl overflow-hidden">
+        <div class="w-full bg-[#FCFBF7] border-b border-[#E6E1D3]">
+          <img
+            src="assets/images/jeju_retreat_banner.png"
+            alt="JA RETREAT in JEJU | OCT 29-31, 2026"
+            class="w-full h-auto object-cover block"
+          />
+        </div>
+
+        <div class="p-4 sm:p-6 bg-white">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div class="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-[#F27A24] bg-[#FFF3E8] border border-[#F27A24]/30 px-2.5 py-0.5 rounded-full mb-1.5">
+                <span>🍊 10/30(금) 팀 미션 & 저녁 미션 보드</span>
+              </div>
+              <h1 class="text-lg sm:text-xl font-extrabold text-[#1D3C34]">우리 팀 미션 확인 및 제출</h1>
+              <p class="text-xs sm:text-sm text-[#4A5255] mt-0.5">
+                각 미션의 주제와 내용은 <strong>정해진 오픈 시각(09:20 ~ 18:30)</strong>에 맞춰 하나씩 공개됩니다!
+              </p>
+            </div>
+
+            <!-- Team Selector Pills -->
+            <div class="flex flex-col items-start md:items-end shrink-0">
+              <span class="text-[11px] font-bold text-[#4A5255] mb-1.5">👇 우리 팀 선택</span>
+              <div id="participant-team-tabs" class="inline-flex bg-[#F5F2E8] p-1 rounded-2xl border border-[#E6E1D3] gap-1">
+                <!-- Populated by JS -->
+              </div>
+            </div>
           </div>
 
-          <!-- Team Selector Pills -->
-          <div class="flex flex-col items-start md:items-end shrink-0">
-            <span class="text-[11px] font-semibold text-slate-500 mb-1.5">👇 현재 선택된 제출 팀</span>
-            <div id="participant-team-tabs" class="inline-flex bg-slate-100 p-1 rounded-2xl border border-slate-200/80 gap-1">
+          <!-- Team Submission Progress Bar (No Mission Titles When Locked) -->
+          <div class="mt-4 pt-4 border-t border-[#E6E1D3]">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="font-bold text-[#1D3C34]"><span id="participant-current-team-name">1팀</span> 팀 미션 진행 현황 (1~5번)</span>
+              <span id="participant-progress-text" class="font-extrabold text-[#F27A24]">0 / 5 완료</span>
+            </div>
+            <div class="grid grid-cols-5 gap-1.5 sm:gap-2" id="participant-status-pills">
               <!-- Populated by JS -->
             </div>
           </div>
         </div>
-
-        <!-- Team Submission Progress Bar (Status Only, No Scores) -->
-        <div class="mt-5 pt-4 border-t border-slate-200/60">
-          <div class="flex items-center justify-between text-xs mb-2">
-            <span class="font-bold text-slate-700"><span id="participant-current-team-name">1팀</span> 미션 달성 현황 (1~5번 팀 미션)</span>
-            <span id="participant-progress-text" class="font-bold text-[#0097A7]">0 / 5 완료</span>
-          </div>
-          <div class="grid grid-cols-5 gap-1.5 sm:gap-2" id="participant-status-pills">
-            <!-- Populated by JS -->
-          </div>
-        </div>
       </div>
 
-      <!-- Mission Navigation Jump Pills (10/30(금) 오픈 시간 안내) -->
-      <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1">
-        <a href="#p-mission-1" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-[#0097A7] hover:text-[#0097A7] transition">1. 여행 포스터 <span class="text-[10px] text-[#0097A7]">09:20 오픈</span></a>
-        <a href="#p-mission-2" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-[#0097A7] hover:text-[#0097A7] transition">2. 제주 발견 <span class="text-[10px] text-[#0097A7]">13:00 오픈</span></a>
-        <a href="#p-mission-3" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-[#0097A7] hover:text-[#0097A7] transition">3. 깜짝 N행시 <span class="text-[10px] text-[#0097A7]">14:30 오픈</span></a>
-        <a href="#p-mission-4" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-[#0097A7] hover:text-[#0097A7] transition">4. 팀별 주인공 <span class="text-[10px] text-[#0097A7]">15:30 오픈</span></a>
-        <a href="#p-mission-5" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-[#0097A7] hover:text-[#0097A7] transition">5. 그림자 JA <span class="text-[10px] text-amber-600">16:00 오픈</span></a>
-        <a href="#p-mission-6" class="shrink-0 text-xs font-bold px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 transition">6. 저녁 개인미션 <span class="text-[10px]">18:30 오픈</span></a>
+      <!-- Dynamic Mission Navigation Jump Pills (Titles hidden until unlocked!) -->
+      <div id="participant-jump-pills" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1">
+        <!-- Populated dynamically by JS so locked mission titles stay secret -->
       </div>
 
       <!-- Participant Mission Cards Container (1 ~ 6) -->
-      <div id="participant-missions-container" class="space-y-5">
+      <div id="participant-missions-container" class="space-y-4">
         <!-- Populated dynamically by js/mission.js -->
       </div>
     </section>
@@ -174,22 +197,22 @@
          =================================================================== -->
     <section id="view-tf" class="hidden space-y-6">
       <!-- Top Real-Time Confidential Scoreboard -->
-      <div class="glass-card-dark rounded-3xl p-5 sm:p-7 text-white relative overflow-hidden">
+      <div class="retreat-card-dark rounded-3xl p-5 sm:p-7 text-white relative overflow-hidden">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-5 border-b border-white/15">
           <div>
-            <div class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2.5 py-0.5 rounded-full mb-2">
+            <div class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider bg-[#F27A24]/25 text-[#FFD2B0] border border-[#F27A24]/40 px-2.5 py-0.5 rounded-full mb-2">
               <span>🔒 TF 전용 비공개 대시보드</span>
               <span>·</span>
               <span>다음날 아침 시상식 전까지 외부 비공개</span>
             </div>
             <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">실시간 팀별 종합 스코어보드 & AI 채점 관제</h1>
-            <p class="text-xs sm:text-sm text-slate-300 mt-1">
-              정규 미션(1~4번) 100점 + 보너스(2번 히든 5점 + 5번 그림자 10점) 15점 = <strong>최대 115점 만점</strong> | 6번 개인미션은 최다 정답자 1명 별도 시상
+            <p class="text-xs sm:text-sm text-emerald-100/80 mt-1">
+              정규 미션(1~4번) 100점 + 보너스(2번 히든 5점 + 5번 그림자 10점) 15점 = <strong>최대 115점 만점</strong> | 6번은 최다 정답자 1명 별도 시상
             </p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <button onclick="gradeAllPendingPhotos()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 hover:opacity-95 shadow-md transition">
+            <button onclick="gradeAllPendingPhotos()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#F27A24] hover:bg-[#d96514] text-white shadow-md transition">
               <span>🤖</span>
               <span>제출 사진 일괄 AI 채점</span>
             </button>
@@ -215,11 +238,11 @@
         <!-- 10/30(금) Mission Unlock Schedule Control Bar -->
         <div class="mt-5 pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs font-extrabold text-amber-300">⏰ 10/30(금) 미션 오픈 스케줄러:</span>
-            <span class="text-[11px] text-slate-300">1번(09:20) · 2번(13:00) · 3번(14:30) · 4번(15:30) · 5번(16:00) · 6번(18:30)</span>
+            <span class="text-xs font-extrabold text-[#FFB980]">⏰ 10/30(금) 비공개 미션 자동 오픈 스케줄:</span>
+            <span class="text-[11px] text-emerald-100/80">1번(09:20) · 2번(13:00) · 3번(14:30) · 4번(15:30) · 5번(16:00) · 6번(18:30)</span>
           </div>
           <div class="flex items-center gap-2 shrink-0">
-            <span id="cloud-sync-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 text-slate-300 border border-white/15">☁️ 로컬 저장 모드</span>
+            <span id="cloud-sync-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white/10 text-slate-200 border border-white/15">☁️ 로컬 저장 모드</span>
             <button id="btn-force-open-all" onclick="toggleForceOpenAllMissions()" class="text-xs font-extrabold px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/40 transition">
               🔓 테스트용 전체 미션 즉시 오픈 켜기
             </button>
@@ -228,14 +251,14 @@
       </div>
 
       <!-- TF Mission Filter Tabs -->
-      <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar bg-white p-1.5 rounded-2xl border border-slate-200/80 shadow-xs">
+      <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar bg-white p-1.5 rounded-2xl border border-[#E6E1D3] shadow-xs">
         <button onclick="setTfMissionFilter('all')" id="tf-tab-all" class="tf-filter-btn tab-active shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl transition">전체 미션 (1~6)</button>
-        <button onclick="setTfMissionFilter(1)" id="tf-tab-1" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition">1. 여행 포스터 (AI 25점)</button>
-        <button onclick="setTfMissionFilter(2)" id="tf-tab-2" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition">2. 제주 발견 (15+5점)</button>
-        <button onclick="setTfMissionFilter(3)" id="tf-tab-3" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition">3. 깜짝 N행시 (투표 30점)</button>
-        <button onclick="setTfMissionFilter(4)" id="tf-tab-4" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition">4. 팀별 주인공 (AI 30점)</button>
-        <button onclick="setTfMissionFilter(5)" id="tf-tab-5" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition">5. 그림자 JA (AI +10점)</button>
-        <button onclick="setTfMissionFilter(6)" id="tf-tab-6" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-amber-700 hover:bg-amber-50 transition">6. 저녁 개인미션 (최다 1명)</button>
+        <button onclick="setTfMissionFilter(1)" id="tf-tab-1" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">1. 여행 포스터 (AI 25점)</button>
+        <button onclick="setTfMissionFilter(2)" id="tf-tab-2" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">2. 제주 발견 (15+5점)</button>
+        <button onclick="setTfMissionFilter(3)" id="tf-tab-3" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">3. 깜짝 N행시 (투표 30점)</button>
+        <button onclick="setTfMissionFilter(4)" id="tf-tab-4" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">4. 팀별 주인공 (AI 30점)</button>
+        <button onclick="setTfMissionFilter(5)" id="tf-tab-5" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">5. 그림자 JA (AI +10점)</button>
+        <button onclick="setTfMissionFilter(6)" id="tf-tab-6" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-[#F27A24] hover:bg-[#FFF3E8] transition">6. 저녁 개인미션 (최다 1명)</button>
       </div>
 
       <!-- TF Mission Control Panels (1 ~ 6) -->
@@ -249,20 +272,23 @@
          3. NEXT MORNING CEREMONY PRESENTATION VIEW (다음 날 아침 시상식 발표 모드)
          =================================================================== -->
     <section id="view-ceremony" class="hidden space-y-8">
-      <div class="glass-card-dark rounded-3xl p-6 sm:p-10 text-white text-center relative overflow-hidden">
-        <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-amber-400/20 text-amber-300 border border-amber-400/30 px-3 py-1 rounded-full mb-3">
-          🌅 2026 JA Korea One JA Retreat in Jeju
-        </span>
-        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">미션 결과 & AI 심사평 시상식</h1>
-        <p class="text-sm text-slate-300 mt-2 max-w-xl mx-auto">
-          어제 하루 동안 세 팀이 함께 만든 제주의 순간들과 AI 심사위원의 한 줄 근거, 그리고 대망의 최종 우승팀을 공개합니다!
-        </p>
+      <div class="retreat-card rounded-3xl overflow-hidden">
+        <img src="assets/images/jeju_retreat_banner.png" alt="JA RETREAT in JEJU" class="w-full h-auto object-cover border-b border-[#E6E1D3]" />
+        <div class="p-6 sm:p-8 bg-[#1D3C34] text-white text-center">
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-[#F27A24] text-white px-3 py-1 rounded-full mb-3">
+            🌅 JA RETREAT in JEJU · AWARDS CEREMONY
+          </span>
+          <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">미션 결과 & AI 심사평 시상식</h1>
+          <p class="text-sm text-emerald-100/80 mt-2 max-w-xl mx-auto">
+            어제 하루 동안 세 팀이 함께 만든 제주의 순간들과 AI 심사위원의 한 줄 근거, 그리고 대망의 최종 우승팀을 공개합니다!
+          </p>
 
-        <div class="flex flex-wrap justify-center gap-2 mt-6">
-          <button onclick="setCeremonySlide('missions')" id="ceremony-btn-missions" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-900 shadow">📸 1~5번 미션별 작품 & AI 한줄평</button>
-          <button onclick="setCeremonySlide('individual')" id="ceremony-btn-individual" class="px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white">🎯 6번 저녁 개인미션 MVP 발표</button>
-          <button onclick="setCeremonySlide('podium')" id="ceremony-btn-podium" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg">🏆 최종 종합 순위 발표</button>
-          <button onclick="switchMode('tf')" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-slate-300">← TF 대시보드로 돌아가기</button>
+          <div class="flex flex-wrap justify-center gap-2 mt-6">
+            <button onclick="setCeremonySlide('missions')" id="ceremony-btn-missions" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-[#1D3C34] shadow">📸 1~5번 미션별 작품 & AI 한줄평</button>
+            <button onclick="setCeremonySlide('individual')" id="ceremony-btn-individual" class="px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white">🎯 6번 저녁 개인미션 MVP 발표</button>
+            <button onclick="setCeremonySlide('podium')" id="ceremony-btn-podium" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#F27A24] hover:bg-[#d96514] text-white shadow-lg">🏆 최종 종합 순위 발표</button>
+            <button onclick="switchMode('tf')" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-emerald-100">← TF 대시보드로 돌아가기</button>
+          </div>
         </div>
       </div>
 
@@ -278,57 +304,57 @@
        =================================================================== -->
 
   <!-- TF PIN Login Modal -->
-  <div id="modal-pin" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100">
+  <div id="modal-pin" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#E6E1D3]">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-extrabold text-[#1D5266]">🔒 TF 운영진 대시보드 접속</h3>
+        <h3 class="text-lg font-extrabold text-[#1D3C34]">🔒 TF 운영진 대시보드 접속</h3>
         <button onclick="closePinModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
-      <p class="text-xs text-slate-500 mb-4">
-        점수와 실시간 순위는 다음날 아침 시상식 전까지 TF 운영진만 열람할 수 있습니다. (초기 비밀번호: <code class="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-700">2026</code>)
+      <p class="text-xs text-[#4A5255] mb-4">
+        미션 내용과 실시간 점수는 다음날 아침 시상식 전까지 TF 운영진만 열람할 수 있습니다. (초기 비밀번호: <code class="bg-[#F5F2E8] px-1.5 py-0.5 rounded font-bold text-[#1D3C34]">2026</code>)
       </p>
       <form onsubmit="submitPinLogin(event)" class="space-y-3">
-        <input id="input-tf-pin" type="password" inputmode="numeric" placeholder="비밀번호 입력" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-center text-lg font-bold tracking-widest focus:outline-none focus:border-[#0097A7]" required />
+        <input id="input-tf-pin" type="password" inputmode="numeric" placeholder="비밀번호 입력" class="w-full px-4 py-3 rounded-xl border border-[#E6E1D3] text-center text-lg font-bold tracking-widest focus:outline-none focus:border-[#1D3C34]" required />
         <p id="pin-error-msg" class="text-xs text-rose-600 font-semibold text-center hidden">비밀번호가 일치하지 않습니다.</p>
-        <button type="submit" class="w-full py-3 rounded-xl bg-[#1D5266] hover:bg-[#123746] text-white font-bold text-sm transition">
+        <button type="submit" class="w-full py-3 rounded-xl bg-[#1D3C34] hover:bg-[#142B25] text-white font-bold text-sm transition">
           대시보드 열기
         </button>
       </form>
     </div>
   </div>
 
-  <!-- TF Settings Modal (OpenAI API Key, Judge Persona, Team Names, PIN) -->
-  <div id="modal-settings" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 my-8">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="text-lg font-extrabold text-[#1D5266]">⚙️ TF 대시보드 & OpenAI API 설정</h3>
+  <!-- TF Settings Modal -->
+  <div id="modal-settings" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-[#E6E1D3] my-8">
+      <div class="flex items-center justify-between pb-3 border-b border-[#E6E1D3]">
+        <h3 class="text-lg font-extrabold text-[#1D3C34]">⚙️ TF 대시보드 & OpenAI API 설정</h3>
         <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
       <div class="space-y-4 mt-4 text-xs sm:text-sm">
         <!-- Cloud DB Real-time Sync for Multi-TF & Participants -->
-        <div class="p-4 rounded-2xl bg-[#F0F9FA] border border-[#0097A7]/30 space-y-2">
-          <label class="block font-bold text-[#1D5266]">☁️ 다른 TF·참가자 실시간 연동 (Firebase DB 주소)</label>
-          <input id="setting-cloud-url" type="url" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:outline-none focus:border-[#0097A7]" />
-          <p class="text-[11px] text-slate-600 leading-relaxed">
+        <div class="p-4 rounded-2xl bg-[#E9F0EC] border border-[#1D3C34]/20 space-y-2">
+          <label class="block font-bold text-[#1D3C34]">☁️ 다른 TF·참가자 실시간 연동 (Firebase DB 주소)</label>
+          <input id="setting-cloud-url" type="url" placeholder="https://your-project-default-rtdb.firebaseio.com" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:outline-none focus:border-[#1D3C34]" />
+          <p class="text-[11px] text-[#4A5255] leading-relaxed">
             • Firebase 콘솔에서 무료 <strong>Realtime Database(테스트 모드)</strong> 생성 후 주소를 넣으면, 모든 TF와 참가자의 폰·노트북이 <strong>실시간으로 자동 동기화</strong>됩니다.<br>
             • 입력 후 아래 <strong>[🔗 공유 링크 복사]</strong>를 눌러 단톡방에 보내면 다른 분들은 설정 없이 클릭만 해도 같은 DB에 자동 연결됩니다!
           </p>
           <div class="flex gap-2 pt-1">
-            <button type="button" onclick="copyShareLinkWithDb(false)" class="flex-1 py-2 px-3 rounded-xl bg-white border border-[#0097A7] text-[#00838F] font-extrabold text-xs hover:bg-[#E0F7FA]">
+            <button type="button" onclick="copyShareLinkWithDb(false)" class="flex-1 py-2 px-3 rounded-xl bg-white border border-[#1D3C34] text-[#1D3C34] font-extrabold text-xs hover:bg-[#F5F2E8]">
               🔗 참가자 배포 링크 복사
             </button>
-            <button type="button" onclick="copyShareLinkWithDb(true)" class="flex-1 py-2 px-3 rounded-xl bg-[#1D5266] text-white font-extrabold text-xs hover:bg-[#123746]">
+            <button type="button" onclick="copyShareLinkWithDb(true)" class="flex-1 py-2 px-3 rounded-xl bg-[#1D3C34] text-white font-extrabold text-xs hover:bg-[#142B25]">
               🔗 다른 TF용 대시보드 링크 복사
             </button>
           </div>
         </div>
 
         <!-- OpenAI API Key -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-          <label class="block font-bold text-slate-800">🔑 OpenAI API Key (GPT-4o 사진 채점용)</label>
-          <input id="setting-api-key" type="password" placeholder="sk-proj-..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:outline-none focus:border-[#0097A7]" />
-          <p class="text-[11px] text-slate-500">
+        <div class="p-4 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3] space-y-2">
+          <label class="block font-bold text-[#1D3C34]">🔑 OpenAI API Key (GPT-4o 사진 채점용)</label>
+          <input id="setting-api-key" type="password" placeholder="sk-proj-..." class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:outline-none focus:border-[#1D3C34]" />
+          <p class="text-[11px] text-[#4A5255]">
             • 입력하신 키는 현재 브라우저에만 안전하게 저장되며 외부로 노출되지 않습니다.<br>
             • 모델: <select id="setting-ai-model" class="border border-slate-300 rounded px-1.5 py-0.5 text-xs font-semibold bg-white">
               <option value="gpt-4o">gpt-4o (고정밀 비전 추천)</option>
@@ -338,8 +364,8 @@
         </div>
 
         <!-- AI Judge Persona -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-          <label class="block font-bold text-slate-800">🎭 AI 심사위원 한 줄 근거 스타일</label>
+        <div class="p-4 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3] space-y-2">
+          <label class="block font-bold text-[#1D3C34]">🎭 AI 심사위원 한 줄 근거 스타일</label>
           <select id="setting-ai-persona" class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-semibold">
             <option value="warm">따뜻하고 센스 넘치는 칭찬형 심사위원 (추천)</option>
             <option value="variety">예능 PD 스타일 재치 만점 유쾌한 심사위원</option>
@@ -348,8 +374,8 @@
         </div>
 
         <!-- Team Names -->
-        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
-          <label class="block font-bold text-slate-800">👥 3개 팀 이름 설정</label>
+        <div class="p-4 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3] space-y-2">
+          <label class="block font-bold text-[#1D3C34]">👥 3개 팀 이름 설정</label>
           <div class="grid grid-cols-3 gap-2">
             <input id="setting-team-1" type="text" placeholder="1팀 이름" class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-center" />
             <input id="setting-team-2" type="text" placeholder="2팀 이름" class="px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-bold text-center" />
@@ -359,14 +385,14 @@
 
         <!-- Admin PIN & Reset -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-            <label class="block font-bold text-slate-800 mb-1">🔐 TF 비밀번호 변경</label>
+          <div class="p-3.5 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3]">
+            <label class="block font-bold text-[#1D3C34] mb-1">🔐 TF 비밀번호 변경</label>
             <input id="setting-admin-pin" type="text" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-bold" />
           </div>
-          <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 flex flex-col justify-between">
-            <span class="font-bold text-rose-800 text-xs">⚠️ 데모 샘플 데이터 / 초기화</span>
+          <div class="p-3.5 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30 flex flex-col justify-between">
+            <span class="font-bold text-[#1D3C34] text-xs">⚠️ 데모 샘플 데이터 / 초기화</span>
             <div class="flex gap-1.5 mt-2">
-              <button type="button" onclick="loadDemoSampleData()" class="flex-1 py-1.5 px-2 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold text-[11px] hover:bg-rose-100">샘플 채우기</button>
+              <button type="button" onclick="loadDemoSampleData()" class="flex-1 py-1.5 px-2 rounded-lg bg-white border border-[#F27A24]/40 text-[#F27A24] font-bold text-[11px] hover:bg-orange-50">샘플 채우기</button>
               <button type="button" onclick="resetAllMissionData()" class="flex-1 py-1.5 px-2 rounded-lg bg-rose-600 text-white font-bold text-[11px] hover:bg-rose-700">전체 초기화</button>
             </div>
           </div>
@@ -375,7 +401,7 @@
 
       <div class="mt-5 flex justify-end gap-2">
         <button onclick="closeSettingsModal()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">취소</button>
-        <button onclick="saveSettingsModal()" class="px-5 py-2.5 rounded-xl bg-[#0097A7] hover:bg-[#00838F] text-white text-xs font-bold shadow">설정 저장하기</button>
+        <button onclick="saveSettingsModal()" class="px-5 py-2.5 rounded-xl bg-[#1D3C34] hover:bg-[#142B25] text-white text-xs font-bold shadow">설정 저장하기</button>
       </div>
     </div>
   </div>

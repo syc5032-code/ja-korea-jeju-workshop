@@ -730,15 +730,15 @@ function renderLockedMissionCard(missionNum) {
   const sched = MISSION_OPEN_SCHEDULE[missionNum];
   const cd = getMissionCountdownInfo(missionNum);
   return `
-    <div id="p-mission-${missionNum}" class="glass-card rounded-3xl p-6 border border-slate-200/90 bg-slate-50/80 text-center relative overflow-hidden">
-      <div class="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full bg-slate-200 text-slate-700 mb-2">
-        <span>🔒 미션 ${missionNum} · 오픈 대기중</span>
+    <div id="p-mission-${missionNum}" class="retreat-card-locked rounded-3xl p-6 sm:p-7 text-center relative overflow-hidden">
+      <div class="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#1D3C34] text-white mb-2.5 tracking-wider">
+        <span>🔒 SECRET MISSION 0${missionNum}</span>
       </div>
-      <h2 class="text-base sm:text-lg font-extrabold text-slate-700">${sched.title}</h2>
-      <p class="text-xs sm:text-sm text-slate-500 mt-1">
-        이 미션은 <strong>${sched.timeLabel}</strong>에 상세 내용과 제출창이 자동으로 열립니다!
+      <h2 class="text-base sm:text-lg font-extrabold text-[#1D3C34]">미션 ${missionNum} · 비공개 미션</h2>
+      <p class="text-xs sm:text-sm text-[#4A5255] mt-1">
+        미션 주제와 상세 내용은 <strong class="text-[#F27A24]">${sched.timeLabel}</strong>에 정각 공개됩니다!
       </p>
-      <div class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 shadow-xs text-xs font-mono font-bold text-[#0097A7]">
+      <div class="mt-3.5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E6E1D3] shadow-xs text-xs font-mono font-bold text-[#1D3C34]">
         <span>⏳</span>
         <span data-countdown-mission="${missionNum}">${cd.text}</span>
       </div>
@@ -754,7 +754,7 @@ function renderParticipantView() {
   if (tabsEl) {
     tabsEl.innerHTML = [1, 2, 3].map(id => {
       const t = appState.teams[id];
-      const active = (id === tid) ? 'tab-active' : 'text-slate-600 hover:bg-white';
+      const active = (id === tid) ? 'tab-active' : 'text-[#4A5255] hover:bg-white';
       return `<button onclick="selectParticipantTeam(${id})" class="px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${active}">${t.name}</button>`;
     }).join('');
   }
@@ -763,11 +763,11 @@ function renderParticipantView() {
   if (nameSpan) nameSpan.textContent = team.name;
 
   const statuses = [
-    { num: 1, label: '1.포스터(09:20)', done: Boolean(team.m1.photo) },
-    { num: 2, label: '2.발견(13:00)', done: (team.m2.commonChecked?.length > 0 || team.m2.photos?.length > 0) },
-    { num: 3, label: '3.N행시(14:30)', done: Boolean(team.m3.kakaoSubmitted) },
-    { num: 4, label: '4.주인공(15:30)', done: Boolean(team.m4.photo) },
-    { num: 5, label: '5.그림자(16:00)', done: Boolean(team.m5.photo || team.m5.passed) }
+    { num: 1, openLabel: '1.여행포스터', secretLabel: '미션 1 (09:20)', done: Boolean(team.m1.photo) },
+    { num: 2, openLabel: '2.제주발견', secretLabel: '미션 2 (13:00)', done: (team.m2.commonChecked?.length > 0 || team.m2.photos?.length > 0) },
+    { num: 3, openLabel: '3.깜짝N행시', secretLabel: '미션 3 (14:30)', done: Boolean(team.m3.kakaoSubmitted) },
+    { num: 4, openLabel: '4.팀별주인공', secretLabel: '미션 4 (15:30)', done: Boolean(team.m4.photo) },
+    { num: 5, openLabel: '5.그림자JA', secretLabel: '미션 5 (16:00)', done: Boolean(team.m5.photo || team.m5.passed) }
   ];
   const doneCount = statuses.filter(s => s.done).length;
   const progText = document.getElementById('participant-progress-text');
@@ -778,10 +778,30 @@ function renderParticipantView() {
     pillsEl.innerHTML = statuses.map(s => {
       const open = isMissionOpen(s.num);
       return `
-        <div class="px-2 py-2 rounded-xl text-center border text-[11px] font-bold ${s.done ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : open ? 'bg-white border-slate-200 text-slate-600' : 'bg-slate-100 border-slate-200 text-slate-400'}">
-          <div>${s.done ? '✅ 제출완료' : open ? '🟢 진행중' : '🔒 오픈대기'}</div>
-          <div class="text-[10px] mt-0.5 truncate">${s.label}</div>
+        <div class="px-2 py-2 rounded-xl text-center border text-[11px] font-bold ${s.done ? 'bg-[#E9F0EC] border-[#1D3C34]/30 text-[#1D3C34]' : open ? 'bg-white border-[#E6E1D3] text-[#1D3C34]' : 'bg-[#F5F2E8] border-[#E6E1D3] text-[#4A5255]'}">
+          <div>${s.done ? '✅ 제출완료' : open ? '🟢 오픈됨' : '🔒 비공개'}</div>
+          <div class="text-[10px] mt-0.5 truncate">${open ? s.openLabel : s.secretLabel}</div>
         </div>
+      `;
+    }).join('');
+  }
+
+  const jumpEl = document.getElementById('participant-jump-pills');
+  if (jumpEl) {
+    const jumpMeta = [
+      { num: 1, openTitle: '1. 여행 포스터', time: '09:20' },
+      { num: 2, openTitle: '2. 제주 발견', time: '13:00' },
+      { num: 3, openTitle: '3. 깜짝 N행시', time: '14:30' },
+      { num: 4, openTitle: '4. 팀별 주인공', time: '15:30' },
+      { num: 5, openTitle: '5. 그림자 JA', time: '16:00' },
+      { num: 6, openTitle: '6. 저녁 개인미션', time: '18:30' }
+    ];
+    jumpEl.innerHTML = jumpMeta.map(j => {
+      const open = isMissionOpen(j.num);
+      return `
+        <a href="#p-mission-${j.num}" class="shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl border transition ${open ? 'bg-white border-[#1D3C34]/30 text-[#1D3C34] hover:border-[#F27A24]' : 'bg-[#F5F2E8] border-[#E6E1D3] text-[#4A5255]'}">
+          ${open ? `🍊 ${j.openTitle}` : `🔒 미션 ${j.num}`} <span class="text-[10px] text-[#F27A24] font-semibold">${j.time}</span>
+        </a>
       `;
     }).join('');
   }
