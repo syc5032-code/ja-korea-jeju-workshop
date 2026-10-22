@@ -231,6 +231,7 @@ async function pushToCloudDb() {
       updated_at: appState.updatedAt,
       data: {
         updatedAt: appState.updatedAt,
+        settings: appState.settings,
         scheduleConfig: appState.scheduleConfig,
         m3Config: appState.m3Config,
         m6Config: appState.m6Config,
@@ -273,6 +274,7 @@ async function pullFromCloudDb() {
     if (row && row.data && row.updated_at > (appState.updatedAt || 0)) {
       const remote = row.data;
       appState.updatedAt = row.updated_at;
+      if (remote.settings) appState.settings = { ...appState.settings, ...remote.settings };
       if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
       if (remote.m3Config) appState.m3Config = remote.m3Config;
       if (remote.m6Config) appState.m6Config = remote.m6Config;
