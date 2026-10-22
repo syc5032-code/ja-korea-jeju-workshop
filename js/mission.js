@@ -830,7 +830,7 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(1));
   } else {
     cards.push(`
-      <div id="p-mission-1" class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/80">
+      <div id="p-mission-1" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 1 · 09:20 오픈</span>
@@ -867,7 +867,7 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(2));
   } else {
     cards.push(`
-      <div id="p-mission-2" class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/80">
+      <div id="p-mission-2" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 2 · 13:00 오픈</span>
@@ -931,38 +931,53 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(3));
   } else {
     cards.push(`
-      <div id="p-mission-3" class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/80">
+      <div id="p-mission-3" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 3 · 14:30 오픈</span>
-            <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">[깜짝 N행시] 오늘의 제시어: 「${appState.m3Config.selectedWord}」</h2>
+            <h2 class="text-base sm:text-lg font-extrabold text-[#1D3C34]">[깜짝 N행시] 오늘의 제시어: 「${appState.m3Config.selectedWord}」</h2>
           </div>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">⏰ 15:15 제출 마감 · 카톡 영상 제출 & 팀 투표</span>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-[#FFF3E8] text-[#F27A24] border border-[#F27A24]/30">⏰ 15:15 제출 마감 · 카톡 영상 제출 & 팀 투표</span>
         </div>
-        <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
-          오늘의 공통 단어 <strong>「${appState.m3Config.selectedWord}」</strong> 각 글자로 시작하는 문장을 이어 팀당 한 편을 <strong>카카오톡 단톡방에 동영상으로 제출</strong>한 뒤 아래 완료 버튼을 눌러주세요!
+        <p class="text-xs sm:text-sm text-[#4A5255] mb-4 leading-relaxed">
+          오늘의 공통 단어 <strong>「${appState.m3Config.selectedWord}」</strong> 각 글자로 시작하는 문장을 이어 팀당 한 편을 <strong>카카오톡 단톡방에 동영상으로 제출</strong>해 주세요! 영상을 올린 후 아래 <strong>[제출 완료 체크]</strong> 버튼을 꼭 눌러주셔야 합니다.
         </p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div class="text-xs font-extrabold text-slate-700">① 우리 팀 N행시 동영상 카톡 제출 확인</div>
-            <button type="button" onclick="toggleM3KakaoSubmitted(${tid})" class="w-full py-3 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 ${team.m3.kakaoSubmitted ? 'bg-emerald-600 text-white shadow-md' : 'bg-white border-2 border-[#1D5266] text-[#1D5266] hover:bg-[#E0F7FA]'}">
-              <span>${team.m3.kakaoSubmitted ? '✅ 카톡으로 동영상 제출 완료됨!' : '🎬 카톡 단톡방에 동영상 보내고 완료 체크하기'}</span>
+          <!-- 1. 본인 팀 카톡 제출 체크 박스 -->
+          <div class="p-4 rounded-2xl ${team.m3.kakaoSubmitted ? 'bg-[#E9F0EC] border-2 border-[#1D3C34]' : 'bg-[#FCFBF7] border border-[#E6E1D3]'} space-y-3 transition">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-[#1D3C34]">① ${team.name} 카톡 동영상 제출 체크</span>
+              ${team.m3.kakaoSubmitted ? `<span class="text-[11px] font-bold text-[#1D3C34] bg-white px-2 py-0.5 rounded-full border border-[#1D3C34]/30">제출완료: ${team.m3.submittedAt || '확인됨'}</span>` : ''}
+            </div>
+            <p class="text-[11px] text-[#4A5255]">
+              카카오톡 단톡방에 우리 팀의 N행시 영상을 전송하셨나요? 업로드 후 아래 버튼을 터치해 주세요.
+            </p>
+            <button type="button" onclick="toggleM3KakaoSubmitted(${tid})" class="w-full py-3.5 px-4 rounded-xl font-extrabold text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-xs ${team.m3.kakaoSubmitted ? 'bg-[#1D3C34] text-white hover:bg-[#142B25]' : 'bg-[#F27A24] text-white hover:bg-[#d96514]'}">
+              <span>${team.m3.kakaoSubmitted ? '✅ 카톡방에 영상 제출 완료함 (취소는 클릭)' : '🎬 카톡방에 영상 올렸어요! 제출 완료 체크'}</span>
             </button>
-            <textarea rows="2" onchange="appState.teams[${tid}].m3.poemText=this.value;saveState();" placeholder="(선택) 우리 팀의 N행시 문구를 적어두셔도 좋습니다." class="w-full p-2.5 rounded-xl border border-slate-200 text-xs bg-white">${team.m3.poemText || ''}</textarea>
+            <div>
+              <label class="block text-[11px] font-bold text-[#4A5255] mb-1">우리 팀 N행시 내용 (선택 메모)</label>
+              <textarea rows="2" onchange="appState.teams[${tid}].m3.poemText=this.value;saveState();" placeholder="단톡방에 올린 N행시 대사나 문구를 적어두셔도 좋습니다." class="w-full p-2.5 rounded-xl border border-[#E6E1D3] text-xs bg-white text-[#1D3C34]">${team.m3.poemText || ''}</textarea>
+            </div>
           </div>
-          <div class="p-4 rounded-2xl bg-[#F0F9FA] border border-[#0097A7]/25 space-y-3">
-            <div class="text-xs font-extrabold text-[#1D5266]">② 🗳️ 다른 팀 N행시 영상 보고 투표하기 (본인 팀 제외 1표)</div>
-            <p class="text-[11px] text-slate-500">세 팀의 영상을 감상한 후, <strong>재미·완성도</strong>가 가장 뛰어난 다른 팀 1곳에 투표해 주세요! (득표 결과는 비공개)</p>
-            <div class="grid grid-cols-2 gap-2.5">
+
+          <!-- 2. 타 팀 영상 감상 후 투표 -->
+          <div class="p-4 rounded-2xl bg-[#F5F2E8] border border-[#E6E1D3] space-y-3">
+            <div class="text-xs font-extrabold text-[#1D3C34]">② 🗳️ 다른 팀 N행시 영상 보고 투표하기</div>
+            <p class="text-[11px] text-[#4A5255]">단톡방에 올라온 다른 두 팀의 영상을 감상한 후, <strong>재미·완성도</strong>가 더 뛰어난 팀 1곳에 투표해 주세요! (본인 팀 제외 1표, 득표 결과는 비공개)</p>
+            <div class="grid grid-cols-2 gap-2.5 pt-1">
               ${otherTeams.map(otherId => {
                 const otherTeam = appState.teams[otherId];
                 const isVoted = team.m3.votedForTeamId === otherId;
-                return `<button type="button" onclick="castM3TeamVote(${tid}, ${otherId})" class="py-3 px-3 rounded-xl border font-extrabold text-xs transition ${isVoted ? 'bg-[#1D5266] text-white border-[#1D5266] shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-[#0097A7]'}">
-                  ${isVoted ? '💘 투표 완료: ' : '👍 투표하기: '}${otherTeam.name}
+                return `<button type="button" onclick="castM3TeamVote(${tid}, ${otherId})" class="py-3 px-3 rounded-xl border font-extrabold text-xs transition ${isVoted ? 'bg-[#1D3C34] text-white border-[#1D3C34] shadow-md' : 'bg-white text-[#1D3C34] border-[#E6E1D3] hover:border-[#1D3C34]'}">
+                  ${isVoted ? '💘 투표 완료: ' : '👍 투표: '}${otherTeam.name}
                 </button>`;
               }).join('')}
             </div>
           </div>
+        </div>
+      </div>
+    `);
         </div>
       </div>
     `);
@@ -973,7 +988,7 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(4));
   } else {
     cards.push(`
-      <div id="p-mission-4" class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/80">
+      <div id="p-mission-4" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 4 · 15:30 오픈</span>
@@ -1010,7 +1025,7 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(5));
   } else {
     cards.push(`
-      <div id="p-mission-5" class="glass-card rounded-3xl p-5 sm:p-6 border border-amber-200/90">
+      <div id="p-mission-5" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="bg-amber-500 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 5 · 16:00 오픈 (보너스)</span>
@@ -1046,7 +1061,7 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(6));
   } else {
     cards.push(`
-      <div id="p-mission-6" class="glass-card rounded-3xl p-5 sm:p-6 border-2 border-[#0097A7]/30 bg-gradient-to-br from-white to-[#F0F9FA]">
+      <div id="p-mission-6" class="retreat-card rounded-3xl p-5 sm:p-6 border-2 border-[#F27A24]/40 bg-gradient-to-br from-white to-[#FFF3E8]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div class="flex items-center gap-2">
             <span class="bg-[#1D5266] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 6 · 18:30 오픈 (저녁 개인미션)</span>
