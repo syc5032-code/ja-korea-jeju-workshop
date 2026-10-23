@@ -105,6 +105,36 @@ function syncM2State(team) {
   const activeHidden = hiddenIds.find(id => Boolean(team.m2.itemPhotos[id]));
   team.m2.hiddenChecked = activeHidden || '';
 
+  // itemPhotos에 등록된 사진이 itemResults를 갖도록 동기화 (누락 시 pending 초기화)
+  Object.keys(team.m2.itemPhotos).forEach(itemId => {
+    if (Boolean(team.m2.itemPhotos[itemId]) && !team.m2.itemResults[itemId]) {
+      team.m2.itemResults[itemId] = {
+        status: 'pending',
+        accepted: false,
+        recognizedItem: '',
+        observations: '',
+        reason: '사진이 등록/교체되어 AI 판독 대기 중입니다.',
+        review: '',
+        evaluatedVersion: '',
+        manualReview: null
+      };
+    }
+  });
+
+  // itemPhotos에서 삭제된 항목의 itemResults 및 인증 상태 정리
+  Object.keys(team.m2.itemResults).forEach(itemId => {
+    if (!Boolean(team.m2.itemPhotos[itemId])) {
+      delete team.m2.itemResults[itemId];
+      if (Array.isArray(team.m2.verifiedCommon)) {
+        const idx = team.m2.verifiedCommon.indexOf(itemId);
+        if (idx >= 0) team.m2.verifiedCommon.splice(idx, 1);
+      }
+      if (team.m2.verifiedHidden === itemId) {
+        team.m2.verifiedHidden = null;
+      }
+    }
+  });
+
   // photos 배열도 하위 호환성 및 API 전송을 위해 자동 동기화 유지
   team.m2.photos = [
     ...team.m2.commonChecked.map(id => team.m2.itemPhotos[id]),
@@ -1149,15 +1179,24 @@ async function runAiGradeMission2(teamId) {
 async function gradeAllPendingPhotos() {
   const targets = [];
   [1, 2, 3].forEach(tid => {
-    // 2번 미션: 사진이 등록되어 있고 아직 채점되지 않았거나 needs_review 상태인 경우
-    const m2 = appState.teams[tid].m2;
-    const hasM2Photos = Object.values(m2?.itemPhotos || {}).some(Boolean) || (m2?.photos?.length > 0);
-    if (hasM2Photos && (!m2.graded || Object.values(m2?.itemResults || {}).some(r => r.status === 'needs_review'))) {
+    const team = appState.teams[tid];
+    if (!team) return;
+    syncM2State(team);
+
+    // 2번 미션: 실제 사진이 등록되어 있고, pending 또는 needs_review인 사진이 하나라도 있거나 아직 채점되지 않은 경우
+    const m2 = team.m2;
+    const photoItemIds = Object.keys(m2?.itemPhotos || {}).filter(k => Boolean(m2.itemPhotos[k]));
+    const hasPendingOrReview = photoItemIds.some(itemId => {
+      const it = m2.itemResults?.[itemId];
+      return !it || it.status === 'pending' || it.status === 'needs_review';
+    });
+    if (photoItemIds.length > 0 && (!m2.graded || hasPendingOrReview)) {
       targets.push({ tid, mNum: 2 });
     }
+
     // 1, 4, 5번 미션
     [1, 4, 5].forEach(mNum => {
-      const m = appState.teams[tid][`m${mNum}`];
+      const m = team[`m${mNum}`];
       if (m.photo && !m.passed && (!m.graded || m.status === 'pending' || m.status === 'needs_review')) {
         targets.push({ tid, mNum });
       }
@@ -1748,48 +1787,6 @@ function removeM2Photo(teamId, idx) {
     saveState();
     renderAll();
   }
-}
-
-function toggleM2CommonItem(teamId, itemId) {
-  const team = appState.teams[teamId];
-  if (!team || !team.m2) return;
-  if (!team.m2.graded) {
-    team.m2.graded = true;
-    team.m2.verifiedCommon = [...(team.m2.commonChecked || [])];
-    team.m2.verifiedHidden = team.m2.hiddenChecked || null;
-  }
-  team.m2.verifiedCommon = team.m2.verifiedCommon || [];
-  const vIdx = team.m2.verifiedCommon.indexOf(itemId);
-  if (vIdx >= 0) {
-    team.m2.verifiedCommon.splice(vIdx, 1);
-  } else {
-    if (team.m2.verifiedCommon.length >= 3) {
-      showToast('흔한 제주 5종은 최대 3종까지만 인정 가능합니다.', 'info');
-      return;
-    }
-    team.m2.verifiedCommon.push(itemId);
-  }
-  const commonScore = Math.min(3, team.m2.verifiedCommon.length) * 5;
-  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
-  team.m2.score = commonScore + hiddenScore;
-  saveState();
-  renderAll();
-}
-
-function selectM2HiddenItem(teamId, itemId) {
-  const team = appState.teams[teamId];
-  if (!team || !team.m2) return;
-  if (!team.m2.graded) {
-    team.m2.graded = true;
-    team.m2.verifiedCommon = [...(team.m2.commonChecked || [])];
-    team.m2.verifiedHidden = team.m2.hiddenChecked || null;
-  }
-  team.m2.verifiedHidden = (team.m2.verifiedHidden === itemId) ? null : itemId;
-  const commonScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
-  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
-  team.m2.score = commonScore + hiddenScore;
-  saveState();
-  renderAll();
 }
 
 function toggleM3KakaoSubmitted(teamId) {
@@ -2879,17 +2876,55 @@ function renderTfDashboardView() {
             syncM2State(team);
             const sc = getMission2Score(team);
             const hasPhotos = (team.m2.photos || []).length > 0;
-            const isGraded = Boolean(team.m2.graded);
-            const verifiedCommon = isGraded ? (team.m2.verifiedCommon || []) : (team.m2.commonChecked || []);
-            const verifiedHidden = isGraded ? team.m2.verifiedHidden : team.m2.hiddenChecked;
-            const hasNeedsReview = Object.values(team.m2?.itemResults || {}).some(it => it.status === 'needs_review');
+            const verifiedCommon = team.m2.verifiedCommon || [];
+            const verifiedHidden = team.m2.verifiedHidden || null;
+
+            // 등록된 실제 사진별 상태 분석
+            const photoItemIds = Object.keys(team.m2?.itemPhotos || {}).filter(k => Boolean(team.m2.itemPhotos[k]));
+            const totalPhotos = photoItemIds.length;
+            const pendingPhotos = photoItemIds.filter(k => {
+              const it = team.m2?.itemResults?.[k];
+              return !it || it.status === 'pending';
+            });
+            const reviewPhotos = photoItemIds.filter(k => team.m2?.itemResults?.[k]?.status === 'needs_review');
+            const evaluatedPhotos = photoItemIds.filter(k => {
+              const it = team.m2?.itemResults?.[k];
+              return it && (it.status === 'valid' || it.status === 'invalid');
+            });
+
+            let m2BadgeClass = 'bg-slate-100 text-slate-500';
+            let m2BadgeText = '미제출';
+
+            if (totalPhotos === 0) {
+              m2BadgeClass = 'bg-slate-100 text-slate-500';
+              m2BadgeText = '미제출';
+            } else if (reviewPhotos.length > 0) {
+              m2BadgeClass = 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse';
+              m2BadgeText = `🟡 TF 검토 항목 있음 (${reviewPhotos.length}건)`;
+            } else if (pendingPhotos.length > 0 && evaluatedPhotos.length > 0) {
+              m2BadgeClass = 'bg-amber-100 text-amber-800 border border-amber-300';
+              m2BadgeText = `⏳ 일부 판독 대기 (${pendingPhotos.length}건)`;
+            } else if (pendingPhotos.length > 0) {
+              m2BadgeClass = 'bg-sky-100 text-sky-800 border border-sky-300';
+              m2BadgeText = `⏳ 판독 대기 (${pendingPhotos.length}건)`;
+            } else {
+              m2BadgeClass = 'bg-emerald-100 text-emerald-800 border border-emerald-300';
+              m2BadgeText = '🤖 AI 판독완료';
+            }
+
+            const btnGradeText = (pendingPhotos.length > 0 && evaluatedPhotos.length > 0)
+              ? '대기 사진 판독 & 재채점'
+              : (pendingPhotos.length > 0)
+                ? '제출 사진 AI 정밀 판독'
+                : '사진 재판독 & 채점';
+
             return `
               <div class="p-4 rounded-2xl bg-white border border-slate-200/90 space-y-3">
                 <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${hasNeedsReview ? 'bg-amber-100 text-amber-900 border border-amber-300 animate-pulse' : isGraded ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
-                      ${hasNeedsReview ? '🟡 TF 검토 항목 있음' : isGraded ? '🤖 AI 판독완료' : '판독 대기'}
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${m2BadgeClass}">
+                      ${m2BadgeText}
                     </span>
                   </div>
                   <span class="text-sm font-black text-[#0097A7]">${sc.total}점 <span class="text-[11px] font-normal text-slate-400">(일반 ${sc.commonScore} + 히든 ${sc.hiddenScore})</span></span>
@@ -2899,7 +2934,7 @@ function renderTfDashboardView() {
                 <div class="flex items-center gap-1.5">
                   <button id="btn-ai-grade-${tid}-2" onclick="runAiGradeMission2(${tid})" ${hasPhotos ? '' : 'disabled'} class="flex-1 py-2 px-3 rounded-xl ${hasPhotos ? 'bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-xs' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} text-xs font-extrabold transition flex items-center justify-center gap-1.5">
                     <span>🤖</span>
-                    <span>${isGraded ? '사진 재판독 & 채점' : '제출 사진 AI 정밀 판독'}</span>
+                    <span>${btnGradeText}</span>
                   </button>
                   <button onclick="copyAiPromptToClipboard(${tid}, 2)" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold" title="ChatGPT용 프롬프트 복사">
                     📋 프롬프트
@@ -2928,22 +2963,20 @@ function renderTfDashboardView() {
                         if (photoSrc) {
                           let badgeHtml = '';
                           let borderClass = 'border-slate-200 bg-slate-50';
-                          if (itRes) {
-                            if (itRes.status === 'valid' && verified) {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-[#0097A7]">✅ AI 인정 (+5점)</span>';
-                              borderClass = 'bg-[#E0F7FA]/50 border-[#0097A7]';
-                            } else if (itRes.status === 'needs_review') {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-amber-800 animate-pulse">🟡 TF 검토필요 (보류)</span>';
-                              borderClass = 'bg-amber-50/80 border-amber-300';
-                            } else {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-rose-600">❌ AI 불인정 (0점)</span>';
-                              borderClass = 'bg-rose-50/60 border-rose-200';
-                            }
+                          const itStatus = itRes?.status || 'pending';
+
+                          if (itStatus === 'pending') {
+                            badgeHtml = '<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">⏳ AI 판독 대기</span>';
+                            borderClass = 'bg-amber-50/40 border-amber-200';
+                          } else if (itStatus === 'needs_review') {
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 animate-pulse">🟡 TF 검토필요 (보류)</span>';
+                            borderClass = 'bg-amber-50/80 border-amber-300';
+                          } else if (itStatus === 'valid' && verified) {
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-[#0097A7]">✅ AI 인정 (+5점)</span>';
+                            borderClass = 'bg-[#E0F7FA]/50 border-[#0097A7]';
                           } else {
-                            badgeHtml = verified
-                              ? '<span class="text-[10px] font-extrabold text-[#0097A7]">✅ 수동 인정 (+5점)</span>'
-                              : '<span class="text-[10px] font-bold text-slate-500">📷 사진 등록됨 (대기)</span>';
-                            borderClass = verified ? 'bg-[#E0F7FA]/50 border-[#0097A7]' : 'bg-slate-50 border-slate-200';
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-rose-600">❌ AI 불인정 (0점)</span>';
+                            borderClass = 'bg-rose-50/60 border-rose-200';
                           }
 
                           return `
@@ -2963,7 +2996,7 @@ function renderTfDashboardView() {
                               ${itRes ? `
                                 <div class="text-[10px] pt-1 border-t border-slate-200/60 leading-tight">
                                   ${itRes.recognizedItem ? `<span class="font-bold text-slate-700">식별: ${itRes.recognizedItem}</span>` : ''}
-                                  ${itRes.reason ? `<span class="${itRes.status === 'invalid' ? 'text-rose-600 font-medium' : itRes.status === 'needs_review' ? 'text-amber-800 font-medium' : 'text-slate-500'}"> · ${itRes.reason}</span>` : ''}
+                                  ${itRes.reason ? `<span class="${itRes.status === 'invalid' ? 'text-rose-600 font-medium' : itRes.status === 'needs_review' ? 'text-amber-800 font-medium' : itRes.status === 'pending' ? 'text-amber-700 font-medium' : 'text-slate-500'}"> · ${itRes.reason}</span>` : ''}
                                 </div>
                               ` : ''}
                             </div>
@@ -2993,22 +3026,20 @@ function renderTfDashboardView() {
                         if (photoSrc) {
                           let badgeHtml = '';
                           let borderClass = 'border-slate-200 bg-slate-50';
-                          if (itRes) {
-                            if (itRes.status === 'valid' && verified) {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-amber-900">⭐ 히든 인정 (+5점)</span>';
-                              borderClass = 'bg-amber-50 border-amber-500';
-                            } else if (itRes.status === 'needs_review') {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-amber-800 animate-pulse">🟡 TF 검토필요 (보류)</span>';
-                              borderClass = 'bg-amber-50/80 border-amber-300';
-                            } else {
-                              badgeHtml = '<span class="text-[10px] font-extrabold text-rose-600">❌ 히든 불인정 (0점)</span>';
-                              borderClass = 'bg-rose-50/60 border-rose-200';
-                            }
+                          const itStatus = itRes?.status || 'pending';
+
+                          if (itStatus === 'pending') {
+                            badgeHtml = '<span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">⏳ AI 판독 대기</span>';
+                            borderClass = 'bg-amber-50/40 border-amber-200';
+                          } else if (itStatus === 'needs_review') {
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 animate-pulse">🟡 TF 검토필요 (보류)</span>';
+                            borderClass = 'bg-amber-50/80 border-amber-300';
+                          } else if (itStatus === 'valid' && verified) {
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-amber-900">⭐ 히든 인정 (+5점)</span>';
+                            borderClass = 'bg-amber-50 border-amber-500';
                           } else {
-                            badgeHtml = verified
-                              ? '<span class="text-[10px] font-extrabold text-amber-800">⭐ 수동 인정 (+5점)</span>'
-                              : '<span class="text-[10px] font-bold text-slate-500">📷 히든 등록됨 (대기)</span>';
-                            borderClass = verified ? 'bg-amber-50 border-amber-500' : 'bg-slate-50 border-slate-200';
+                            badgeHtml = '<span class="text-[10px] font-extrabold text-rose-600">❌ 히든 불인정 (0점)</span>';
+                            borderClass = 'bg-rose-50/60 border-rose-200';
                           }
 
                           return `
@@ -3028,7 +3059,7 @@ function renderTfDashboardView() {
                               ${itRes ? `
                                 <div class="text-[10px] pt-1 border-t border-amber-200/60 leading-tight">
                                   ${itRes.recognizedItem ? `<span class="font-bold text-amber-900">식별: ${itRes.recognizedItem}</span>` : ''}
-                                  ${itRes.reason ? `<span class="${itRes.status === 'invalid' ? 'text-rose-600 font-medium' : itRes.status === 'needs_review' ? 'text-amber-800 font-medium' : 'text-slate-500'}"> · ${itRes.reason}</span>` : ''}
+                                  ${itRes.reason ? `<span class="${itRes.status === 'invalid' ? 'text-rose-600 font-medium' : itRes.status === 'needs_review' ? 'text-amber-800 font-medium' : itRes.status === 'pending' ? 'text-amber-700 font-medium' : 'text-slate-500'}"> · ${itRes.reason}</span>` : ''}
                                 </div>
                               ` : ''}
                             </div>
