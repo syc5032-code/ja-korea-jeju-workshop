@@ -3,6 +3,8 @@
    ========================================================================== */
 
 const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V3';
+const MY_TEAM_AUTH_KEY = 'JA_JEJU_2026_MY_TEAM_AUTH';
+const MY_TEAM_ID_KEY = 'JA_JEJU_2026_MY_TEAM_ID';
 
 // 10/30(금) 미션별 자동 오픈 스케줄 (KST 기준)
 const MISSION_OPEN_SCHEDULE = {
@@ -128,7 +130,8 @@ function getInitialState() {
       apiKey: '',
       aiModel: 'gpt-4o',
       aiPersona: 'warm',
-      cloudDbUrl: ''
+      cloudDbUrl: '',
+      teamPins: { 1: '1111', 2: '2222', 3: '3333' }
     },
     m3Config: {
       selectedWord: '제이에이',
@@ -165,7 +168,16 @@ function loadState() {
       mode: 'participant',
       tfUnlocked: false,
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
-      settings: { ...base.settings, ...(parsed.settings || {}) },
+      settings: {
+        ...base.settings,
+        ...(parsed.settings || {}),
+        teamPins: {
+          1: '1111',
+          2: '2222',
+          3: '3333',
+          ...((parsed.settings && parsed.settings.teamPins) || {})
+        }
+      },
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
       m6Config: { ...base.m6Config, ...(parsed.m6Config || {}) },
       teams: sanitizeTeams(parsed.teams || base.teams)
@@ -639,11 +651,146 @@ function copyAiPromptToClipboard(teamId, missionNum) {
 }
 
 /* ==========================================================================
+   PARTICIPANT AUTH & TEAM NAME MANAGEMENT
+   ========================================================================== */
+
+let loginSelectedTeamId = 1;
+
+function selectLoginTeam(teamId) {
+  loginSelectedTeamId = Number(teamId);
+  [1, 2, 3].forEach(id => {
+    const btn = document.getElementById(`btn-login-team-${id}`);
+    if (!btn) return;
+    if (id === loginSelectedTeamId) {
+      btn.className = 'p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition bg-[#1D3C34] text-white border-[#1D3C34] shadow-sm';
+    } else {
+      btn.className = 'p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition bg-[#FCFBF7] text-[#1D3C34] border-[#E6E1D3] hover:border-[#1D3C34]';
+    }
+  });
+
+  const curTeam = getTeam(loginSelectedTeamId);
+  const nameInput = document.getElementById('input-team-login-name');
+  if (nameInput) {
+    nameInput.value = curTeam.name || `${loginSelectedTeamId}팀`;
+  }
+  const pinInput = document.getElementById('input-team-login-pin');
+  if (pinInput) {
+    pinInput.value = '';
+    pinInput.focus();
+  }
+  const errMsg = document.getElementById('login-error-msg');
+  if (errMsg) errMsg.classList.add('hidden');
+}
+
+function openTeamLoginModal() {
+  const modal = document.getElementById('modal-team-login');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  [1, 2, 3].forEach(id => {
+    const nameEl = document.getElementById(`login-preview-name-${id}`);
+    if (nameEl) nameEl.textContent = getTeam(id).name;
+  });
+
+  const initialTid = Number(localStorage.getItem(MY_TEAM_ID_KEY)) || appState.selectedTeamId || 1;
+  selectLoginTeam(initialTid);
+}
+
+function closeTeamLoginModal() {
+  const modal = document.getElementById('modal-team-login');
+  if (modal) modal.classList.add('hidden');
+}
+
+function submitTeamLogin() {
+  const tid = loginSelectedTeamId;
+  const pinInput = document.getElementById('input-team-login-pin');
+  const enteredPin = (pinInput ? pinInput.value : '').trim();
+  const errMsg = document.getElementById('login-error-msg');
+
+  const validPin = appState.settings.teamPins?.[tid] || `${tid}${tid}${tid}${tid}`;
+
+  if (!enteredPin) {
+    if (errMsg) {
+      errMsg.textContent = '비밀번호를 입력해주세요.';
+      errMsg.classList.remove('hidden');
+    }
+    pinInput?.focus();
+    return;
+  }
+
+  if (enteredPin !== validPin) {
+    if (errMsg) {
+      errMsg.textContent = '비밀번호가 올바르지 않습니다. (1팀: 1111 / 2팀: 2222 / 3팀: 3333)';
+      errMsg.classList.remove('hidden');
+    }
+    pinInput?.select();
+    return;
+  }
+
+  // 비밀번호 일치: 팀명 변경사항 반영
+  const nameInput = document.getElementById('input-team-login-name');
+  const customName = (nameInput ? nameInput.value : '').trim();
+  if (customName) {
+    appState.teams[tid].name = customName;
+  }
+
+  appState.selectedTeamId = tid;
+  localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
+  localStorage.setItem(MY_TEAM_ID_KEY, String(tid));
+  saveState();
+
+  closeTeamLoginModal();
+  renderAll();
+  showToast(`🎉 ${appState.teams[tid].name} 입장 완료!`, 'success');
+}
+
+function promptSwitchTeam() {
+  if (confirm('다른 팀으로 변경하시겠습니까? 팀 비밀번호를 다시 입력해야 합니다.')) {
+    localStorage.removeItem(MY_TEAM_AUTH_KEY);
+    openTeamLoginModal();
+  }
+}
+
+function openChangeTeamNameModal() {
+  const modal = document.getElementById('modal-change-team-name');
+  if (!modal) return;
+  const team = getTeam(appState.selectedTeamId);
+  const input = document.getElementById('input-change-team-name');
+  if (input) {
+    input.value = team.name;
+    setTimeout(() => input.focus(), 100);
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeChangeTeamNameModal() {
+  const modal = document.getElementById('modal-change-team-name');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveNewTeamName() {
+  const input = document.getElementById('input-change-team-name');
+  const newName = (input ? input.value : '').trim();
+  if (!newName) {
+    showToast('팀명을 1글자 이상 입력해주세요.', 'error');
+    return;
+  }
+
+  const tid = appState.selectedTeamId;
+  appState.teams[tid].name = newName;
+  saveState();
+  closeChangeTeamNameModal();
+  renderAll();
+  showToast(`팀명이 '${newName}'(으)로 변경되었습니다!`, 'success');
+}
+
+/* ==========================================================================
    PARTICIPANT VIEW RENDERER & HANDLERS (10/30 시간별 오픈 적용)
    ========================================================================== */
 
 function selectParticipantTeam(teamId) {
   appState.selectedTeamId = Number(teamId);
+  localStorage.setItem(MY_TEAM_ID_KEY, String(teamId));
   saveState(true);
   renderParticipantView();
 }
@@ -801,11 +948,18 @@ function renderParticipantView() {
 
     const tabsEl = document.getElementById('participant-team-tabs');
     if (tabsEl) {
-      tabsEl.innerHTML = [1, 2, 3].map(id => {
-        const t = getTeam(id);
-        const active = (id === tid) ? 'tab-active' : 'text-[#4A5255] hover:bg-white';
-        return `<button onclick="selectParticipantTeam(${id})" class="px-4 py-1.5 rounded-xl text-xs font-extrabold transition ${active}">${t.name}</button>`;
-      }).join('');
+      tabsEl.innerHTML = `
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#1D3C34] text-white font-extrabold text-xs shadow-xs">
+          <span>🍊 우리 팀:</span>
+          <span class="font-black text-[#FFD2B0]">${team.name}</span>
+        </div>
+        <button type="button" onclick="openChangeTeamNameModal()" class="px-2.5 py-1.5 rounded-xl bg-[#FFF3E8] hover:bg-[#FFE6D0] border border-[#F27A24]/30 text-[#F27A24] text-[11px] font-extrabold transition">
+          ✏️ 팀명 변경
+        </button>
+        <button type="button" onclick="promptSwitchTeam()" class="px-2 py-1.5 rounded-xl bg-[#F5F2E8] hover:bg-[#E6E1D3] text-[#4A5255] text-[11px] font-bold transition" title="다른 팀으로 재로그인">
+          🔄 팀 변경
+        </button>
+      `;
     }
 
   const nameSpan = document.getElementById('participant-current-team-name');
@@ -1837,6 +1991,13 @@ function openSettingsModal() {
   document.getElementById('setting-team-1').value = appState.teams[1].name;
   document.getElementById('setting-team-2').value = appState.teams[2].name;
   document.getElementById('setting-team-3').value = appState.teams[3].name;
+  const pins = appState.settings.teamPins || { 1: '1111', 2: '2222', 3: '3333' };
+  const pin1El = document.getElementById('setting-team-1-pin');
+  const pin2El = document.getElementById('setting-team-2-pin');
+  const pin3El = document.getElementById('setting-team-3-pin');
+  if (pin1El) pin1El.value = pins[1] || '1111';
+  if (pin2El) pin2El.value = pins[2] || '2222';
+  if (pin3El) pin3El.value = pins[3] || '3333';
   document.getElementById('setting-admin-pin').value = appState.settings.adminPin || '2026';
   document.getElementById('modal-settings').classList.remove('hidden');
 }
@@ -1853,6 +2014,14 @@ function saveSettingsModal() {
   appState.teams[1].name = document.getElementById('setting-team-1').value.trim() || '1팀';
   appState.teams[2].name = document.getElementById('setting-team-2').value.trim() || '2팀';
   appState.teams[3].name = document.getElementById('setting-team-3').value.trim() || '3팀';
+  const pin1El = document.getElementById('setting-team-1-pin');
+  const pin2El = document.getElementById('setting-team-2-pin');
+  const pin3El = document.getElementById('setting-team-3-pin');
+  appState.settings.teamPins = {
+    1: pin1El ? pin1El.value.trim() || '1111' : '1111',
+    2: pin2El ? pin2El.value.trim() || '2222' : '2222',
+    3: pin3El ? pin3El.value.trim() || '3333' : '3333'
+  };
   appState.settings.adminPin = document.getElementById('setting-admin-pin').value.trim() || '2026';
   saveState();
   closeSettingsModal();
@@ -2038,7 +2207,7 @@ function tickMissionScheduleCountdowns() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // URL 파라미터(?db=..., ?tf=1) 자동 인식
+  // URL 파라미터(?db=..., ?tf=1, ?team=..., ?pin=...) 자동 인식
   const params = new URLSearchParams(window.location.search);
   const dbParam = params.get('db');
   if (dbParam && dbParam.startsWith('http')) {
@@ -2049,8 +2218,33 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => openPinModal(), 200);
   }
 
+  // URL 파라미터(?team=1&pin=1111) 팀 자동 인증
+  const teamParam = params.get('team');
+  const pinParam = params.get('pin');
+  if (teamParam && [1, 2, 3].includes(Number(teamParam))) {
+    const tid = Number(teamParam);
+    const validPin = appState.settings.teamPins?.[tid] || `${tid}${tid}${tid}${tid}`;
+    if (pinParam && pinParam === validPin) {
+      localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
+      localStorage.setItem(MY_TEAM_ID_KEY, String(tid));
+      appState.selectedTeamId = tid;
+    }
+  }
+
+  // 저장된 캐시에서 내 팀 복원
+  const isAuthed = localStorage.getItem(MY_TEAM_AUTH_KEY) === 'true';
+  const savedTeam = Number(localStorage.getItem(MY_TEAM_ID_KEY));
+  if (isAuthed && [1, 2, 3].includes(savedTeam)) {
+    appState.selectedTeamId = savedTeam;
+  }
+
   renderAll();
   pullFromCloudDb();
+
+  // 아직 팀 인증이 안 되어 있고, TF 모드도 아니라면 팀 로그인 모달 오픈
+  if (!isAuthed && !appState.tfUnlocked && params.get('tf') !== '1') {
+    setTimeout(() => openTeamLoginModal(), 250);
+  }
 
   setInterval(tickMissionScheduleCountdowns, 1000);
   setInterval(pullFromCloudDb, 4000);
