@@ -2,10 +2,14 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Jeju Retreat Mission AI Grading - Comprehensive Regression & Validation Suite</title>
+  <title>Jeju Retreat Mission AI Grading - Simulation Logic & Regression Test Suite</title>
 </head>
 <body>
-  <h1>Jeju Retreat Mission AI Grading - Comprehensive Regression & Validation Suite</h1>
+  <h1>Jeju Retreat Mission AI Grading - Simulation Logic & Regression Test Suite</h1>
+  <p style="color: #64748b; font-size: 13px;">
+    ※ 본 테스트 스위트는 클라이언트 상태 머신, 응답 스키마 정제기, 오탈락 방지 루브릭 경계값, 사진 교체 라이프사이클의 <strong>모의 응답 처리 결과(Simulation Logic)</strong>를 검증합니다.<br>
+    ※ 실제 GPT-4o Vision API 호출 테스트는 Vercel 환경변수(OPENAI_API_KEY) 등록 후 별도로 수행됩니다.
+  </p>
   <pre id="test-output">Running tests...</pre>
 
   <script src="js/mission.js"></script>
@@ -424,7 +428,7 @@
         assert(p2.systemPrompt.includes('키위, 사과, 바나나, 주스캔 등 다른 과일이나 가짜는 절대 불인정'), 'M2 타 과일 배제 지침 탑재 확인');
         assert(p2.systemPrompt.includes('검은색 구멍 숭숭 뚫린 제주 화산석 돌담'), 'M2 콘크리트벽 배제 및 현무암 검증 지침 확인');
 
-        results.push(`\n=== 종합 결과: ${passCount} PASSED, ${failCount} FAILED ===`);
+        results.push(`\n=== 모의 응답 처리 로직 검증: ${passCount} PASSED, ${failCount} FAILED (실제 API 호출 전 시뮬레이션 완료) ===`);
       } catch (err) {
         failCount++;
         results.push(`[FATAL ERROR] ${err.message}\n${err.stack}`);

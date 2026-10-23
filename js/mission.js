@@ -227,7 +227,7 @@ function getInitialState() {
       manualOpen: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true }
     },
     settings: {
-      adminPin: '2026',
+      adminPin: '',
       aiModel: 'gpt-4o',
       aiPersona: 'warm',
       cloudDbUrl: '',
@@ -954,7 +954,17 @@ function sanitizeGradingResponse(missionNum, parsed) {
 async function callAiGradingApi(payload) {
   // 운영 보안 정책: 브라우저 직접 OpenAI 호출 및 클라이언트 키 전달을 완전히 차단하고,
   // 오직 TF 인증 헤더(x-tf-pin)를 갖춘 Vercel 서버리스 엔드포인트(/api/grade)만을 통해 채점
-  const tfAdminPin = (appState.settings.adminPin || '2026').trim();
+  let tfAdminPin = (appState.settings.adminPin || '').trim();
+  if (!tfAdminPin) {
+    tfAdminPin = (prompt('TF 운영진 관리자 PIN을 입력하세요:') || '').trim();
+    if (tfAdminPin) {
+      appState.settings.adminPin = tfAdminPin;
+      saveState();
+    }
+  }
+  if (!tfAdminPin) {
+    throw new Error('TF 관리자 PIN이 입력되지 않아 채점 요청이 취소되었습니다.');
+  }
 
   let res;
   try {
@@ -967,7 +977,7 @@ async function callAiGradingApi(payload) {
       body: JSON.stringify(payload)
     });
   } catch (netErr) {
-    throw new Error('AI 심사 서버(/api/grade)에 연결할 수 없습니다. Vercel 네트워크 상태를 확인하시거나 [📋 프롬프트 복사] 버튼을 사용하여 ChatGPT로 수동 판정해 주세요.');
+    throw new Error('AI 심사 서버(/api/grade)에 연결할 수 없습니다. Vercel 네트워크 상태를 확인하시거나 [📋 프롬프트 복사] 버튼을 사용하여 수동 판정해 주세요.');
   }
 
   if (res.ok) {
@@ -976,7 +986,10 @@ async function callAiGradingApi(payload) {
 
   const errJson = await res.json().catch(() => ({}));
   if (res.status === 401) {
-    throw new Error(`TF 운영진 인증 실패 (401): ${errJson?.error || 'TF 비밀번호(2026)를 확인해 주세요.'}`);
+    throw new Error(`TF 운영진 인증 실패 (401): ${errJson?.error || 'TF 관리자 PIN을 확인해 주세요.'}`);
+  }
+  if (res.status === 403) {
+    throw new Error(`접근 차단 (403): ${errJson?.error || '반복된 인증 실패로 일시 차단되었습니다.'}`);
   }
   if (res.status === 413) {
     throw new Error(`사진 용량 초과 (413): ${errJson?.error || '사진 파일 용량이 너무 큽니다 (최대 4.5MB).'}`);
@@ -3372,17 +3385,23 @@ function closePinModal() {
 function submitPinLogin(e) {
   e.preventDefault();
   const val = document.getElementById('input-tf-pin').value.trim();
-  const pin = appState.settings.adminPin || '2026';
-  if (val === pin) {
-    appState.tfUnlocked = true;
-    appState.mode = 'tf';
-    closePinModal();
-    saveState(true);
-    renderAll();
-    showToast('TF 운영진 전용 대시보드가 열렸습니다.', 'success');
-  } else {
+  if (!val) {
     document.getElementById('pin-error-msg').classList.remove('hidden');
+    return;
   }
+  // 관리자 PIN이 이미 설정되어 있는 경우 불일치 시 거부
+  if (appState.settings.adminPin && appState.settings.adminPin !== val) {
+    document.getElementById('pin-error-msg').classList.remove('hidden');
+    return;
+  }
+  // TF 로그인 성공 시 입력된 PIN을 저장하여 /api/grade 호출 시 x-tf-pin으로 전송
+  appState.settings.adminPin = val;
+  appState.tfUnlocked = true;
+  appState.mode = 'tf';
+  closePinModal();
+  saveState(true);
+  renderAll();
+  showToast('TF 운영진 전용 대시보드가 열렸습니다.', 'success');
 }
 
 function openSettingsModal() {
@@ -3399,7 +3418,7 @@ function openSettingsModal() {
   if (pin1El) pin1El.value = pins[1] || '';
   if (pin2El) pin2El.value = pins[2] || '';
   if (pin3El) pin3El.value = pins[3] || '';
-  document.getElementById('setting-admin-pin').value = appState.settings.adminPin || '2026';
+  document.getElementById('setting-admin-pin').value = appState.settings.adminPin || '';
   document.getElementById('modal-settings').classList.remove('hidden');
 }
 
@@ -3423,7 +3442,7 @@ function saveSettingsModal() {
     2: pin2El ? pin2El.value.trim() : '',
     3: pin3El ? pin3El.value.trim() : ''
   };
-  appState.settings.adminPin = document.getElementById('setting-admin-pin').value.trim() || '2026';
+  appState.settings.adminPin = document.getElementById('setting-admin-pin').value.trim();
   saveState();
   closeSettingsModal();
   renderAll();
