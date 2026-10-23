@@ -42,7 +42,7 @@ function createDefaultTeamData(id, name) {
       caption: '',
       submittedAt: '',
       graded: false,
-      subScores: { chemistry: 9, vibe: 7, poster: 6 },
+      subScores: { vibe: 8, chemistry: 9, poster: 7 },
       score: 0,
       oneLineReview: ''
     },
@@ -70,7 +70,7 @@ function createDefaultTeamData(id, name) {
       heroName: '',
       submittedAt: '',
       graded: false,
-      subScores: { heroFocus: 10, teamwork: 9, creativity: 7 },
+      subScores: { heroFocus: 12, teamwork: 10, creativity: 7 },
       score: 0,
       oneLineReview: ''
     },
@@ -79,7 +79,7 @@ function createDefaultTeamData(id, name) {
       photo: '',
       submittedAt: '',
       graded: false,
-      subScores: { base: 4, jaShape: 2, teamwork: 2 },
+      subScores: { base: 4, jaShape: 4, teamwork: 2 },
       score: 0,
       oneLineReview: ''
     }
@@ -572,38 +572,104 @@ function getMissionPromptConfig(missionNum, teamName) {
   if (missionNum === 1) {
     return {
       title: '[미션 1] 제주 여행 포스터 (25점 만점)',
-      systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 사진 미션 AI 심사위원입니다. ${personaText}
-인원수(촬영자가 빠진 것 등)는 절대 감점하지 마세요.
+      systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 1번 미션 [우리 팀의 제주 여행 포스터] 전문 AI 심사위원입니다. ${personaText}
+참가팀 '${teamName}'이 제출한 포스터 사진을 아래 [루브릭 채점 체크리스트]에 맞춰 객관적이고 공정하게 심사하세요.
+(※ 촬영자 1명이 빠져 팀원 전원이 다 안 나왔더라도 인원수 관련 감점은 절대 하지 마세요.)
+
+[루브릭 채점 체크리스트 - 총 25점 만점]
+1. vibe (제주 랜드마크 & 분위기, 4~8점):
+   - 제주 고유의 자연(바다, 오름, 유채꽃, 현무암 돌담 등) 또는 유명 명소 풍경이 확실히 드러남 (+8점)
+   - 제주 야외이긴 하나 배경이 모호하거나 특색이 약함 (+6점)
+   - 일반 실내/카페/식당 내부 등 제주 명소 분위기를 알기 어려움 (+4점)
+
+2. chemistry (팀원 에너지 & 표정 케미, 6~9점):
+   - 팀원 전원이 활짝 웃고 활기찬 포즈로 멋진 호흡과 케미를 뽐냄 (+9점)
+   - 일부는 웃고 있으나 다소 정적이거나 평범한 포즈 (+7~8점)
+   - 표정이 굳어 있거나 어색함 (+6점)
+
+3. poster (포스터 완성도 & 구도, 5~8점):
+   - 잡지 표지나 영화 포스터처럼 인물과 배경의 황금비율 및 안정적인 구도 (+8점)
+   - 구도는 좋으나 수평이 살짝 기울어지거나 인물에 치우침 (+6~7점)
+   - 단순한 단체 셀카 각도이거나 피사체가 잘림 (+5점)
+
+[점수 및 심사평 작성 지침]
+- totalScore = vibe + chemistry + poster (15 ~ 25점)
+- oneLineReview: 각 항목별 점수 근거를 명확하게 언급하며 재치 있고 기분 좋은 60자 내외의 심사평 작성
+  (예: "제주 바다 배경 탁월(+8), 팀원 표정 케미 만점(+9), 포스터 구도 우수(+7) 총 24점 드립니다!")
+
 반드시 아래 JSON 형식으로만 응답하세요:
-{"subScores":{"chemistry":9,"vibe":7,"poster":6},"totalScore":22,"oneLineReview":"한 줄 심사평(60자 내외)"}
-채점 기준 (총 25점 만점, 제출 시 최소 19점 이상 보장):
-1. chemistry (팀 케미 & 표정 에너지, 8~10점): 사진 속 사람들의 표정이 밝고 화기애애한가
-2. vibe (제주 관광지 분위기, 6~8점): 제주의 자연/명소 분위기가 느껴지는가
-3. poster (포스터 구도 & 감성, 5~7점): 여행 홍보 포스터처럼 구도가 매력적인가`
+{
+  "subScores": { "vibe": 8, "chemistry": 9, "poster": 7 },
+  "totalScore": 24,
+  "oneLineReview": "제주 바다 배경 탁월(+8), 팀원 표정 케미 만점(+9), 포스터 구도 우수(+7) 총 24점 드립니다!"
+}`
     };
   }
   if (missionNum === 4) {
     return {
       title: '[미션 4] 팀별 주인공 사진 (30점 만점)',
-      systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 사진 미션 AI 심사위원입니다. ${personaText}
-촬영자 인원수 여부는 절대 감점하지 마세요.
+      systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 4번 미션 [팀별 주인공 사진] 전문 AI 심사위원입니다. ${personaText}
+참가팀 '${teamName}'이 제출한 주인공 사진을 아래 [루브릭 채점 체크리스트]에 맞춰 객관적이고 엄격하면서도 유쾌하게 심사하세요.
+(※ 촬영자 제외 여부 등 인원수 관련 감점은 절대 하지 마세요.)
+
+[루브릭 채점 체크리스트 - 총 30점 만점]
+1. heroFocus (독보적 원탑 주인공 연출, 6~12점):
+   - 시선 몰아주기, 손짓, 중앙 배치, 독점 포즈 등으로 1명이 '누가 봐도 확실한 주인공'임 (+11~12점)
+   - 주인공 포즈가 있으나 주변 인물과 시선 분산이 다소 있음 (+8~10점)
+   - 누가 주인공인지 한눈에 구분이 잘 안 됨 (+6~7점)
+
+2. teamwork (팀원들의 몰아주기 리액션 & 연기력, 6~10점):
+   - 주인공을 받들거나 감탄/경악/환호/절규하는 등 팀원들의 표정 연기력과 리액션이 압도적임 (+10점)
+   - 주인공에게 집중하고 있으나 리액션이나 표정이 다소 얌전함 (+8~9점)
+   - 팀원들의 호흡이 맞지 않거나 리액션이 약함 (+6~7점)
+
+3. creativity (재치 & 스토리텔링, 5~8점):
+   - 유명 밈 패러디, 영화/드라마 씬 재현 등 컨셉과 상황극 연출이 매우 독창적이고 유쾌함 (+8점)
+   - 참신한 아이디어가 엿보이나 전형적인 몰아주기 포즈 (+6~7점)
+   - 평범한 단체 포즈 수준 (+5점)
+
+[점수 및 심사평 작성 지침]
+- totalScore = heroFocus + teamwork + creativity (17 ~ 30점)
+- oneLineReview: 각 항목별 점수 근거를 명시한 재치 넘치는 60자 내외의 심사평 작성
+  (예: "주인공 원탑 연출 완벽(+12), 팀원들 몰아주기 연기력 폭발(+10), 컨셉 재치 우수(+7) 총 29점!")
+
 반드시 아래 JSON 형식으로만 응답하세요:
-{"subScores":{"heroFocus":11,"teamwork":9,"creativity":7},"totalScore":27,"oneLineReview":"한 줄 심사평(60자 내외)"}
-채점 기준 (총 30점 만점, 제출 시 최소 23점 이상 보장):
-1. heroFocus (주인공 집중 연출, 9~12점): 1명이 확실한 주인공으로 돋보이도록 시선/포즈를 몰아주었는가
-2. teamwork (팀원 리액션 & 포즈 호흡, 8~10점): 주변 팀원들이 주인공을 빛내주기 위해 호흡을 맞췄는가
-3. creativity (창의성 & 유쾌함, 6~8점): 표정이나 포즈 컨셉이 재치 있고 유쾌한가`
+{
+  "subScores": { "heroFocus": 12, "teamwork": 10, "creativity": 7 },
+  "totalScore": 29,
+  "oneLineReview": "주인공 원탑 연출 완벽(+12), 팀원들 몰아주기 연기력 폭발(+10), 컨셉 재치 우수(+7) 총 29점!"
+}`
     };
   }
   return {
     title: "[미션 5] 그림자 사진 'JA' (보너스 10점 만점)",
-    systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 보너스 사진 미션 AI 심사위원입니다. ${personaText}
+    systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 5번 보너스 미션 [해변 그림자 'JA'] 전문 AI 심사위원입니다. ${personaText}
+참가팀 '${teamName}'이 백사장/해변/지면에 드리운 그림자로 'JA' 알파벳을 만든 사진을 심사하세요.
+
+[루브릭 채점 체크리스트 - 보너스 총 10점 만점]
+1. base (도전 기본 점수, 4점 고정):
+   - 지면에 드리운 실제 그림자 사진을 정상 제출함 (+4점 고정)
+
+2. jaShape ('JA' 알파벳 가독성, 2~4점):
+   - 설명 없이 그림자만 보아도 알파벳 'J'와 'A' 형태를 즉시 뚜렷하게 읽을 수 있음 (+4점)
+   - 형태가 다소 모호하여 유추해야 하거나 두 글자 중 한 글자만 선명함 (+3점)
+   - 글자 형태 식별이 어렵거나 미흡함 (+2점)
+
+3. teamwork (신체 협동 연출 난이도, 1~2점):
+   - 팀원들이 전신, 팔다리, 손가락, 소품 등을 복합적으로 연결하여 협동한 노력이 돋보임 (+2점)
+   - 1~2명의 단순 포즈 (+1점)
+
+[점수 및 심사평 작성 지침]
+- totalScore = base + jaShape + teamwork (7 ~ 10점)
+- oneLineReview: 각 항목별 근거를 담은 60자 내외의 명쾌한 심사평 작성
+  (예: "도전 기본(+4), JA 글자 식별도 매우 우수(+4), 신체 협동 연출력 우수(+2) 총 10점 만점!")
+
 반드시 아래 JSON 형식으로만 응답하세요:
-{"subScores":{"base":4,"jaShape":3,"teamwork":2},"totalScore":9,"oneLineReview":"한 줄 심사평(60자 내외)"}
-채점 기준 (보너스 총 10점 만점, 제출 시 최소 6점 이상 보장):
-1. base (도전 기본 점수, 4점 고정): 그림자 사진을 찍어 제출함
-2. jaShape ('JA' 알파벳 식별도, 1~3점): 그림자로 J와 A 형태를 표현하려 했는가
-3. teamwork (협동 연출력, 1~3점): 팀원들이 몸/손/소품으로 함께 만든 재치가 돋보이는가`
+{
+  "subScores": { "base": 4, "jaShape": 4, "teamwork": 2 },
+  "totalScore": 10,
+  "oneLineReview": "도전 기본(+4), JA 글자 식별도 매우 우수(+4), 신체 협동 연출력 우수(+2) 총 10점 만점!"
+}`
   };
 }
 
@@ -1462,6 +1528,30 @@ function renderParticipantView() {
         <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
           팀원들이 함께 나오고 관광지 분위기가 느껴지는 사진 1장을 체험 전후 안전한 곳에서 촬영해 <strong>12:30까지</strong> 제출해 주세요.
         </p>
+
+        <!-- 💡 AI 심사위원이 보는 3대 핵심 채점 기준 -->
+        <div class="mb-4 p-3 rounded-2xl bg-[#FFF8EE] border border-[#F27A24]/30 text-xs text-[#1D3C34]">
+          <div class="font-extrabold flex items-center justify-between text-[#F27A24] mb-2">
+            <span class="flex items-center gap-1.5">💡 <b>AI 심사위원이 보는 3대 핵심 채점 기준 (25점 만점)</b></span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#F27A24] border border-[#F27A24]/30">제출 시 15점 이상 보장</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-tight">
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">🌊 제주 분위기 (최대 8점)</span>
+              <span class="text-slate-600">바다·오름·돌담 등 제주의 고유 자연/명소 풍경이 뚜렷한가</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">😄 팀 표정 케미 (최대 9점)</span>
+              <span class="text-slate-600">팀원 전원의 활짝 웃는 표정과 활기찬 에너지 넘치는 포즈</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">🖼️ 포스터 구도 (최대 8점)</span>
+              <span class="text-slate-600">영화나 여행 잡지 표지처럼 인물과 배경의 균형 잡힌 구도</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-slate-500 mt-2">* 촬영자 1명이 빠져도 인원수 감점은 전혀 없습니다! 편하고 즐겁게 촬영해 주세요.</div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           <label class="flex flex-col items-center justify-center h-44 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden relative">
             ${team.m1.photo
@@ -1699,6 +1789,30 @@ function renderParticipantView() {
         <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
           한 사람을 제주 여행의 주인공으로 만들어 주세요! 포즈를 연출해 사진 1장을 17:30까지 보내주세요. 표정 몰아주기는 선택, 편하고 안전한 방식으로요.
         </p>
+
+        <!-- 💡 AI 심사위원이 보는 3대 핵심 채점 기준 -->
+        <div class="mb-4 p-3 rounded-2xl bg-[#FFF8EE] border border-[#F27A24]/30 text-xs text-[#1D3C34]">
+          <div class="font-extrabold flex items-center justify-between text-[#F27A24] mb-2">
+            <span class="flex items-center gap-1.5">💡 <b>AI 심사위원이 보는 3대 핵심 채점 기준 (30점 만점)</b></span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#F27A24] border border-[#F27A24]/30">제출 시 17점 이상 보장</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-tight">
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">👑 원탑 주인공 (최대 12점)</span>
+              <span class="text-slate-600">시선·손짓·포즈·중앙 배치로 누가 봐도 확실한 1인 주인공</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">🎭 몰아주기 연기력 (최대 10점)</span>
+              <span class="text-slate-600">주인공을 받들거나 감탄·환호·절규하는 팀원들의 폭발적 리액션</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/50 shadow-2xs">
+              <span class="font-bold text-[#1D5266] block mb-1">💡 재치 & 스토리 (최대 8점)</span>
+              <span class="text-slate-600">유쾌한 밈 패러디나 상황극 컨셉의 독창성과 웃음</span>
+            </div>
+          </div>
+          <div class="text-[10px] text-slate-500 mt-2">* 촬영자 1명이 빠져도 인원수 감점은 전혀 없습니다!</div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           <label class="flex flex-col items-center justify-center h-44 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden relative">
             ${team.m4.photo
@@ -1736,6 +1850,29 @@ function renderParticipantView() {
         <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
           팀원 그림자로 <strong>‘JA’</strong>를 만들어 사진 1장을 찍어 주세요. 17:30까지 제출하면 보너스! 흐리거나 안전한 촬영 장소가 없으면 패스해도 감점은 없습니다.
         </p>
+
+        <!-- 💡 AI 심사위원이 보는 3대 핵심 채점 기준 -->
+        <div class="mb-4 p-3 rounded-2xl bg-[#FFF8EE] border border-amber-300 text-xs text-amber-950">
+          <div class="font-extrabold flex items-center justify-between text-amber-900 mb-2">
+            <span class="flex items-center gap-1.5">💡 <b>AI 심사위원이 보는 3대 핵심 채점 기준 (보너스 10점 만점)</b></span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-amber-900 border border-amber-300">제출 시 기본 4점 보장</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] leading-tight">
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+              <span class="font-bold text-amber-900 block mb-1">✅ 도전 기본점 (4점 고정)</span>
+              <span class="text-slate-600">지면에 드리운 실제 그림자 사진 정상 제출 시 기본 점수</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+              <span class="font-bold text-amber-900 block mb-1">🔤 'JA' 가독성 (최대 4점)</span>
+              <span class="text-slate-600">그림자만 보고도 알파벳 'J'와 'A' 형태를 즉시 판별 가능</span>
+            </div>
+            <div class="bg-white/90 p-2.5 rounded-xl border border-amber-200/60 shadow-2xs">
+              <span class="font-bold text-amber-900 block mb-1">🤝 신체 협동 난이도 (최대 2점)</span>
+              <span class="text-slate-600">전신, 팔다리, 손가락 등을 복합 활용한 팀 협동 노력</span>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           <label class="flex flex-col items-center justify-center h-40 rounded-2xl border-2 border-dashed border-amber-400/60 bg-amber-50/40 hover:bg-amber-50 cursor-pointer transition overflow-hidden relative">
             ${team.m5.photo
@@ -2103,6 +2240,13 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
                     <span class="text-xs font-bold text-slate-500">점</span>
                   </div>
                 </div>
+                ${m.subScores && Object.keys(m.subScores).length > 0 ? `
+                  <div class="flex flex-wrap gap-1.5 py-0.5">
+                    ${Object.entries(m.subScores).map(([k, v]) => `
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600">${k}: <b class="text-[#0097A7]">${v}점</b></span>
+                    `).join('')}
+                  </div>
+                ` : ''}
                 <div>
                   <label class="block text-[11px] font-bold text-slate-500 mb-1">💬 AI 한 줄 근거 (직접 수정 가능)</label>
                   <textarea rows="2" onchange="updateAiOneLineReview(${tid}, ${missionNum}, this.value)" placeholder="AI 채점 버튼을 누르면 한 줄 심사평이 자동 기록됩니다." class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white text-slate-700">${m.oneLineReview || ''}</textarea>
@@ -2129,7 +2273,7 @@ function renderTfDashboardView() {
       1,
       '[관광지 사진] 우리 팀의 제주 여행 포스터 (09:20 오픈 ~ 12:30 마감)',
       25,
-      '채점 기준: ① 팀 케미·표정 에너지(10점, 기본 8점 보장, 촬영자 인원 무관) + ② 제주 관광지 분위기(8점) + ③ 포스터 구도·감성(7점)'
+      '루브릭 심사 기준: ① 제주 랜드마크 분위기(최대 8점) + ② 팀원 에너지·표정 케미(최대 9점) + ③ 포스터 완성도 구도(최대 8점) · 촬영자 인원수 감점 배제'
     ));
   }
 
@@ -2336,7 +2480,7 @@ function renderTfDashboardView() {
       4,
       '[창의 단체사진] 한 사람을 제주 여행의 주인공으로! (15:30 오픈 ~ 17:30 마감)',
       30,
-      '채점 기준: ① 주인공 집중 연출(12점) + ② 팀원 리액션·포즈 호흡(10점, 기본 8점 보장, 촬영자 인원 무관) + ③ 창의성·유쾌함(8점)'
+      '루브릭 심사 기준: ① 독보적 원탑 주인공 연출(최대 12점) + ② 팀원 몰아주기 리액션·연기력(최대 10점) + ③ 재치·스토리텔링(최대 8점) · 인원수 감점 배제'
     ));
   }
 
@@ -2345,7 +2489,7 @@ function renderTfDashboardView() {
       5,
       "[보너스 미션] 팀원 그림자로 'JA' 만들기 (16:00 오픈 ~ 17:30 마감)",
       10,
-      "패스 시 0점(감점 없음) · 채점 기준: ① 도전 기본 점수(4점) + ② 'JA' 알파벳 식별도(3점) + ③ 협동 연출력(3점)"
+      "패스 시 감점 없음 · 루브릭 심사 기준: ① 도전 기본 점수(4점 고정) + ② 'JA' 알파벳 가독성(최대 4점) + ③ 신체 협동 난이도(최대 2점)"
     ));
   }
 
