@@ -381,10 +381,18 @@ function showToast(message, type = 'info') {
    ========================================================================== */
 
 function getMission2Score(team) {
+  if (team.m2.graded) {
+    const verifiedCommon = team.m2.verifiedCommon || [];
+    const commonCount = Math.min(3, verifiedCommon.length);
+    const commonScore = commonCount * 5;
+    const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
+    const total = (team.m2.score !== undefined && team.m2.score !== null) ? Number(team.m2.score) : (commonScore + hiddenScore);
+    return { commonScore, hiddenScore, total, graded: true };
+  }
   const commonCount = Math.min(3, (team.m2.commonChecked || []).length);
   const commonScore = commonCount * 5;
   const hiddenScore = team.m2.hiddenChecked ? 5 : 0;
-  return { commonScore, hiddenScore, total: commonScore + hiddenScore };
+  return { commonScore, hiddenScore, total: commonScore + hiddenScore, graded: false };
 }
 
 function getMission3VotesAndScores() {
@@ -626,9 +634,140 @@ async function runAiGradeMission(teamId, missionNum) {
   }
 }
 
+async function runAiGradeMission2(teamId) {
+  const team = appState.teams[teamId];
+  const photos = team.m2?.photos || [];
+
+  if (photos.length === 0) {
+    showToast(`${team.name}의 2번 미션 사진이 아직 등록되지 않았습니다.`, 'error');
+    return;
+  }
+
+  const apiKey = (appState.settings.apiKey || '').trim();
+  if (!apiKey) {
+    showToast('OpenAI API 키가 설정되지 않아 설정 창을 엽니다.', 'info');
+    openSettingsModal();
+    return;
+  }
+
+  const btn = document.getElementById(`btn-ai-grade-${teamId}-2`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span><span>AI 사진 판독 중...</span>';
+  }
+
+  try {
+    const personaText = getPersonaInstruction(appState.settings.aiPersona);
+    const claimedCommon = (team.m2.commonChecked || []).map(id => {
+      const it = JEJU_COMMON_ITEMS.find(x => x.id === id);
+      return it ? `${it.id}(${it.label})` : id;
+    }).join(', ');
+    const claimedHidden = team.m2.hiddenChecked ? (JEJU_HIDDEN_ITEMS.find(x => x.id === team.m2.hiddenChecked)?.label || team.m2.hiddenChecked) : '선택 안 함';
+
+    const systemPrompt = `당신은 '2026 JA Korea 제주 리트릿' 2번 미션 [제주 발견 (5종 중 3종 + 히든 1종)] 정밀 사진 판독 AI 심사위원입니다. ${personaText}
+참가팀 '${team.name}'이 총 ${photos.length}장의 사진을 제출했습니다.
+
+[인증 대상 항목 정의 및 엄격한 판별 기준]
+■ 흔한 5종 (최대 3종 인정, 1종당 5점 = 최대 15점):
+- stone: '현무암 돌담' (제주 특유의 검은색 구멍 숭숭 뚫린 화산석 돌담. 일반 시멘트 벽, 실내 벽, 자갈바닥, 새/동물 그림, 잡초 등은 절대 불인정)
+- tangerine: '귤 / 귤나무' (실제 감귤 열매 또는 감귤나무. 키위, 사과, 바나나, 주스캔 등 다른 과일이나 가짜는 절대 불인정!)
+- sea: '제주 바다' (실제 제주 해변, 파도, 수평선 바다 풍경. 수영장, 호수, 욕조 등은 불인정)
+- palm: '야자수' (실제 야자나무. 일반 가로수, 소나무 등은 불인정)
+- sign: "'제주' 글자 간판·표지" (실제 간판이나 이정표에 '제주' 또는 'JEJU' 글자가 명확히 적힌 것)
+
+■ 히든 4종 (최대 1종 인정, 인정 시 +5점 보너스):
+- harubang: '돌하르방' (제주 전통 돌하르방 석상)
+- jeongnang: '정낭' (제주 전통 대문 통나무와 정주석)
+- bangsatap: '방사탑' (마을 액운을 막는 제주 둥근 돌탑)
+- haenyeo: '해녀 조형물/벽화' (물질 도구를 든 해녀 동상, 조각, 또는 벽화)
+
+[팀이 체크하여 주장한 항목]
+- 흔한 5종: ${claimedCommon || '없음'}
+- 히든: ${claimedHidden}
+
+[심사 지침]
+제출된 사진들을 하나씩 꼼꼼하게 대조하세요.
+팀이 체크했더라도 사진 속 실제 대상과 일치하지 않는 엉뚱한 사진(예: 키위 사진 올리고 귤 주장, 새 일러스트 올리고 돌담 주장 등)은 단호하게 불인정(탈락) 처리하세요.
+실제로 사진 속에 확실하게 존재하는 항목만 verifiedCommon / verifiedHidden 에 넣으세요.
+- verifiedCommon: 실제로 식별된 흔한 5종의 ID 배열 (최대 3개까지만 인정, 예: ["stone", "sea"])
+- verifiedHidden: 실제로 식별된 히든 항목의 ID (없거나 불일치 시 null, 예: "harubang" 또는 null)
+- commonScore: Math.min(3, verifiedCommon.length) * 5 (최대 15점)
+- hiddenScore: verifiedHidden ? 5 : 0 (최대 5점)
+- totalScore: commonScore + hiddenScore (0 ~ 20점)
+- oneLineReview: 사진 판독 근거를 담은 60자 내외의 재치 있고 솔직한 심사평 (예: "귤을 체크하셨지만 사진은 키위네요 🥝 새 그림도 멋지지만 돌담/바다가 없어 0점 처리되었습니다!")
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{
+  "verifiedCommon": ["stone"],
+  "verifiedHidden": null,
+  "commonScore": 5,
+  "hiddenScore": 0,
+  "totalScore": 5,
+  "oneLineReview": "심사평..."
+}`;
+
+    const userContent = [
+      { type: 'text', text: `${team.name}의 2번 미션 발견 사진 ${photos.length}장입니다. 엄격하게 판독하여 기준에 맞춰 채점해주세요.` }
+    ];
+    photos.forEach((src) => {
+      userContent.push({
+        type: 'image_url',
+        image_url: { url: src, detail: 'high' }
+      });
+    });
+
+    const model = appState.settings.aiModel || 'gpt-4o';
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent }
+        ],
+        temperature: 0.3,
+        max_tokens: 350
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || `API 오류 (${response.status})`);
+    }
+
+    const data = await response.json();
+    const parsed = JSON.parse(data.choices[0].message.content);
+
+    team.m2.graded = true;
+    team.m2.verifiedCommon = Array.isArray(parsed.verifiedCommon) ? parsed.verifiedCommon : [];
+    team.m2.verifiedHidden = parsed.verifiedHidden || null;
+    team.m2.score = Number(parsed.totalScore) || 0;
+    team.m2.oneLineReview = parsed.oneLineReview || '';
+
+    saveState();
+    renderAll();
+    showToast(`${team.name} 2번 미션 AI 판독 완료! (${team.m2.score}점 인정)`, 'success');
+  } catch (err) {
+    showToast(`2번 미션 AI 판독 실패: ${err.message}`, 'error');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🤖</span><span>사진 정밀 AI 판독 & 채점</span>';
+    }
+  }
+}
+
 async function gradeAllPendingPhotos() {
   const targets = [];
   [1, 2, 3].forEach(tid => {
+    // 2번 미션 사진
+    const m2 = appState.teams[tid].m2;
+    if (m2?.photos?.length > 0) targets.push({ tid, mNum: 2 });
+    // 1, 4, 5번 미션 사진
     [1, 4, 5].forEach(mNum => {
       const m = appState.teams[tid][`m${mNum}`];
       if (m.photo && !m.passed) targets.push({ tid, mNum });
@@ -639,7 +778,11 @@ async function gradeAllPendingPhotos() {
     return;
   }
   for (const t of targets) {
-    await runAiGradeMission(t.tid, t.mNum);
+    if (t.mNum === 2) {
+      await runAiGradeMission2(t.tid);
+    } else {
+      await runAiGradeMission(t.tid, t.mNum);
+    }
   }
 }
 
@@ -967,6 +1110,11 @@ function toggleM2CommonItem(teamId, itemId) {
     arr.push(itemId);
   }
   team.m2.commonChecked = arr;
+  if (team.m2.graded && Array.isArray(team.m2.verifiedCommon)) {
+    const vIdx = team.m2.verifiedCommon.indexOf(itemId);
+    if (vIdx >= 0) team.m2.verifiedCommon.splice(vIdx, 1);
+    else if (team.m2.verifiedCommon.length < 3) team.m2.verifiedCommon.push(itemId);
+  }
   team.m2.submittedAt = formatNowTime(false);
   saveState();
   renderAll();
@@ -975,6 +1123,9 @@ function toggleM2CommonItem(teamId, itemId) {
 function selectM2HiddenItem(teamId, itemId) {
   const team = appState.teams[teamId];
   team.m2.hiddenChecked = (team.m2.hiddenChecked === itemId) ? '' : itemId;
+  if (team.m2.graded) {
+    team.m2.verifiedHidden = (team.m2.verifiedHidden === itemId) ? null : itemId;
+  }
   team.m2.submittedAt = formatNowTime(false);
   saveState();
   renderAll();
@@ -1749,47 +1900,94 @@ function renderTfDashboardView() {
 
   if (f === 'all' || f === 2) {
     blocks.push(`
-      <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90">
+      <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-200/70">
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 2</span>
-              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">[제주 발견] 흔한 제주 5종 중 3종(15점) + 히든 1종(+5점)</h2>
+              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">[제주 발견] 흔한 제주 5종 중 3종 + 히든 1종 (최대 20점)</h2>
+              <span class="text-xs font-extrabold text-[#0097A7] bg-[#E0F7FA] px-2.5 py-0.5 rounded-full">정규 15점 + 보너스 5점 = 20점 만점</span>
+              ${renderMissionScheduleToggleBadge(2)}
             </div>
-            <p class="text-xs text-slate-500 mt-1">10/30(금) 13:00 오픈 ~ 17:30 마감 · 일반 종당 5점(최대 15점) + 히든 발견 시 +5점 보너스</p>
+            <p class="text-xs text-slate-500 mt-1">10/30(금) 13:00 오픈 ~ 17:30 마감 · 🤖 GPT-4o Vision이 업로드된 사진을 판독하여 키위 등 다른 과일이나 엉뚱한 사진 제출을 자동 감지합니다.</p>
           </div>
-          ${renderMissionScheduleToggleBadge(2)}
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           ${[1, 2, 3].map(tid => {
             const team = appState.teams[tid];
             const sc = getMission2Score(team);
+            const hasPhotos = (team.m2.photos || []).length > 0;
+            const isGraded = Boolean(team.m2.graded);
+            const verifiedCommon = isGraded ? (team.m2.verifiedCommon || []) : (team.m2.commonChecked || []);
+            const verifiedHidden = isGraded ? team.m2.verifiedHidden : team.m2.hiddenChecked;
             return `
               <div class="p-4 rounded-2xl bg-white border border-slate-200/90 space-y-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
+                <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isGraded ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
+                      ${isGraded ? '🤖 AI 판독완료' : '판독 대기'}
+                    </span>
+                  </div>
                   <span class="text-sm font-black text-[#0097A7]">${sc.total}점 <span class="text-[11px] font-normal text-slate-400">(일반 ${sc.commonScore} + 히든 ${sc.hiddenScore})</span></span>
                 </div>
+
+                <!-- AI Grade Button -->
+                <button id="btn-ai-grade-${tid}-2" onclick="runAiGradeMission2(${tid})" ${hasPhotos ? '' : 'disabled'} class="w-full py-2 px-3 rounded-xl ${hasPhotos ? 'bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-xs' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} text-xs font-extrabold transition flex items-center justify-center gap-1.5">
+                  <span>🤖</span>
+                  <span>${isGraded ? '사진 재판독 & 채점' : '제출 사진 AI 정밀 판독'}</span>
+                </button>
+
+                ${team.m2.oneLineReview ? `
+                  <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed font-medium">
+                    <span class="text-[#0097A7] font-bold">🤖 AI 심사평: </span>${team.m2.oneLineReview}
+                  </div>
+                ` : ''}
+
+                <!-- Common items -->
                 <div class="space-y-1.5">
-                  <div class="text-[11px] font-bold text-slate-500">일반 5종 체크 (최대 3종 인정)</div>
+                  <div class="text-[11px] font-bold text-slate-500 flex items-center justify-between">
+                    <span>일반 5종 (최대 3종 인정)</span>
+                    <span class="text-[10px] text-slate-400 font-normal">초록: 인정 / 취소선: 불인정</span>
+                  </div>
                   <div class="flex flex-wrap gap-1.5">
                     ${JEJU_COMMON_ITEMS.map(item => {
-                      const on = (team.m2.commonChecked || []).includes(item.id);
-                      return `<button onclick="toggleM2CommonItem(${tid}, '${item.id}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border ${on ? 'bg-[#E0F7FA] border-[#0097A7] text-[#1D5266]' : 'bg-slate-50 border-slate-200 text-slate-500'}">${item.icon} ${item.label}</button>`;
+                      const claimed = (team.m2.commonChecked || []).includes(item.id);
+                      const verified = verifiedCommon.includes(item.id);
+                      return `
+                        <button onclick="toggleM2CommonItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold border transition ${verified ? 'bg-[#E0F7FA] border-[#0097A7] text-[#1D5266]' : claimed ? 'bg-rose-50 border-rose-300 text-rose-500 line-through' : 'bg-slate-50 border-slate-200 text-slate-400'}">
+                          ${item.icon} ${item.label} ${verified ? '✅' : claimed ? '❌' : ''}
+                        </button>
+                      `;
                     }).join('')}
                   </div>
                 </div>
+
+                <!-- Hidden items -->
                 <div class="space-y-1.5">
-                  <div class="text-[11px] font-bold text-amber-700">히든 4종 중 1종 (+5점 보너스)</div>
+                  <div class="text-[11px] font-bold text-amber-700 flex items-center justify-between">
+                    <span>히든 4종 중 1종 (+5점 보너스)</span>
+                  </div>
                   <div class="flex flex-wrap gap-1.5">
                     ${JEJU_HIDDEN_ITEMS.map(item => {
-                      const on = team.m2.hiddenChecked === item.id;
-                      return `<button onclick="selectM2HiddenItem(${tid}, '${item.id}')" class="px-2.5 py-1 rounded-lg text-xs font-bold border ${on ? 'bg-amber-100 border-amber-500 text-amber-900' : 'bg-slate-50 border-slate-200 text-slate-500'}">${item.icon} ${item.label}</button>`;
+                      const claimed = team.m2.hiddenChecked === item.id;
+                      const verified = verifiedHidden === item.id;
+                      return `
+                        <button onclick="selectM2HiddenItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold border transition ${verified ? 'bg-amber-100 border-amber-500 text-amber-900' : claimed ? 'bg-rose-50 border-rose-300 text-rose-500 line-through' : 'bg-slate-50 border-slate-200 text-slate-400'}">
+                          ${item.icon} ${item.label} ${verified ? '⭐' : claimed ? '❌' : ''}
+                        </button>
+                      `;
                     }).join('')}
                   </div>
                 </div>
-                <div class="grid grid-cols-4 gap-1.5 pt-1">
-                  ${(team.m2.photos || []).map(src => `<img src="${src}" onclick="openLightbox('${src}')" class="h-14 w-full object-cover rounded-lg border cursor-zoom-in" />`).join('')}
+
+                <!-- Submitted Photos -->
+                <div class="space-y-1 pt-1">
+                  <span class="text-[11px] font-bold text-slate-500 block">제출 사진 (${(team.m2.photos || []).length}/4장)</span>
+                  <div class="grid grid-cols-4 gap-1.5">
+                    ${(team.m2.photos || []).map(src => `<img src="${src}" onclick="openLightbox('${src}')" class="h-14 w-full object-cover rounded-lg border cursor-zoom-in hover:opacity-80 transition" title="클릭하여 확대" />`).join('')}
+                    ${(team.m2.photos || []).length === 0 ? '<span class="text-xs text-slate-400 col-span-4 py-2 text-center italic bg-slate-50 rounded-lg">사진 미제출</span>' : ''}
+                  </div>
                 </div>
               </div>
             `;
