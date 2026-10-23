@@ -782,6 +782,17 @@ function submitTeamLogin() {
       return;
     }
 
+    // 동시 접속 시 다른 팀원이 방금 먼저 등록했는지 재확인
+    const recheckPin = (appState.settings.teamPins?.[tid] || '').trim();
+    if (recheckPin) {
+      selectLoginTeam(tid);
+      if (errMsg) {
+        errMsg.textContent = '방금 다른 팀원이 비밀번호를 먼저 등록했습니다! 팀원에게 비밀번호를 확인 후 입력해주세요.';
+        errMsg.classList.remove('hidden');
+      }
+      return;
+    }
+
     if (!appState.settings.teamPins) appState.settings.teamPins = {};
     appState.settings.teamPins[tid] = enteredPin;
     if (customName) {
