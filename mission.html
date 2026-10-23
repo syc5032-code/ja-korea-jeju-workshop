@@ -235,6 +235,11 @@
           <!-- Populated by JS -->
         </div>
 
+        <!-- TF Real-Time Team PIN Monitoring Bar -->
+        <div id="tf-team-pins-monitor-bar" class="mt-4 p-3.5 rounded-2xl bg-black/30 border border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+          <!-- Populated by JS -->
+        </div>
+
         <!-- 10/30(금) Mission Unlock Schedule Control Bar -->
         <div class="mt-5 pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2 flex-wrap">
@@ -422,11 +427,11 @@
   <div id="modal-team-login" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
     <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-[#E6E1D3] my-8 animate-in fade-in zoom-in-95 duration-200">
       <div class="text-center pb-4 border-b border-[#E6E1D3]">
-        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30 text-2xl mb-2">
+        <div id="login-badge-icon" class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30 text-2xl mb-2">
           🍊
         </div>
-        <h3 class="text-lg sm:text-xl font-extrabold text-[#1D3C34]">우리 팀 입장 & 팀명 설정</h3>
-        <p class="text-xs text-[#4A5255] mt-1">소속 팀을 선택하고 비밀번호를 입력해주세요.<br>한 번 입장하면 이 기기에는 자동으로 유지됩니다!</p>
+        <h3 id="login-modal-title" class="text-lg sm:text-xl font-extrabold text-[#1D3C34]">우리 팀 입장 & 팀명 설정</h3>
+        <p id="login-modal-subtitle" class="text-xs text-[#4A5255] mt-1">소속 팀을 선택하고 비밀번호를 입력해주세요.<br>한 번 입장하면 이 기기에는 자동으로 유지됩니다!</p>
       </div>
 
       <div class="space-y-4 mt-5">
@@ -437,14 +442,17 @@
             <button type="button" onclick="selectLoginTeam(1)" id="btn-login-team-1" class="p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition">
               <span class="text-xl">🍊</span>
               <span id="login-preview-name-1">1팀</span>
+              <span id="login-pin-status-1" class="text-[9px] px-1.5 py-0.2 rounded-full font-bold"></span>
             </button>
             <button type="button" onclick="selectLoginTeam(2)" id="btn-login-team-2" class="p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition">
               <span class="text-xl">🌊</span>
               <span id="login-preview-name-2">2팀</span>
+              <span id="login-pin-status-2" class="text-[9px] px-1.5 py-0.2 rounded-full font-bold"></span>
             </button>
             <button type="button" onclick="selectLoginTeam(3)" id="btn-login-team-3" class="p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition">
               <span class="text-xl">🌴</span>
               <span id="login-preview-name-3">3팀</span>
+              <span id="login-pin-status-3" class="text-[9px] px-1.5 py-0.2 rounded-full font-bold"></span>
             </button>
           </div>
         </div>
@@ -452,24 +460,27 @@
         <!-- 2. Team PIN -->
         <div class="p-3.5 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3]">
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-extrabold text-[#1D3C34]">2️⃣ 팀 비밀번호 입력</label>
-            <span class="text-[10px] text-[#F27A24] font-bold" id="login-pin-hint">비밀번호 4자리</span>
+            <label id="label-team-login-pin" class="text-xs font-extrabold text-[#1D3C34]">2️⃣ 팀 비밀번호</label>
+            <span class="text-[10px] text-[#F27A24] font-bold" id="login-pin-hint">직접 설정</span>
           </div>
           <input
             id="input-team-login-pin"
-            type="password"
+            type="text"
             inputmode="numeric"
             maxlength="10"
-            placeholder="비밀번호 입력"
+            placeholder="비밀번호 입력 (예: 1234)"
             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-center text-sm font-bold tracking-widest focus:outline-none focus:border-[#1D3C34]"
             onkeydown="if(event.key === 'Enter') submitTeamLogin()"
           />
+          <p id="login-pin-subhint" class="text-[10px] text-[#4A5255] mt-1.5 text-center">
+            💡 여기서 정한 비밀번호로 같은 팀원들도 입장하게 됩니다.
+          </p>
         </div>
 
         <!-- 3. Team Name Setting -->
         <div class="p-3.5 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30">
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-extrabold text-[#1D3C34]">3️⃣ 우리 팀명 정하기 (선택/수정 가능)</label>
+            <label class="text-xs font-extrabold text-[#1D3C34]">3️⃣ 우리 팀명 정하기 (수정 가능)</label>
             <span class="text-[10px] text-[#4A5255]">자유롭게 입력</span>
           </div>
           <input
@@ -494,36 +505,55 @@
           onclick="submitTeamLogin()"
           class="w-full py-3.5 rounded-2xl bg-[#1D3C34] hover:bg-[#142B25] text-white font-black text-sm shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
         >
-          <span>🚀</span>
-          <span>우리 팀으로 입장하기</span>
+          <span id="btn-login-submit-icon">🚀</span>
+          <span id="btn-login-submit-text">우리 팀으로 입장하기</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Quick Team Name Change Modal (Participant View) -->
+  <!-- Quick Team Info (Name & PIN) Change Modal (Participant View) -->
   <div id="modal-change-team-name" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#E6E1D3] animate-in fade-in zoom-in-95 duration-200">
       <div class="flex items-center justify-between pb-3 border-b border-[#E6E1D3]">
         <h3 class="text-base font-extrabold text-[#1D3C34] flex items-center gap-1.5">
           <span>✏️</span>
-          <span>우리 팀명 변경</span>
+          <span>우리 팀명 & 비밀번호 변경</span>
         </h3>
         <button onclick="closeChangeTeamNameModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
       </div>
 
-      <div class="mt-4 space-y-3">
-        <p class="text-xs text-[#4A5255]">
-          새로운 팀명을 입력하시면 모든 팀원과 TF 대시보드에 실시간으로 즉시 반영됩니다.
+      <div class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-xs font-extrabold text-[#1D3C34] mb-1">🍊 우리 팀명</label>
+          <input
+            id="input-change-team-name"
+            type="text"
+            maxlength="20"
+            placeholder="새로운 팀명 입력"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-[#1D3C34]/30 bg-[#FCFBF7] text-center text-sm font-extrabold text-[#1D3C34] focus:outline-none focus:border-[#1D3C34]"
+            onkeydown="if(event.key === 'Enter') saveNewTeamName()"
+          />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs font-extrabold text-[#1D3C34]">🔐 팀 비밀번호</label>
+            <span class="text-[10px] text-[#4A5255]">현재 비번 유지 시 공백</span>
+          </div>
+          <input
+            id="input-change-team-pin"
+            type="text"
+            maxlength="10"
+            placeholder="새 비밀번호 입력 (변경할 경우만)"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#FCFBF7] text-center font-mono text-sm font-bold focus:outline-none focus:border-[#1D3C34]"
+            onkeydown="if(event.key === 'Enter') saveNewTeamName()"
+          />
+        </div>
+
+        <p class="text-[11px] text-[#4A5255] leading-relaxed">
+          💡 저장하시면 모든 팀원과 <strong>TF 대시보드에 실시간으로 즉시 동기화</strong>됩니다.
         </p>
-        <input
-          id="input-change-team-name"
-          type="text"
-          maxlength="20"
-          placeholder="새로운 팀명 입력"
-          class="w-full px-3.5 py-2.5 rounded-xl border border-[#1D3C34]/30 bg-[#FCFBF7] text-center text-sm font-extrabold text-[#1D3C34] focus:outline-none focus:border-[#1D3C34]"
-          onkeydown="if(event.key === 'Enter') saveNewTeamName()"
-        />
       </div>
 
       <div class="mt-5 flex gap-2">

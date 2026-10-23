@@ -131,7 +131,7 @@ function getInitialState() {
       aiModel: 'gpt-4o',
       aiPersona: 'warm',
       cloudDbUrl: '',
-      teamPins: { 1: '1111', 2: '2222', 3: '3333' }
+      teamPins: { 1: '', 2: '', 3: '' }
     },
     m3Config: {
       selectedWord: '제이에이',
@@ -172,9 +172,9 @@ function loadState() {
         ...base.settings,
         ...(parsed.settings || {}),
         teamPins: {
-          1: '1111',
-          2: '2222',
-          3: '3333',
+          1: '',
+          2: '',
+          3: '',
           ...((parsed.settings && parsed.settings.teamPins) || {})
         }
       },
@@ -658,8 +658,22 @@ let loginSelectedTeamId = 1;
 
 function selectLoginTeam(teamId) {
   loginSelectedTeamId = Number(teamId);
+  const curPin = (appState.settings.teamPins?.[loginSelectedTeamId] || '').trim();
+  const isUnset = !curPin;
+
   [1, 2, 3].forEach(id => {
     const btn = document.getElementById(`btn-login-team-${id}`);
+    const statusPill = document.getElementById(`login-pin-status-${id}`);
+    const p = (appState.settings.teamPins?.[id] || '').trim();
+    if (statusPill) {
+      if (p) {
+        statusPill.textContent = '🔒 설정됨';
+        statusPill.className = 'text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+      } else {
+        statusPill.textContent = '✨ 첫 등록';
+        statusPill.className = 'text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-amber-100 text-amber-800 border border-amber-300';
+      }
+    }
     if (!btn) return;
     if (id === loginSelectedTeamId) {
       btn.className = 'p-3 rounded-2xl border-2 font-extrabold text-xs flex flex-col items-center gap-1 transition bg-[#1D3C34] text-white border-[#1D3C34] shadow-sm';
@@ -669,15 +683,52 @@ function selectLoginTeam(teamId) {
   });
 
   const curTeam = getTeam(loginSelectedTeamId);
+  const titleEl = document.getElementById('login-modal-title');
+  const subTitleEl = document.getElementById('login-modal-subtitle');
+  const pinLabelEl = document.getElementById('label-team-login-pin');
+  const pinHintEl = document.getElementById('login-pin-hint');
+  const pinSubhintEl = document.getElementById('login-pin-subhint');
+  const submitTextEl = document.getElementById('btn-login-submit-text');
+  const submitIconEl = document.getElementById('btn-login-submit-icon');
+  const pinInput = document.getElementById('input-team-login-pin');
   const nameInput = document.getElementById('input-team-login-name');
+
   if (nameInput) {
     nameInput.value = curTeam.name || `${loginSelectedTeamId}팀`;
   }
-  const pinInput = document.getElementById('input-team-login-pin');
   if (pinInput) {
     pinInput.value = '';
     pinInput.focus();
   }
+
+  if (isUnset) {
+    // 최초 등록 모드 (첫 팀원이 비번과 팀명을 직접 세팅)
+    if (titleEl) titleEl.textContent = `${curTeam.name} 최초 등록 & 비밀번호 설정`;
+    if (subTitleEl) subTitleEl.innerHTML = `아직 비밀번호가 없습니다! 팀원들과 함께 사용할 <strong>비밀번호(4자리)와 팀명</strong>을 설정해주세요.`;
+    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 직접 생성';
+    if (pinHintEl) pinHintEl.textContent = '✨ 최초 설정';
+    if (pinSubhintEl) {
+      pinSubhintEl.textContent = '💡 여기서 정한 비밀번호로 같은 팀원들도 입장하게 됩니다.';
+      pinSubhintEl.classList.remove('hidden');
+    }
+    if (pinInput) pinInput.placeholder = '팀원들과 쓸 비밀번호 (예: 1234)';
+    if (submitTextEl) submitTextEl.textContent = '우리 팀 비밀번호 & 팀명 등록하고 입장하기';
+    if (submitIconEl) submitIconEl.textContent = '✨';
+  } else {
+    // 기존 설정된 비번으로 팀원 입장 모드
+    if (titleEl) titleEl.textContent = `${curTeam.name} 입장하기`;
+    if (subTitleEl) subTitleEl.innerHTML = `팀원이 이미 비밀번호를 설정했습니다.<br>공유받은 <strong>팀 비밀번호</strong>를 입력해주세요.`;
+    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 입력';
+    if (pinHintEl) pinHintEl.textContent = '🔒 확인';
+    if (pinSubhintEl) {
+      pinSubhintEl.textContent = '💡 비밀번호를 분실하신 경우 TF 운영진 대시보드에서 바로 확인 가능합니다.';
+      pinSubhintEl.classList.remove('hidden');
+    }
+    if (pinInput) pinInput.placeholder = '팀 비밀번호 입력';
+    if (submitTextEl) submitTextEl.textContent = '우리 팀으로 입장하기';
+    if (submitIconEl) submitIconEl.textContent = '🚀';
+  }
+
   const errMsg = document.getElementById('login-error-msg');
   if (errMsg) errMsg.classList.add('hidden');
 }
@@ -706,8 +757,7 @@ function submitTeamLogin() {
   const pinInput = document.getElementById('input-team-login-pin');
   const enteredPin = (pinInput ? pinInput.value : '').trim();
   const errMsg = document.getElementById('login-error-msg');
-
-  const validPin = appState.settings.teamPins?.[tid] || `${tid}${tid}${tid}${tid}`;
+  const existingPin = (appState.settings.teamPins?.[tid] || '').trim();
 
   if (!enteredPin) {
     if (errMsg) {
@@ -718,9 +768,41 @@ function submitTeamLogin() {
     return;
   }
 
-  if (enteredPin !== validPin) {
+  const nameInput = document.getElementById('input-team-login-name');
+  const customName = (nameInput ? nameInput.value : '').trim();
+
+  if (!existingPin) {
+    // 최초 등록: 비밀번호를 직접 생성하는 경우
+    if (enteredPin.length < 2) {
+      if (errMsg) {
+        errMsg.textContent = '비밀번호를 2자리 이상 입력해주세요.';
+        errMsg.classList.remove('hidden');
+      }
+      pinInput?.focus();
+      return;
+    }
+
+    if (!appState.settings.teamPins) appState.settings.teamPins = {};
+    appState.settings.teamPins[tid] = enteredPin;
+    if (customName) {
+      appState.teams[tid].name = customName;
+    }
+
+    appState.selectedTeamId = tid;
+    localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
+    localStorage.setItem(MY_TEAM_ID_KEY, String(tid));
+    saveState();
+
+    closeTeamLoginModal();
+    renderAll();
+    showToast(`🎉 ${appState.teams[tid].name} 비밀번호('${enteredPin}') 등록 완료! 팀원들에게 공유해주세요.`, 'success');
+    return;
+  }
+
+  // 기존 비밀번호 검증
+  if (enteredPin !== existingPin) {
     if (errMsg) {
-      errMsg.textContent = '비밀번호가 올바르지 않습니다. (1팀: 1111 / 2팀: 2222 / 3팀: 3333)';
+      errMsg.textContent = '비밀번호가 올바르지 않습니다. (분실 시 TF 운영진에게 문의하세요)';
       errMsg.classList.remove('hidden');
     }
     pinInput?.select();
@@ -728,8 +810,6 @@ function submitTeamLogin() {
   }
 
   // 비밀번호 일치: 팀명 변경사항 반영
-  const nameInput = document.getElementById('input-team-login-name');
-  const customName = (nameInput ? nameInput.value : '').trim();
   if (customName) {
     appState.teams[tid].name = customName;
   }
@@ -755,10 +835,15 @@ function openChangeTeamNameModal() {
   const modal = document.getElementById('modal-change-team-name');
   if (!modal) return;
   const team = getTeam(appState.selectedTeamId);
-  const input = document.getElementById('input-change-team-name');
-  if (input) {
-    input.value = team.name;
-    setTimeout(() => input.focus(), 100);
+  const nameInput = document.getElementById('input-change-team-name');
+  if (nameInput) {
+    nameInput.value = team.name;
+    setTimeout(() => nameInput.focus(), 100);
+  }
+  const pinInput = document.getElementById('input-change-team-pin');
+  if (pinInput) {
+    const curPin = (appState.settings.teamPins?.[appState.selectedTeamId] || '').trim();
+    pinInput.value = curPin;
   }
   modal.classList.remove('hidden');
 }
@@ -769,8 +854,11 @@ function closeChangeTeamNameModal() {
 }
 
 function saveNewTeamName() {
-  const input = document.getElementById('input-change-team-name');
-  const newName = (input ? input.value : '').trim();
+  const nameInput = document.getElementById('input-change-team-name');
+  const newName = (nameInput ? nameInput.value : '').trim();
+  const pinInput = document.getElementById('input-change-team-pin');
+  const newPin = (pinInput ? pinInput.value : '').trim();
+
   if (!newName) {
     showToast('팀명을 1글자 이상 입력해주세요.', 'error');
     return;
@@ -778,10 +866,14 @@ function saveNewTeamName() {
 
   const tid = appState.selectedTeamId;
   appState.teams[tid].name = newName;
+  if (newPin) {
+    if (!appState.settings.teamPins) appState.settings.teamPins = {};
+    appState.settings.teamPins[tid] = newPin;
+  }
   saveState();
   closeChangeTeamNameModal();
   renderAll();
-  showToast(`팀명이 '${newName}'(으)로 변경되었습니다!`, 'success');
+  showToast(`팀 정보가 성공적으로 변경되었습니다!`, 'success');
 }
 
 /* ==========================================================================
@@ -1475,6 +1567,7 @@ function renderTfLeaderboard() {
 
   grid.innerHTML = list.map((item, idx) => {
     const s = item.summary;
+    const pin = (appState.settings.teamPins?.[item.id] || '').trim();
     return `
       <div class="p-4 rounded-2xl bg-white/10 border ${idx === 0 ? 'border-amber-400/80 bg-white/15' : 'border-white/15'} backdrop-blur-md">
         <div class="flex items-center justify-between mb-2">
@@ -1485,6 +1578,17 @@ function renderTfLeaderboard() {
           <h3 class="text-lg font-extrabold text-white">${item.name}</h3>
           <div class="text-2xl font-black text-amber-300">${s.grandTotal}<span class="text-xs font-normal text-slate-300 ml-0.5">/ 115점</span></div>
         </div>
+
+        <!-- Team PIN display for TF -->
+        <div class="mt-2.5 flex items-center justify-between text-xs bg-black/35 px-3 py-1.5 rounded-xl border border-white/10">
+          <span class="text-slate-200 font-bold flex items-center gap-1.5">
+            <span>🔐 팀 접속 비밀번호:</span>
+          </span>
+          <span class="font-mono ${pin ? 'text-amber-300 font-black text-sm bg-amber-400/20 px-2 py-0.5 rounded-lg border border-amber-400/40' : 'text-rose-300 font-bold italic text-[11px] bg-rose-500/20 px-2 py-0.5 rounded-lg'}">
+            ${pin ? `[ ${pin} ]` : '미설정 (최초 등록 대기)'}
+          </span>
+        </div>
+
         <div class="grid grid-cols-5 gap-1 mt-3 pt-2.5 border-t border-white/10 text-[10px] text-center text-slate-300">
           <div><div class="text-slate-400">1.포스터</div><div class="font-bold text-white">${s.m1}/25</div></div>
           <div><div class="text-slate-400">2.발견</div><div class="font-bold text-white">${s.m2}/20</div></div>
@@ -1495,6 +1599,29 @@ function renderTfLeaderboard() {
       </div>
     `;
   }).join('');
+
+  const bar = document.getElementById('tf-team-pins-monitor-bar');
+  if (bar) {
+    bar.innerHTML = `
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="font-extrabold text-amber-300 flex items-center gap-1">
+          <span>🔑 TF 관제 실시간 팀 비밀번호:</span>
+        </span>
+        ${[1, 2, 3].map(id => {
+          const p = (appState.settings.teamPins?.[id] || '').trim();
+          return `
+            <span class="inline-flex items-center gap-1.5 bg-black/50 px-2.5 py-1 rounded-xl border border-white/15">
+              <span class="font-extrabold text-white">${appState.teams[id].name}:</span>
+              <span class="font-mono ${p ? 'text-amber-300 font-black' : 'text-rose-300 font-bold italic text-[11px]'}">${p ? `[ ${p} ]` : '미설정'}</span>
+            </span>
+          `;
+        }).join('')}
+      </div>
+      <button type="button" onclick="openSettingsModal()" class="shrink-0 text-[11px] font-extrabold px-3 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white border border-white/20 transition">
+        ⚙️ 비번 직접 수정/초기화
+      </button>
+    `;
+  }
 }
 
 function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
@@ -1991,13 +2118,13 @@ function openSettingsModal() {
   document.getElementById('setting-team-1').value = appState.teams[1].name;
   document.getElementById('setting-team-2').value = appState.teams[2].name;
   document.getElementById('setting-team-3').value = appState.teams[3].name;
-  const pins = appState.settings.teamPins || { 1: '1111', 2: '2222', 3: '3333' };
+  const pins = appState.settings.teamPins || {};
   const pin1El = document.getElementById('setting-team-1-pin');
   const pin2El = document.getElementById('setting-team-2-pin');
   const pin3El = document.getElementById('setting-team-3-pin');
-  if (pin1El) pin1El.value = pins[1] || '1111';
-  if (pin2El) pin2El.value = pins[2] || '2222';
-  if (pin3El) pin3El.value = pins[3] || '3333';
+  if (pin1El) pin1El.value = pins[1] || '';
+  if (pin2El) pin2El.value = pins[2] || '';
+  if (pin3El) pin3El.value = pins[3] || '';
   document.getElementById('setting-admin-pin').value = appState.settings.adminPin || '2026';
   document.getElementById('modal-settings').classList.remove('hidden');
 }
@@ -2018,9 +2145,9 @@ function saveSettingsModal() {
   const pin2El = document.getElementById('setting-team-2-pin');
   const pin3El = document.getElementById('setting-team-3-pin');
   appState.settings.teamPins = {
-    1: pin1El ? pin1El.value.trim() || '1111' : '1111',
-    2: pin2El ? pin2El.value.trim() || '2222' : '2222',
-    3: pin3El ? pin3El.value.trim() || '3333' : '3333'
+    1: pin1El ? pin1El.value.trim() : '',
+    2: pin2El ? pin2El.value.trim() : '',
+    3: pin3El ? pin3El.value.trim() : ''
   };
   appState.settings.adminPin = document.getElementById('setting-admin-pin').value.trim() || '2026';
   saveState();
@@ -2223,8 +2350,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const pinParam = params.get('pin');
   if (teamParam && [1, 2, 3].includes(Number(teamParam))) {
     const tid = Number(teamParam);
-    const validPin = appState.settings.teamPins?.[tid] || `${tid}${tid}${tid}${tid}`;
-    if (pinParam && pinParam === validPin) {
+    const validPin = (appState.settings.teamPins?.[tid] || '').trim();
+    if (validPin && pinParam && pinParam === validPin) {
       localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
       localStorage.setItem(MY_TEAM_ID_KEY, String(tid));
       appState.selectedTeamId = tid;
