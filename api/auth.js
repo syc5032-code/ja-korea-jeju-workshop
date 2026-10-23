@@ -50,6 +50,21 @@ function parseCookies(req) {
   return list;
 }
 
+function normalizeAuditData(raw) {
+  const data = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  return {
+    authFailures: (data.authFailures && typeof data.authFailures === 'object' && !Array.isArray(data.authFailures))
+      ? data.authFailures
+      : {},
+    sessionLimits: (data.sessionLimits && typeof data.sessionLimits === 'object' && !Array.isArray(data.sessionLimits))
+      ? data.sessionLimits
+      : {},
+    ipLimits: (data.ipLimits && typeof data.ipLimits === 'object' && !Array.isArray(data.ipLimits))
+      ? data.ipLimits
+      : {}
+  };
+}
+
 async function getSharedAuditData() {
   try {
     const controller = new AbortController();
@@ -64,16 +79,18 @@ async function getSharedAuditData() {
     clearTimeout(timeout);
     if (res.ok) {
       const rows = await res.json();
-      return rows?.[0]?.data || { ipLimits: {}, authFailures: {} };
+      if (rows?.[0]?.data) {
+        return normalizeAuditData(rows[0].data);
+      }
     }
   } catch (e) {}
-  return {
-    ipLimits: {},
+  return normalizeAuditData({
     authFailures: Object.fromEntries(l1AuthFailures)
-  };
+  });
 }
 
 function saveSharedAuditAsync(data) {
+  const normalized = normalizeAuditData(data);
   fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
     method: 'POST',
     headers: {
@@ -85,7 +102,7 @@ function saveSharedAuditAsync(data) {
     body: JSON.stringify({
       id: 'api_security_audit',
       updated_at: Date.now(),
-      data
+      data: normalized
     })
   }).catch(() => {});
 }
@@ -138,7 +155,8 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+    const forwarded = req.headers['x-forwarded-for'];
+    const clientIp = forwarded ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || 'unknown');
     const now = Date.now();
     const auditData = await getSharedAuditData();
     const failRecord = auditData.authFailures[clientIp] || l1AuthFailures.get(clientIp);

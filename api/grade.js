@@ -325,10 +325,22 @@ function parseCookies(req) {
   return list;
 }
 
-async function checkSessionRateLimit(sessionKey) {
-  const now = Date.now();
-  let auditData = { sessionLimits: {} };
+function normalizeAuditData(raw) {
+  const data = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+  return {
+    authFailures: (data.authFailures && typeof data.authFailures === 'object' && !Array.isArray(data.authFailures))
+      ? data.authFailures
+      : {},
+    sessionLimits: (data.sessionLimits && typeof data.sessionLimits === 'object' && !Array.isArray(data.sessionLimits))
+      ? data.sessionLimits
+      : {},
+    ipLimits: (data.ipLimits && typeof data.ipLimits === 'object' && !Array.isArray(data.ipLimits))
+      ? data.ipLimits
+      : {}
+  };
+}
 
+async function getSharedAuditData() {
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 2000);
@@ -343,13 +355,19 @@ async function checkSessionRateLimit(sessionKey) {
     if (fetchRes.ok) {
       const rows = await fetchRes.json();
       if (rows?.[0]?.data) {
-        auditData = rows[0].data;
-        if (!auditData.sessionLimits) auditData.sessionLimits = {};
+        return normalizeAuditData(rows[0].data);
       }
     }
-  } catch (e) {
-    auditData = { sessionLimits: Object.fromEntries(l1RateLimitMap) };
-  }
+  } catch (e) {}
+
+  return normalizeAuditData({
+    sessionLimits: Object.fromEntries(l1RateLimitMap)
+  });
+}
+
+async function checkSessionRateLimit(sessionKey) {
+  const now = Date.now();
+  const auditData = await getSharedAuditData();
 
   // 행사장 동일 Wi-Fi 고려: IP 대신 인증된 TF 세션별로 1분당 최대 30회 독립 할당
   const limitRecord = auditData.sessionLimits[sessionKey];
@@ -369,11 +387,18 @@ async function checkSessionRateLimit(sessionKey) {
     l1RateLimitMap.set(sessionKey, newRecord);
   }
 
-  // 만료된 오래된 레코드 정리
+  // 만료된 오래된 세션 레코드 정리
   for (const [key, rec] of Object.entries(auditData.sessionLimits)) {
     if (rec.resetAt < now) {
       delete auditData.sessionLimits[key];
       l1RateLimitMap.delete(key);
+    }
+  }
+
+  // 만료된 오래된 IP 실패 레코드 정리 (잠금 만료 및 resetAt 경과 레코드)
+  for (const [ip, rec] of Object.entries(auditData.authFailures)) {
+    if ((!rec.lockedUntil || rec.lockedUntil < now) && rec.resetAt < now) {
+      delete auditData.authFailures[ip];
     }
   }
 
@@ -382,6 +407,7 @@ async function checkSessionRateLimit(sessionKey) {
 }
 
 function saveSecurityAuditAsync(data) {
+  const normalized = normalizeAuditData(data);
   fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
     method: 'POST',
     headers: {
@@ -393,7 +419,7 @@ function saveSecurityAuditAsync(data) {
     body: JSON.stringify({
       id: 'api_security_audit',
       updated_at: Date.now(),
-      data
+      data: normalized
     })
   }).catch(() => {});
 }
