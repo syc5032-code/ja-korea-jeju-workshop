@@ -48,10 +48,16 @@ function createDefaultTeamData(id, name) {
     },
     m2: {
       photos: [],
+      itemPhotos: {},
       commonChecked: [],
       hiddenChecked: '',
       submittedAt: '',
-      memo: ''
+      memo: '',
+      graded: false,
+      verifiedCommon: [],
+      verifiedHidden: null,
+      score: 0,
+      oneLineReview: ''
     },
     m3: {
       kakaoSubmitted: false,
@@ -80,6 +86,25 @@ function createDefaultTeamData(id, name) {
   };
 }
 
+function syncM2State(team) {
+  if (!team || !team.m2) return;
+  if (!team.m2.itemPhotos || typeof team.m2.itemPhotos !== 'object') {
+    team.m2.itemPhotos = {};
+  }
+  const commonIds = JEJU_COMMON_ITEMS.map(x => x.id);
+  const hiddenIds = JEJU_HIDDEN_ITEMS.map(x => x.id);
+
+  team.m2.commonChecked = commonIds.filter(id => Boolean(team.m2.itemPhotos[id]));
+  const activeHidden = hiddenIds.find(id => Boolean(team.m2.itemPhotos[id]));
+  team.m2.hiddenChecked = activeHidden || '';
+
+  // photos 배열도 하위 호환성 및 API 전송을 위해 자동 동기화 유지
+  team.m2.photos = [
+    ...team.m2.commonChecked.map(id => team.m2.itemPhotos[id]),
+    ...(team.m2.hiddenChecked ? [team.m2.itemPhotos[team.m2.hiddenChecked]] : [])
+  ];
+}
+
 function sanitizeTeams(teamsObj) {
   const result = {
     1: createDefaultTeamData(1, '1팀'),
@@ -94,11 +119,34 @@ function sanitizeTeams(teamsObj) {
         id,
         name: raw.name || `${id}팀`,
         m1: typeof raw.m1 === 'object' ? { ...result[id].m1, ...raw.m1 } : result[id].m1,
-        m2: typeof raw.m2 === 'object' ? { ...result[id].m2, ...raw.m2, commonChecked: Array.isArray(raw.m2?.commonChecked) ? raw.m2.commonChecked : [], photos: Array.isArray(raw.m2?.photos) ? raw.m2.photos : [] } : result[id].m2,
+        m2: (() => {
+          const m2Raw = typeof raw.m2 === 'object' ? raw.m2 : {};
+          const m2Obj = {
+            ...result[id].m2,
+            ...m2Raw,
+            itemPhotos: (m2Raw.itemPhotos && typeof m2Raw.itemPhotos === 'object') ? { ...m2Raw.itemPhotos } : {},
+            commonChecked: Array.isArray(m2Raw.commonChecked) ? [...m2Raw.commonChecked] : [],
+            hiddenChecked: m2Raw.hiddenChecked || '',
+            photos: Array.isArray(m2Raw.photos) ? [...m2Raw.photos] : []
+          };
+          // 기존 데이터(사진 배열만 있고 itemPhotos가 비어있는 경우) 안전 마이그레이션
+          if (Object.keys(m2Obj.itemPhotos).length === 0 && m2Obj.photos.length > 0) {
+            const claimed = [...m2Obj.commonChecked];
+            if (m2Obj.hiddenChecked) claimed.push(m2Obj.hiddenChecked);
+            m2Obj.photos.forEach((src, idx) => {
+              const targetId = claimed[idx] || (idx < JEJU_COMMON_ITEMS.length ? JEJU_COMMON_ITEMS[idx].id : null);
+              if (targetId) {
+                m2Obj.itemPhotos[targetId] = src;
+              }
+            });
+          }
+          return m2Obj;
+        })(),
         m3: typeof raw.m3 === 'object' ? { ...result[id].m3, ...raw.m3 } : result[id].m3,
         m4: typeof raw.m4 === 'object' ? { ...result[id].m4, ...raw.m4 } : result[id].m4,
         m5: typeof raw.m5 === 'object' ? { ...result[id].m5, ...raw.m5 } : result[id].m5
       };
+      syncM2State(result[id]);
     }
   });
   return result;
@@ -636,10 +684,12 @@ async function runAiGradeMission(teamId, missionNum) {
 
 async function runAiGradeMission2(teamId) {
   const team = appState.teams[teamId];
-  const photos = team.m2?.photos || [];
+  syncM2State(team);
+  const itemPhotos = team.m2?.itemPhotos || {};
+  const photoEntries = Object.entries(itemPhotos).filter(([k, src]) => Boolean(src));
 
-  if (photos.length === 0) {
-    showToast(`${team.name}의 2번 미션 사진이 아직 등록되지 않았습니다.`, 'error');
+  if (photoEntries.length === 0) {
+    showToast(`${team.name}의 2번 미션에 등록된 사진이 없습니다.`, 'error');
     return;
   }
 
@@ -653,19 +703,14 @@ async function runAiGradeMission2(teamId) {
   const btn = document.getElementById(`btn-ai-grade-${teamId}-2`);
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<span>⏳</span><span>AI 사진 판독 중...</span>';
+    btn.innerHTML = '<span>⏳</span><span>AI 정밀 사진 판독 중...</span>';
   }
 
   try {
     const personaText = getPersonaInstruction(appState.settings.aiPersona);
-    const claimedCommon = (team.m2.commonChecked || []).map(id => {
-      const it = JEJU_COMMON_ITEMS.find(x => x.id === id);
-      return it ? `${it.id}(${it.label})` : id;
-    }).join(', ');
-    const claimedHidden = team.m2.hiddenChecked ? (JEJU_HIDDEN_ITEMS.find(x => x.id === team.m2.hiddenChecked)?.label || team.m2.hiddenChecked) : '선택 안 함';
 
     const systemPrompt = `당신은 '2026 JA Korea 제주 리트릿' 2번 미션 [제주 발견 (5종 중 3종 + 히든 1종)] 정밀 사진 판독 AI 심사위원입니다. ${personaText}
-참가팀 '${team.name}'이 총 ${photos.length}장의 사진을 제출했습니다.
+참가팀 '${team.name}'이 항목별로 직접 지정하여 총 ${photoEntries.length}장의 사진을 제출했습니다.
 
 [인증 대상 항목 정의 및 엄격한 판별 기준]
 ■ 흔한 5종 (최대 3종 인정, 1종당 5점 = 최대 15점):
@@ -681,20 +726,16 @@ async function runAiGradeMission2(teamId) {
 - bangsatap: '방사탑' (마을 액운을 막는 제주 둥근 돌탑)
 - haenyeo: '해녀 조형물/벽화' (물질 도구를 든 해녀 동상, 조각, 또는 벽화)
 
-[팀이 체크하여 주장한 항목]
-- 흔한 5종: ${claimedCommon || '없음'}
-- 히든: ${claimedHidden}
-
 [심사 지침]
-제출된 사진들을 하나씩 꼼꼼하게 대조하세요.
-팀이 체크했더라도 사진 속 실제 대상과 일치하지 않는 엉뚱한 사진(예: 키위 사진 올리고 귤 주장, 새 일러스트 올리고 돌담 주장 등)은 단호하게 불인정(탈락) 처리하세요.
-실제로 사진 속에 확실하게 존재하는 항목만 verifiedCommon / verifiedHidden 에 넣으세요.
-- verifiedCommon: 실제로 식별된 흔한 5종의 ID 배열 (최대 3개까지만 인정, 예: ["stone", "sea"])
-- verifiedHidden: 실제로 식별된 히든 항목의 ID (없거나 불일치 시 null, 예: "harubang" 또는 null)
+제출된 각 사진을 해당 사진이 지정된 항목(ID)의 기준과 1:1로 엄격하게 대조하세요.
+팀이 특정 항목으로 등록했더라도 사진 속 실제 대상과 일치하지 않는 엉뚱한 사진(예: 키위 사진 올리고 귤 등록, 새 일러스트 올리고 돌담 등록 등)은 단호하게 불인정(탈락) 처리하세요.
+실제로 기준에 확실하게 부합하는 항목만 verifiedCommon 및 verifiedHidden에 넣으세요.
+- verifiedCommon: 실제로 식별 통과된 흔한 5종의 ID 배열 (최대 3개까지만 인정, 예: ["stone", "sea"])
+- verifiedHidden: 실제로 식별 통과된 히든 항목의 ID (없거나 불일치 시 null, 예: "harubang" 또는 null)
 - commonScore: Math.min(3, verifiedCommon.length) * 5 (최대 15점)
 - hiddenScore: verifiedHidden ? 5 : 0 (최대 5점)
 - totalScore: commonScore + hiddenScore (0 ~ 20점)
-- oneLineReview: 사진 판독 근거를 담은 60자 내외의 재치 있고 솔직한 심사평 (예: "귤을 체크하셨지만 사진은 키위네요 🥝 새 그림도 멋지지만 돌담/바다가 없어 0점 처리되었습니다!")
+- oneLineReview: 1:1 사진 판독 근거를 담은 60자 내외의 재치 있고 솔직한 심사평 (예: "귤 항목 사진은 키위네요 🥝 새 그림도 멋지지만 돌담이 아니어서 바다 1종만 5점 인정되었습니다!")
 
 반드시 아래 JSON 형식으로만 응답하세요:
 {
@@ -707,9 +748,18 @@ async function runAiGradeMission2(teamId) {
 }`;
 
     const userContent = [
-      { type: 'text', text: `${team.name}의 2번 미션 발견 사진 ${photos.length}장입니다. 엄격하게 판독하여 기준에 맞춰 채점해주세요.` }
+      { type: 'text', text: `${team.name}의 2번 미션 [제주 발견] 항목별 제출 사진 ${photoEntries.length}장입니다. 각 사진이 지정된 항목에 실제로 부합하는지 1:1로 정밀하게 검증하여 채점해주세요.` }
     ];
-    photos.forEach((src) => {
+
+    photoEntries.forEach(([itemId, src], idx) => {
+      const isHidden = JEJU_HIDDEN_ITEMS.some(x => x.id === itemId);
+      const meta = (isHidden ? JEJU_HIDDEN_ITEMS : JEJU_COMMON_ITEMS).find(x => x.id === itemId);
+      const itemLabel = meta ? `${meta.icon} ${meta.label}` : itemId;
+      const catName = isHidden ? '히든 미션 (보너스 +5점)' : '흔한 제주 5종 (+5점)';
+      userContent.push({
+        type: 'text',
+        text: `[제출 사진 #${idx + 1}] 팀이 등록한 대상 항목: 【${catName} - ${itemLabel} (항목 ID: ${itemId})】`
+      });
       userContent.push({
         type: 'image_url',
         image_url: { url: src, detail: 'high' }
@@ -1072,10 +1122,9 @@ async function handlePhotoUpload(teamId, missionNum, inputEl) {
     const dataUrl = await compressImageFile(file, 1024, 0.8);
     const team = appState.teams[teamId];
     if (missionNum === 2) {
-      team.m2.photos = team.m2.photos || [];
-      if (team.m2.photos.length >= 4) team.m2.photos.shift();
-      team.m2.photos.push(dataUrl);
-      team.m2.submittedAt = formatNowTime(false);
+      // 2번 미션은 uploadM2ItemPhoto 로 세부 항목별 1:1 직접 업로드 처리됨
+      showToast('2번 미션은 각 항목별 [사진 올리기] 버튼을 이용해 주세요.', 'info');
+      return;
     } else {
       const mKey = `m${missionNum}`;
       team[mKey].photo = dataUrl;
@@ -1090,43 +1139,147 @@ async function handlePhotoUpload(teamId, missionNum, inputEl) {
   }
 }
 
+async function uploadM2ItemPhoto(teamId, itemId, inputEl, isHidden = false) {
+  const file = inputEl?.files?.[0];
+  if (!file) return;
+  const team = appState.teams[teamId];
+  if (!team) return;
+  if (!team.m2.itemPhotos) team.m2.itemPhotos = {};
+
+  const commonIds = JEJU_COMMON_ITEMS.map(x => x.id);
+  const currentCommonCount = Object.keys(team.m2.itemPhotos).filter(k => commonIds.includes(k) && Boolean(team.m2.itemPhotos[k])).length;
+  const alreadyHasThis = Boolean(team.m2.itemPhotos[itemId]);
+
+  if (!isHidden && !alreadyHasThis && currentCommonCount >= 3) {
+    showToast('흔한 제주 5종은 최대 3종까지만 등록할 수 있습니다. 변경하려면 기존 사진을 먼저 삭제해주세요.', 'info');
+    inputEl.value = '';
+    return;
+  }
+
+  let replacedHidden = false;
+  if (isHidden) {
+    const hiddenIds = JEJU_HIDDEN_ITEMS.map(x => x.id);
+    hiddenIds.forEach(hid => {
+      if (hid !== itemId && team.m2.itemPhotos[hid]) {
+        delete team.m2.itemPhotos[hid];
+        replacedHidden = true;
+      }
+    });
+  }
+
+  try {
+    const dataUrl = await compressImageFile(file, 1024, 0.8);
+    team.m2.itemPhotos[itemId] = dataUrl;
+    team.m2.submittedAt = formatNowTime(false);
+
+    if (team.m2.graded) {
+      if (!isHidden && Array.isArray(team.m2.verifiedCommon) && !team.m2.verifiedCommon.includes(itemId) && team.m2.verifiedCommon.length < 3) {
+        team.m2.verifiedCommon.push(itemId);
+      }
+      if (isHidden) {
+        team.m2.verifiedHidden = itemId;
+      }
+      const cScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
+      const hScore = team.m2.verifiedHidden ? 5 : 0;
+      team.m2.score = cScore + hScore;
+    }
+
+    syncM2State(team);
+    saveState();
+    renderAll();
+
+    const itemMeta = (isHidden ? JEJU_HIDDEN_ITEMS : JEJU_COMMON_ITEMS).find(x => x.id === itemId);
+    const itemName = itemMeta ? `${itemMeta.icon} ${itemMeta.label}` : itemId;
+    if (replacedHidden) {
+      showToast(`${itemName} 사진 등록 완료! (이전 히든 사진이 교체되었습니다)`, 'success');
+    } else {
+      showToast(`${itemName} 사진이 성공적으로 등록되었습니다!`, 'success');
+    }
+  } catch (err) {
+    showToast('사진 등록 중 오류가 발생했습니다.', 'error');
+  }
+  inputEl.value = '';
+}
+
+function removeM2ItemPhoto(teamId, itemId) {
+  const team = appState.teams[teamId];
+  if (!team || !team.m2?.itemPhotos) return;
+  if (team.m2.itemPhotos[itemId]) {
+    delete team.m2.itemPhotos[itemId];
+
+    if (team.m2.graded) {
+      if (Array.isArray(team.m2.verifiedCommon)) {
+        const idx = team.m2.verifiedCommon.indexOf(itemId);
+        if (idx >= 0) team.m2.verifiedCommon.splice(idx, 1);
+      }
+      if (team.m2.verifiedHidden === itemId) {
+        team.m2.verifiedHidden = null;
+      }
+      const cScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
+      const hScore = team.m2.verifiedHidden ? 5 : 0;
+      team.m2.score = cScore + hScore;
+    }
+
+    syncM2State(team);
+    saveState();
+    renderAll();
+    const itemMeta = [...JEJU_COMMON_ITEMS, ...JEJU_HIDDEN_ITEMS].find(x => x.id === itemId);
+    const itemName = itemMeta ? `${itemMeta.icon} ${itemMeta.label}` : itemId;
+    showToast(`${itemName} 사진이 삭제되었습니다.`, 'info');
+  }
+}
+
 function removeM2Photo(teamId, idx) {
-  appState.teams[teamId].m2.photos.splice(idx, 1);
-  saveState();
-  renderAll();
+  const team = appState.teams[teamId];
+  if (!team || !team.m2) return;
+  const keys = Object.keys(team.m2.itemPhotos || {});
+  if (keys[idx]) {
+    removeM2ItemPhoto(teamId, keys[idx]);
+  } else if (Array.isArray(team.m2.photos)) {
+    team.m2.photos.splice(idx, 1);
+    saveState();
+    renderAll();
+  }
 }
 
 function toggleM2CommonItem(teamId, itemId) {
   const team = appState.teams[teamId];
-  const arr = team.m2.commonChecked || [];
-  const idx = arr.indexOf(itemId);
-  if (idx >= 0) {
-    arr.splice(idx, 1);
+  if (!team || !team.m2) return;
+  if (!team.m2.graded) {
+    team.m2.graded = true;
+    team.m2.verifiedCommon = [...(team.m2.commonChecked || [])];
+    team.m2.verifiedHidden = team.m2.hiddenChecked || null;
+  }
+  team.m2.verifiedCommon = team.m2.verifiedCommon || [];
+  const vIdx = team.m2.verifiedCommon.indexOf(itemId);
+  if (vIdx >= 0) {
+    team.m2.verifiedCommon.splice(vIdx, 1);
   } else {
-    if (arr.length >= 3) {
-      showToast('흔한 제주 5종 중 최대 3종까지만 선택할 수 있습니다.', 'info');
+    if (team.m2.verifiedCommon.length >= 3) {
+      showToast('흔한 제주 5종은 최대 3종까지만 인정 가능합니다.', 'info');
       return;
     }
-    arr.push(itemId);
+    team.m2.verifiedCommon.push(itemId);
   }
-  team.m2.commonChecked = arr;
-  if (team.m2.graded && Array.isArray(team.m2.verifiedCommon)) {
-    const vIdx = team.m2.verifiedCommon.indexOf(itemId);
-    if (vIdx >= 0) team.m2.verifiedCommon.splice(vIdx, 1);
-    else if (team.m2.verifiedCommon.length < 3) team.m2.verifiedCommon.push(itemId);
-  }
-  team.m2.submittedAt = formatNowTime(false);
+  const commonScore = Math.min(3, team.m2.verifiedCommon.length) * 5;
+  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
+  team.m2.score = commonScore + hiddenScore;
   saveState();
   renderAll();
 }
 
 function selectM2HiddenItem(teamId, itemId) {
   const team = appState.teams[teamId];
-  team.m2.hiddenChecked = (team.m2.hiddenChecked === itemId) ? '' : itemId;
-  if (team.m2.graded) {
-    team.m2.verifiedHidden = (team.m2.verifiedHidden === itemId) ? null : itemId;
+  if (!team || !team.m2) return;
+  if (!team.m2.graded) {
+    team.m2.graded = true;
+    team.m2.verifiedCommon = [...(team.m2.commonChecked || [])];
+    team.m2.verifiedHidden = team.m2.hiddenChecked || null;
   }
-  team.m2.submittedAt = formatNowTime(false);
+  team.m2.verifiedHidden = (team.m2.verifiedHidden === itemId) ? null : itemId;
+  const commonScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
+  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
+  team.m2.score = commonScore + hiddenScore;
   saveState();
   renderAll();
 }
@@ -1334,6 +1487,11 @@ function renderParticipantView() {
   if (!isMissionOpen(2)) {
     cards.push(renderLockedMissionCard(2));
   } else {
+    syncM2State(team);
+    const commonPhotosCount = JEJU_COMMON_ITEMS.filter(it => Boolean(team.m2?.itemPhotos?.[it.id])).length;
+    const hasHiddenPhoto = JEJU_HIDDEN_ITEMS.some(it => Boolean(team.m2?.itemPhotos?.[it.id]));
+    const commonMaxed = commonPhotosCount >= 3;
+
     cards.push(`
       <div id="p-mission-2" class="retreat-card rounded-3xl p-5 sm:p-6 border border-[#E6E1D3]">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -1344,50 +1502,127 @@ function renderParticipantView() {
           <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200">⏰ 17:30 제출 마감 · 원래 동선에서만</span>
         </div>
         <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
-          흔한 제주 5종 중 <strong>서로 다른 3종</strong>을 찾아 사진으로 보내주세요. 히든은 <strong>돌하르방·정낭·방사탑·해녀 조형물/벽화 중 1종!</strong>
+          원하는 항목 카드를 클릭해 발견한 사진을 바로 등록해 주세요! 사진은 언제든 <strong>[수정]</strong>하거나 <strong>[삭제]</strong>할 수 있습니다. (흔한 제주 5종 중 <strong>최대 3종</strong>, 히든 <strong>1종</strong>)
         </p>
-        <div class="space-y-4">
+
+        <div class="space-y-6">
+          <!-- ① 흔한 제주 5종 -->
           <div>
-            <div class="text-xs font-bold text-slate-700 mb-2">① 흔한 제주 5종 중 찾은 항목 체크 (최대 3종 선택 · 현재 ${(team.m2.commonChecked || []).length}/3)</div>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <div class="flex items-center justify-between mb-2.5">
+              <div class="text-xs sm:text-sm font-extrabold text-[#1D5266] flex items-center gap-1.5">
+                <span>① 흔한 제주 5종</span>
+                <span class="text-[11px] font-medium text-slate-500">(서로 다른 3종 사진 등록 · 1종당 5점)</span>
+              </div>
+              <span class="text-xs font-black px-2.5 py-0.5 rounded-full ${commonPhotosCount >= 3 ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-[#E0F7FA] text-[#0097A7] border border-[#0097A7]/30'}">
+                ${commonPhotosCount}/3종 등록
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
               ${JEJU_COMMON_ITEMS.map(item => {
-                const checked = (team.m2.commonChecked || []).includes(item.id);
-                return `<button type="button" onclick="toggleM2CommonItem(${tid}, '${item.id}')" class="p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${checked ? 'bg-[#E0F7FA] border-[#0097A7] text-[#1D5266] font-extrabold shadow-xs' : 'bg-white border-slate-200 text-slate-600'}">
-                  <span class="text-base">${item.icon}</span>
-                  <span class="text-xs leading-tight">${item.label}</span>
-                </button>`;
+                const photoSrc = team.m2?.itemPhotos?.[item.id];
+                if (photoSrc) {
+                  return `
+                    <div class="rounded-2xl p-2.5 border-2 border-[#0097A7] bg-[#F0FAFA] flex flex-col justify-between shadow-xs transition">
+                      <div class="flex items-center justify-between gap-1 mb-1.5">
+                        <div class="flex items-center gap-1 min-w-0">
+                          <span class="text-base">${item.icon}</span>
+                          <span class="text-xs font-black text-[#1D5266] truncate">${item.label}</span>
+                        </div>
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-[#0097A7] text-white shrink-0">등록됨</span>
+                      </div>
+                      <div class="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden border border-[#0097A7]/30 bg-slate-100 group">
+                        <img src="${photoSrc}" onclick="openLightbox('${photoSrc}')" class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" title="클릭하여 확대" />
+                      </div>
+                      <div class="grid grid-cols-2 gap-1.5 mt-2">
+                        <label class="py-1 px-1.5 rounded-lg bg-white border border-[#0097A7]/40 hover:bg-[#E0F7FA] text-[#1D5266] text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-2xs">
+                          <span>🔄</span><span>수정</span>
+                          <input type="file" accept="image/*" class="hidden" onchange="uploadM2ItemPhoto(${tid}, '${item.id}', this, false)" />
+                        </label>
+                        <button type="button" onclick="removeM2ItemPhoto(${tid}, '${item.id}')" class="py-1 px-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-2xs">
+                          <span>🗑️</span><span>삭제</span>
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                } else if (commonMaxed) {
+                  return `
+                    <div onclick="showToast('흔한 제주 5종은 최대 3종까지만 등록 가능합니다. 변경을 원하시면 이미 등록된 항목을 먼저 [삭제]해주세요.', 'info')" class="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-3 sm:p-4 flex flex-col items-center justify-center text-center opacity-60 cursor-not-allowed min-h-[140px] select-none">
+                      <span class="text-2xl mb-1 grayscale">${item.icon}</span>
+                      <span class="text-xs font-bold text-slate-500 leading-tight">${item.label}</span>
+                      <span class="mt-2 text-[10px] font-bold text-slate-400 bg-slate-200/80 px-2 py-0.5 rounded-full">3종 완료</span>
+                    </div>
+                  `;
+                } else {
+                  return `
+                    <label class="rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#0097A7] hover:bg-[#F0FAFA] bg-white cursor-pointer transition p-3 sm:p-4 flex flex-col items-center justify-center text-center group min-h-[140px]">
+                      <span class="text-2xl mb-1 group-hover:scale-110 transition duration-150">${item.icon}</span>
+                      <span class="text-xs font-bold text-slate-800 group-hover:text-[#1D5266] leading-tight">${item.label}</span>
+                      <span class="mt-2.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 group-hover:bg-[#E0F7FA] text-slate-600 group-hover:text-[#0097A7] flex items-center gap-1 transition">
+                        <span>📷</span><span>사진 올리기</span>
+                      </span>
+                      <input type="file" accept="image/*" class="hidden" onchange="uploadM2ItemPhoto(${tid}, '${item.id}', this, false)" />
+                    </label>
+                  `;
+                }
               }).join('')}
             </div>
           </div>
+
+          <!-- ② 히든 미션 4종 -->
           <div>
-            <div class="text-xs font-bold text-amber-800 mb-2">② 🌟 히든 미션 4종 중 찾은 1종 체크 (선택 보너스)</div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="flex items-center justify-between mb-2.5">
+              <div class="text-xs sm:text-sm font-extrabold text-amber-900 flex items-center gap-1.5">
+                <span>② 🌟 히든 미션 4종</span>
+                <span class="text-[11px] font-medium text-amber-700">(1종 선택 보너스 +5점 · 돌하르방/정낭/방사탑/해녀)</span>
+              </div>
+              <span class="text-xs font-black px-2.5 py-0.5 rounded-full ${hasHiddenPhoto ? 'bg-amber-200 text-amber-950 border border-amber-400' : 'bg-amber-50 text-amber-800 border border-amber-200'}">
+                ${hasHiddenPhoto ? '⭐ 1종 등록 완료' : '미등록 (0/1)'}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
               ${JEJU_HIDDEN_ITEMS.map(item => {
-                const checked = team.m2.hiddenChecked === item.id;
-                return `<button type="button" onclick="selectM2HiddenItem(${tid}, '${item.id}')" class="p-2.5 rounded-xl border text-left transition flex items-center gap-2 ${checked ? 'bg-amber-100 border-amber-500 text-amber-900 font-extrabold shadow-xs' : 'bg-white border-slate-200 text-slate-600'}">
-                  <span class="text-base">${item.icon}</span>
-                  <span class="text-xs leading-tight">${item.label}</span>
-                </button>`;
+                const photoSrc = team.m2?.itemPhotos?.[item.id];
+                if (photoSrc) {
+                  return `
+                    <div class="rounded-2xl p-2.5 border-2 border-amber-500 bg-amber-50/90 flex flex-col justify-between shadow-xs transition">
+                      <div class="flex items-center justify-between gap-1 mb-1.5">
+                        <div class="flex items-center gap-1 min-w-0">
+                          <span class="text-base">${item.icon}</span>
+                          <span class="text-xs font-black text-amber-950 truncate">${item.label}</span>
+                        </div>
+                        <span class="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-amber-600 text-white shrink-0">+5점</span>
+                      </div>
+                      <div class="relative w-full h-28 sm:h-32 rounded-xl overflow-hidden border border-amber-300 bg-amber-100 group">
+                        <img src="${photoSrc}" onclick="openLightbox('${photoSrc}')" class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" title="클릭하여 확대" />
+                      </div>
+                      <div class="grid grid-cols-2 gap-1.5 mt-2">
+                        <label class="py-1 px-1.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-[11px] font-bold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-2xs">
+                          <span>🔄</span><span>수정</span>
+                          <input type="file" accept="image/*" class="hidden" onchange="uploadM2ItemPhoto(${tid}, '${item.id}', this, true)" />
+                        </label>
+                        <button type="button" onclick="removeM2ItemPhoto(${tid}, '${item.id}')" class="py-1 px-1.5 rounded-lg bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-[11px] font-bold transition flex items-center justify-center gap-1 shadow-2xs">
+                          <span>🗑️</span><span>삭제</span>
+                        </button>
+                      </div>
+                    </div>
+                  `;
+                } else {
+                  return `
+                    <label class="rounded-2xl border-2 border-dashed border-amber-300/80 hover:border-amber-500 hover:bg-amber-50/70 bg-white cursor-pointer transition p-3 sm:p-4 flex flex-col items-center justify-center text-center group min-h-[140px]">
+                      <span class="text-2xl mb-1 group-hover:scale-110 transition duration-150">${item.icon}</span>
+                      <span class="text-xs font-bold text-slate-800 group-hover:text-amber-900 leading-tight">${item.label}</span>
+                      <span class="mt-2.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-50 group-hover:bg-amber-100 text-amber-800 flex items-center gap-1 transition">
+                        <span>⭐</span><span>${hasHiddenPhoto ? '교체 올리기' : '히든 올리기'}</span>
+                      </span>
+                      <input type="file" accept="image/*" class="hidden" onchange="uploadM2ItemPhoto(${tid}, '${item.id}', this, true)" />
+                    </label>
+                  `;
+                }
               }).join('')}
             </div>
-          </div>
-          <div>
-            <div class="text-xs font-bold text-slate-700 mb-2">③ 발견 인증 사진 첨부 (최대 4장)</div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              ${(team.m2.photos || []).map((src, i) => `
-                <div class="relative h-28 rounded-xl overflow-hidden border border-slate-200">
-                  <img src="${src}" onclick="openLightbox('${src}')" class="w-full h-full object-cover cursor-zoom-in" />
-                  <button onclick="removeM2Photo(${tid}, ${i})" class="absolute top-1.5 right-1.5 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-full">삭제</button>
-                </div>
-              `).join('')}
-              ${(team.m2.photos || []).length < 4 ? `
-                <label class="h-28 rounded-xl border-2 border-dashed border-slate-300 hover:border-[#0097A7] bg-slate-50/70 flex flex-col items-center justify-center cursor-pointer transition">
-                  <span class="text-lg">➕</span>
-                  <span class="text-[11px] font-bold text-slate-600">사진 추가</span>
-                  <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 2, this)" />
-                </label>
-              ` : ''}
-            </div>
+            ${hasHiddenPhoto ? '<p class="text-[11px] text-amber-800/80 mt-2">* 히든 미션은 최대 1종만 인정됩니다. 다른 항목을 등록하면 기존 등록된 히든 사진이 자동으로 교체됩니다.</p>' : ''}
           </div>
         </div>
       </div>
@@ -1915,6 +2150,7 @@ function renderTfDashboardView() {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           ${[1, 2, 3].map(tid => {
             const team = appState.teams[tid];
+            syncM2State(team);
             const sc = getMission2Score(team);
             const hasPhotos = (team.m2.photos || []).length > 0;
             const isGraded = Boolean(team.m2.graded);
@@ -1944,49 +2180,79 @@ function renderTfDashboardView() {
                   </div>
                 ` : ''}
 
-                <!-- Common items -->
-                <div class="space-y-1.5">
-                  <div class="text-[11px] font-bold text-slate-500 flex items-center justify-between">
-                    <span>일반 5종 (최대 3종 인정)</span>
-                    <span class="text-[10px] text-slate-400 font-normal">초록: 인정 / 취소선: 불인정</span>
+                <!-- 1:1 Item Photo Verification List -->
+                <div class="space-y-2.5 pt-1">
+                  <!-- 흔한 제주 5종 -->
+                  <div>
+                    <div class="text-[11px] font-bold text-slate-600 flex items-center justify-between mb-1.5">
+                      <span>일반 5종 (최대 3종 인정)</span>
+                      <span class="text-[10px] text-slate-400">버튼으로 인정/불인정 토글</span>
+                    </div>
+                    <div class="space-y-1.5">
+                      ${JEJU_COMMON_ITEMS.map(item => {
+                        const photoSrc = team.m2?.itemPhotos?.[item.id];
+                        const verified = verifiedCommon.includes(item.id);
+                        if (photoSrc) {
+                          return `
+                            <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl border ${verified ? 'bg-[#E0F7FA]/50 border-[#0097A7]' : 'bg-rose-50/60 border-rose-200'}">
+                              <div class="flex items-center gap-2 min-w-0">
+                                <img src="${photoSrc}" onclick="openLightbox('${photoSrc}')" class="w-10 h-10 rounded-lg object-cover border cursor-zoom-in shrink-0" title="클릭하여 확대" />
+                                <div class="min-w-0">
+                                  <div class="text-xs font-bold text-slate-800 truncate">${item.icon} ${item.label}</div>
+                                  <div class="text-[10px] font-extrabold ${verified ? 'text-[#0097A7]' : 'text-rose-500'}">
+                                    ${isGraded ? (verified ? '✅ AI 인정 (+5점)' : '❌ AI 불인정 (0점)') : '📷 사진 등록됨'}
+                                  </div>
+                                </div>
+                              </div>
+                              <button type="button" onclick="toggleM2CommonItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition ${verified ? 'bg-white border border-[#0097A7] text-[#1D5266] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300' : 'bg-white border border-slate-300 text-slate-600 hover:bg-[#E0F7FA] hover:text-[#0097A7] hover:border-[#0097A7]'}">
+                                ${verified ? '불인정 전환' : '인정 전환'}
+                              </button>
+                            </div>
+                          `;
+                        } else {
+                          return `
+                            <div class="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-400 text-xs">
+                              <span class="text-[11px]">${item.icon} ${item.label}</span>
+                              <span class="text-[10px]">미제출</span>
+                            </div>
+                          `;
+                        }
+                      }).join('')}
+                    </div>
                   </div>
-                  <div class="flex flex-wrap gap-1.5">
-                    ${JEJU_COMMON_ITEMS.map(item => {
-                      const claimed = (team.m2.commonChecked || []).includes(item.id);
-                      const verified = verifiedCommon.includes(item.id);
-                      return `
-                        <button onclick="toggleM2CommonItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold border transition ${verified ? 'bg-[#E0F7FA] border-[#0097A7] text-[#1D5266]' : claimed ? 'bg-rose-50 border-rose-300 text-rose-500 line-through' : 'bg-slate-50 border-slate-200 text-slate-400'}">
-                          ${item.icon} ${item.label} ${verified ? '✅' : claimed ? '❌' : ''}
-                        </button>
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
 
-                <!-- Hidden items -->
-                <div class="space-y-1.5">
-                  <div class="text-[11px] font-bold text-amber-700 flex items-center justify-between">
-                    <span>히든 4종 중 1종 (+5점 보너스)</span>
-                  </div>
-                  <div class="flex flex-wrap gap-1.5">
-                    ${JEJU_HIDDEN_ITEMS.map(item => {
-                      const claimed = team.m2.hiddenChecked === item.id;
-                      const verified = verifiedHidden === item.id;
-                      return `
-                        <button onclick="selectM2HiddenItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[11px] font-bold border transition ${verified ? 'bg-amber-100 border-amber-500 text-amber-900' : claimed ? 'bg-rose-50 border-rose-300 text-rose-500 line-through' : 'bg-slate-50 border-slate-200 text-slate-400'}">
-                          ${item.icon} ${item.label} ${verified ? '⭐' : claimed ? '❌' : ''}
-                        </button>
-                      `;
-                    }).join('')}
-                  </div>
-                </div>
-
-                <!-- Submitted Photos -->
-                <div class="space-y-1 pt-1">
-                  <span class="text-[11px] font-bold text-slate-500 block">제출 사진 (${(team.m2.photos || []).length}/4장)</span>
-                  <div class="grid grid-cols-4 gap-1.5">
-                    ${(team.m2.photos || []).map(src => `<img src="${src}" onclick="openLightbox('${src}')" class="h-14 w-full object-cover rounded-lg border cursor-zoom-in hover:opacity-80 transition" title="클릭하여 확대" />`).join('')}
-                    ${(team.m2.photos || []).length === 0 ? '<span class="text-xs text-slate-400 col-span-4 py-2 text-center italic bg-slate-50 rounded-lg">사진 미제출</span>' : ''}
+                  <!-- 히든 미션 4종 -->
+                  <div class="pt-1.5 border-t border-slate-100">
+                    <div class="text-[11px] font-bold text-amber-800 flex items-center justify-between mb-1.5">
+                      <span>히든 4종 (최대 1종 인정 · +5점)</span>
+                    </div>
+                    <div class="space-y-1.5">
+                      ${JEJU_HIDDEN_ITEMS.map(item => {
+                        const photoSrc = team.m2?.itemPhotos?.[item.id];
+                        const verified = verifiedHidden === item.id;
+                        if (photoSrc) {
+                          return `
+                            <div class="flex items-center justify-between gap-2 p-1.5 rounded-xl border ${verified ? 'bg-amber-50 border-amber-500' : 'bg-rose-50/60 border-rose-200'}">
+                              <div class="flex items-center gap-2 min-w-0">
+                                <img src="${photoSrc}" onclick="openLightbox('${photoSrc}')" class="w-10 h-10 rounded-lg object-cover border cursor-zoom-in shrink-0" title="클릭하여 확대" />
+                                <div class="min-w-0">
+                                  <div class="text-xs font-bold text-amber-950 truncate">${item.icon} ${item.label}</div>
+                                  <div class="text-[10px] font-extrabold ${verified ? 'text-amber-800' : 'text-rose-500'}">
+                                    ${isGraded ? (verified ? '⭐ 히든 인정 (+5점)' : '❌ AI 불인정 (0점)') : '⭐ 히든 사진 등록됨'}
+                                  </div>
+                                </div>
+                              </div>
+                              <button type="button" onclick="selectM2HiddenItem(${tid}, '${item.id}')" class="px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition ${verified ? 'bg-white border border-amber-500 text-amber-900 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-300' : 'bg-white border border-slate-300 text-slate-600 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-500'}">
+                                ${verified ? '불인정 전환' : '인정 전환'}
+                              </button>
+                            </div>
+                          `;
+                        } else {
+                          return '';
+                        }
+                      }).join('')}
+                      ${!JEJU_HIDDEN_ITEMS.some(it => Boolean(team.m2?.itemPhotos?.[it.id])) ? '<div class="text-[11px] text-slate-400 p-2 bg-slate-50 rounded-xl text-center">히든 미션 사진 미제출</div>' : ''}
+                    </div>
                   </div>
                 </div>
               </div>
