@@ -692,40 +692,52 @@ function selectLoginTeam(teamId) {
   const submitIconEl = document.getElementById('btn-login-submit-icon');
   const pinInput = document.getElementById('input-team-login-pin');
   const nameInput = document.getElementById('input-team-login-name');
+  const nameBoxEl = document.getElementById('login-team-name-box');
+  const namePreviewEl = document.getElementById('login-team-name-preview');
+  const nameDisplayEl = document.getElementById('login-team-name-display');
 
-  if (nameInput) {
-    nameInput.value = curTeam.name || `${loginSelectedTeamId}팀`;
-  }
   if (pinInput) {
     pinInput.value = '';
     pinInput.focus();
   }
 
   if (isUnset) {
-    // 최초 등록 모드 (첫 팀원이 비번과 팀명을 직접 세팅)
+    // 최초 등록 모드 (첫 팀원이 비번 4자리와 팀명을 직접 세팅)
+    if (nameBoxEl) nameBoxEl.classList.remove('hidden');
+    if (namePreviewEl) namePreviewEl.classList.add('hidden');
+    if (nameInput) {
+      nameInput.value = curTeam.name || `${loginSelectedTeamId}팀`;
+    }
+
     if (titleEl) titleEl.textContent = `${curTeam.name} 최초 등록 & 비밀번호 설정`;
-    if (subTitleEl) subTitleEl.innerHTML = `아직 비밀번호가 없습니다! 팀원들과 함께 사용할 <strong>비밀번호(4자리)와 팀명</strong>을 설정해주세요.`;
-    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 직접 생성';
-    if (pinHintEl) pinHintEl.textContent = '✨ 최초 설정';
+    if (subTitleEl) subTitleEl.innerHTML = `우리 팀 첫 입장! <strong>숫자 4자리 비밀번호</strong>와 <strong>팀명</strong>을 정해주세요.`;
+    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 사용할 팀 비밀번호 (숫자 4자리)';
+    if (pinHintEl) pinHintEl.textContent = '숫자 4자리 필수';
     if (pinSubhintEl) {
-      pinSubhintEl.textContent = '💡 여기서 정한 비밀번호로 같은 팀원들도 입장하게 됩니다.';
+      pinSubhintEl.textContent = '💡 여기서 정한 4자리 번호로 다른 팀원들도 입장하게 됩니다.';
       pinSubhintEl.classList.remove('hidden');
     }
-    if (pinInput) pinInput.placeholder = '팀원들과 쓸 비밀번호 (예: 1234)';
+    if (pinInput) pinInput.placeholder = '숫자 4자리 (예: 1234)';
     if (submitTextEl) submitTextEl.textContent = '우리 팀 비밀번호 & 팀명 등록하고 입장하기';
     if (submitIconEl) submitIconEl.textContent = '✨';
   } else {
-    // 기존 설정된 비번으로 팀원 입장 모드
+    // 기존 설정된 비번으로 팀원 입장 모드 (팀명 입력칸 숨기고 비번 4자리만 입력)
+    if (nameBoxEl) nameBoxEl.classList.add('hidden');
+    if (namePreviewEl) {
+      namePreviewEl.classList.remove('hidden');
+      if (nameDisplayEl) nameDisplayEl.textContent = curTeam.name;
+    }
+
     if (titleEl) titleEl.textContent = `${curTeam.name} 입장하기`;
-    if (subTitleEl) subTitleEl.innerHTML = `팀원이 이미 비밀번호를 설정했습니다.<br>공유받은 <strong>팀 비밀번호</strong>를 입력해주세요.`;
-    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 입력';
-    if (pinHintEl) pinHintEl.textContent = '🔒 확인';
+    if (subTitleEl) subTitleEl.innerHTML = `팀원이 이미 등록을 완료했습니다!<br>공유받은 <strong>팀 비밀번호 4자리</strong>를 입력해주세요.`;
+    if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 입력 (숫자 4자리)';
+    if (pinHintEl) pinHintEl.textContent = '숫자 4자리';
     if (pinSubhintEl) {
-      pinSubhintEl.textContent = '💡 비밀번호를 분실하신 경우 TF 운영진 대시보드에서 바로 확인 가능합니다.';
+      pinSubhintEl.textContent = '💡 비밀번호를 모르시는 경우 TF 운영진에게 문의하시면 즉시 확인 가능합니다.';
       pinSubhintEl.classList.remove('hidden');
     }
-    if (pinInput) pinInput.placeholder = '팀 비밀번호 입력';
-    if (submitTextEl) submitTextEl.textContent = '우리 팀으로 입장하기';
+    if (pinInput) pinInput.placeholder = '비밀번호 4자리 입력';
+    if (submitTextEl) submitTextEl.textContent = `${curTeam.name} 입장하기`;
     if (submitIconEl) submitIconEl.textContent = '🚀';
   }
 
@@ -761,24 +773,34 @@ function submitTeamLogin() {
 
   if (!enteredPin) {
     if (errMsg) {
-      errMsg.textContent = '비밀번호를 입력해주세요.';
+      errMsg.textContent = '비밀번호 숫자 4자리를 입력해주세요.';
       errMsg.classList.remove('hidden');
     }
     pinInput?.focus();
     return;
   }
 
-  const nameInput = document.getElementById('input-team-login-name');
-  const customName = (nameInput ? nameInput.value : '').trim();
+  // 비밀번호 4자리 숫자 엄격 검증
+  if (enteredPin.length !== 4 || !/^\d{4}$/.test(enteredPin)) {
+    if (errMsg) {
+      errMsg.textContent = '비밀번호는 반드시 숫자 4자리로 입력해주세요. (예: 1234)';
+      errMsg.classList.remove('hidden');
+    }
+    pinInput?.focus();
+    return;
+  }
 
   if (!existingPin) {
-    // 최초 등록: 비밀번호를 직접 생성하는 경우
-    if (enteredPin.length < 2) {
+    // 최초 등록: 첫 사람이 팀명과 4자리 비밀번호를 등록
+    const nameInput = document.getElementById('input-team-login-name');
+    const customName = (nameInput ? nameInput.value : '').trim();
+
+    if (!customName) {
       if (errMsg) {
-        errMsg.textContent = '비밀번호를 2자리 이상 입력해주세요.';
+        errMsg.textContent = '우리 팀명을 1글자 이상 입력해주세요. (예: 감귤프렌즈)';
         errMsg.classList.remove('hidden');
       }
-      pinInput?.focus();
+      nameInput?.focus();
       return;
     }
 
@@ -795,9 +817,7 @@ function submitTeamLogin() {
 
     if (!appState.settings.teamPins) appState.settings.teamPins = {};
     appState.settings.teamPins[tid] = enteredPin;
-    if (customName) {
-      appState.teams[tid].name = customName;
-    }
+    appState.teams[tid].name = customName;
 
     appState.selectedTeamId = tid;
     localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
@@ -806,23 +826,18 @@ function submitTeamLogin() {
 
     closeTeamLoginModal();
     renderAll();
-    showToast(`🎉 ${appState.teams[tid].name} 비밀번호('${enteredPin}') 등록 완료! 팀원들에게 공유해주세요.`, 'success');
+    showToast(`🎉 '${customName}' 팀 등록 완료! 팀원들에게 비밀번호(${enteredPin})를 알려주세요.`, 'success');
     return;
   }
 
-  // 기존 비밀번호 검증
+  // 기존 비밀번호 검증 (팀명은 변경하지 않고 기존 팀명 유지)
   if (enteredPin !== existingPin) {
     if (errMsg) {
-      errMsg.textContent = '비밀번호가 올바르지 않습니다. (분실 시 TF 운영진에게 문의하세요)';
+      errMsg.textContent = '비밀번호 4자리가 일치하지 않습니다. (분실 시 TF 운영진에게 문의하세요)';
       errMsg.classList.remove('hidden');
     }
     pinInput?.select();
     return;
-  }
-
-  // 비밀번호 일치: 팀명 변경사항 반영
-  if (customName) {
-    appState.teams[tid].name = customName;
   }
 
   appState.selectedTeamId = tid;
@@ -853,8 +868,8 @@ function openChangeTeamNameModal() {
   }
   const pinInput = document.getElementById('input-change-team-pin');
   if (pinInput) {
-    const curPin = (appState.settings.teamPins?.[appState.selectedTeamId] || '').trim();
-    pinInput.value = curPin;
+    pinInput.value = '';
+    pinInput.placeholder = '새 숫자 4자리 입력 (변경 시만)';
   }
   modal.classList.remove('hidden');
 }
@@ -877,14 +892,23 @@ function saveNewTeamName() {
 
   const tid = appState.selectedTeamId;
   appState.teams[tid].name = newName;
+
   if (newPin) {
+    if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+      showToast('새 비밀번호는 숫자 4자리여야 합니다. (예: 1234)', 'error');
+      pinInput?.focus();
+      return;
+    }
     if (!appState.settings.teamPins) appState.settings.teamPins = {};
     appState.settings.teamPins[tid] = newPin;
+    showToast(`팀명과 새 비밀번호(${newPin})가 저장되었습니다!`, 'success');
+  } else {
+    showToast(`팀명이 '${newName}'(으)로 변경되었습니다!`, 'success');
   }
+
   saveState();
   closeChangeTeamNameModal();
   renderAll();
-  showToast(`팀 정보가 성공적으로 변경되었습니다!`, 'success');
 }
 
 /* ==========================================================================

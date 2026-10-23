@@ -457,31 +457,39 @@
           </div>
         </div>
 
-        <!-- 2. Team PIN -->
+        <!-- 2. Team PIN (Exactly 4 digits) -->
         <div class="p-3.5 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3]">
           <div class="flex items-center justify-between mb-1.5">
-            <label id="label-team-login-pin" class="text-xs font-extrabold text-[#1D3C34]">2️⃣ 팀 비밀번호</label>
-            <span class="text-[10px] text-[#F27A24] font-bold" id="login-pin-hint">직접 설정</span>
+            <label id="label-team-login-pin" class="text-xs font-extrabold text-[#1D3C34]">2️⃣ 팀 비밀번호 (숫자 4자리)</label>
+            <span class="text-[10px] text-[#F27A24] font-bold" id="login-pin-hint">숫자 4자리</span>
           </div>
           <input
             id="input-team-login-pin"
-            type="text"
+            type="tel"
             inputmode="numeric"
-            maxlength="10"
-            placeholder="비밀번호 입력 (예: 1234)"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-center text-sm font-bold tracking-widest focus:outline-none focus:border-[#1D3C34]"
+            pattern="[0-9]*"
+            maxlength="4"
+            placeholder="숫자 4자리 입력 (예: 1234)"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-center text-lg font-black tracking-widest focus:outline-none focus:border-[#1D3C34]"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             onkeydown="if(event.key === 'Enter') submitTeamLogin()"
           />
           <p id="login-pin-subhint" class="text-[10px] text-[#4A5255] mt-1.5 text-center">
-            💡 여기서 정한 비밀번호로 같은 팀원들도 입장하게 됩니다.
+            💡 숫자 4자리를 입력해주세요 (예: 1234)
           </p>
         </div>
 
-        <!-- 3. Team Name Setting -->
-        <div class="p-3.5 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30">
+        <!-- 3-A. Team Name Preview (Shown when already registered by first person) -->
+        <div id="login-team-name-preview" class="p-3 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30 text-center hidden">
+          <span class="text-xs text-[#4A5255]">등록된 우리 팀명: </span>
+          <span id="login-team-name-display" class="font-black text-[#1D3C34] text-sm ml-1 underline decoration-[#F27A24] decoration-2 underline-offset-2"></span>
+        </div>
+
+        <!-- 3-B. Team Name Setting (Only shown when first registering!) -->
+        <div id="login-team-name-box" class="p-3.5 rounded-2xl bg-[#FFF3E8] border border-[#F27A24]/30">
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs font-extrabold text-[#1D3C34]">3️⃣ 우리 팀명 정하기 (수정 가능)</label>
-            <span class="text-[10px] text-[#4A5255]">자유롭게 입력</span>
+            <label class="text-xs font-extrabold text-[#1D3C34]">3️⃣ 우리 팀명 정하기</label>
+            <span class="text-[10px] text-[#4A5255]">최초 1회 설정</span>
           </div>
           <input
             id="input-team-login-name"
@@ -492,7 +500,7 @@
             onkeydown="if(event.key === 'Enter') submitTeamLogin()"
           />
           <p class="text-[10px] text-[#4A5255] mt-1.5 text-center">
-            💡 팀원들과 정한 이름을 입력하면 전체 스코어보드에 실시간 반영됩니다.
+            💡 팀원들과 정한 이름을 입력해주세요. (팀명 변경은 로그인 후 가능합니다)
           </p>
         </div>
 
@@ -538,15 +546,18 @@
 
         <div>
           <div class="flex items-center justify-between mb-1">
-            <label class="text-xs font-extrabold text-[#1D3C34]">🔐 팀 비밀번호</label>
+            <label class="text-xs font-extrabold text-[#1D3C34]">🔐 팀 비밀번호 (숫자 4자리)</label>
             <span class="text-[10px] text-[#4A5255]">현재 비번 유지 시 공백</span>
           </div>
           <input
             id="input-change-team-pin"
-            type="text"
-            maxlength="10"
-            placeholder="새 비밀번호 입력 (변경할 경우만)"
-            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#FCFBF7] text-center font-mono text-sm font-bold focus:outline-none focus:border-[#1D3C34]"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="4"
+            placeholder="새 숫자 4자리 입력 (변경 시만)"
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-[#FCFBF7] text-center font-mono text-base font-black tracking-widest focus:outline-none focus:border-[#1D3C34]"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             onkeydown="if(event.key === 'Enter') saveNewTeamName()"
           />
         </div>
