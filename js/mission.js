@@ -227,7 +227,6 @@ function getInitialState() {
       manualOpen: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true }
     },
     settings: {
-      adminPin: '',
       aiModel: 'gpt-4o',
       aiPersona: 'warm',
       cloudDbUrl: '',
@@ -272,8 +271,9 @@ function loadState() {
         ...((parsed.settings && parsed.settings.teamPins) || {})
       }
     };
-    // 보안 조치: 기존 localStorage에 저장되어 있던 apiKey 안전 삭제 (운영 데이터 유지)
+    // 보안 조치: 기존 localStorage에 저장되어 있던 apiKey 및 adminPin 안전 삭제 (운영 데이터 유지)
     delete cleanSettings.apiKey;
+    delete cleanSettings.adminPin;
 
     return {
       ...base,
@@ -952,27 +952,16 @@ function sanitizeGradingResponse(missionNum, parsed) {
 }
 
 async function callAiGradingApi(payload) {
-  // 운영 보안 정책: 브라우저 직접 OpenAI 호출 및 클라이언트 키 전달을 완전히 차단하고,
-  // 오직 TF 인증 헤더(x-tf-pin)를 갖춘 Vercel 서버리스 엔드포인트(/api/grade)만을 통해 채점
-  let tfAdminPin = (appState.settings.adminPin || '').trim();
-  if (!tfAdminPin) {
-    tfAdminPin = (prompt('TF 운영진 관리자 PIN을 입력하세요:') || '').trim();
-    if (tfAdminPin) {
-      appState.settings.adminPin = tfAdminPin;
-      saveState();
-    }
-  }
-  if (!tfAdminPin) {
-    throw new Error('TF 관리자 PIN이 입력되지 않아 채점 요청이 취소되었습니다.');
-  }
-
+  // 운영 보안 정책: 브라우저 직접 OpenAI 호출 및 클라이언트 키 전달을 차단하고,
+  // 서버 인증 세션(HttpOnly tf_session 쿠키)과 CSRF 방어 토큰을 통해 채점 엔드포인트(/api/grade) 호출
   let res;
   try {
     res = await fetch('/api/grade', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
-        'x-tf-pin': tfAdminPin
+        'x-csrf-token': appState.csrfToken || ''
       },
       body: JSON.stringify(payload)
     });
@@ -986,16 +975,18 @@ async function callAiGradingApi(payload) {
 
   const errJson = await res.json().catch(() => ({}));
   if (res.status === 401) {
-    throw new Error(`TF 운영진 인증 실패 (401): ${errJson?.error || 'TF 관리자 PIN을 확인해 주세요.'}`);
+    appState.tfUnlocked = false;
+    renderAll();
+    throw new Error(`TF 운영진 인증 필요/만료 (401): ${errJson?.error || 'TF 대시보드에 다시 로그인해 주세요.'}`);
   }
   if (res.status === 403) {
-    throw new Error(`접근 차단 (403): ${errJson?.error || '반복된 인증 실패로 일시 차단되었습니다.'}`);
+    throw new Error(`접근 거부 (403): ${errJson?.error || '유효하지 않은 요청(CSRF 검증 실패)입니다.'}`);
   }
   if (res.status === 413) {
     throw new Error(`사진 용량 초과 (413): ${errJson?.error || '사진 파일 용량이 너무 큽니다 (최대 4.5MB).'}`);
   }
   if (res.status === 429) {
-    throw new Error(`요청 한도 초과 (429): ${errJson?.error || '1분당 최대 20회 채점 가능합니다. 잠시 후 다시 시도해 주세요.'}`);
+    throw new Error(`요청 한도 초과 (429): ${errJson?.error || '단시간 내 채점 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.'}`);
   }
   if (res.status === 404 || res.status === 405) {
     throw new Error('AI 자동 심사는 Vercel 배포 환경(/api/grade)에서만 제공됩니다. 로컬 환경에서는 [📋 프롬프트 복사] 기능을 이용해 주세요.');
@@ -1158,9 +1149,10 @@ async function runAiGradeMission2(teamId) {
 async function gradeAllPendingPhotos() {
   const targets = [];
   [1, 2, 3].forEach(tid => {
-    // 2번 미션
+    // 2번 미션: 사진이 등록되어 있고 아직 채점되지 않았거나 needs_review 상태인 경우
     const m2 = appState.teams[tid].m2;
-    if (m2?.photos?.length > 0) {
+    const hasM2Photos = Object.values(m2?.itemPhotos || {}).some(Boolean) || (m2?.photos?.length > 0);
+    if (hasM2Photos && (!m2.graded || Object.values(m2?.itemResults || {}).some(r => r.status === 'needs_review'))) {
       targets.push({ tid, mNum: 2 });
     }
     // 1, 4, 5번 미션
@@ -1176,7 +1168,12 @@ async function gradeAllPendingPhotos() {
     return;
   }
   showToast(`총 ${targets.length}건의 사진 채점을 순차적으로 시작합니다...`, 'info');
-  for (const t of targets) {
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i];
+    if (i > 0) {
+      // 일괄 채점 속도 조절(Pacing): 서버리스 인스턴스 과부하 방지 및 Rate Limit 여유 확보 (1.5초 간격)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
     if (t.mNum === 2) {
       await runAiGradeMission2(t.tid);
     } else {
@@ -3363,45 +3360,107 @@ function switchMode(newMode) {
   renderAll();
 }
 
-function handleTfAccess() {
+async function handleTfAccess() {
   if (appState.tfUnlocked && appState.mode !== 'participant') {
-    switchMode('participant');
+    await logoutTfSession();
   } else {
+    // 세션 활성 여부 서버 검증 (/api/auth?action=me)
+    try {
+      const res = await fetch('/api/auth?action=me', { credentials: 'same-origin' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.authenticated && data.csrfToken) {
+        appState.tfUnlocked = true;
+        appState.csrfToken = data.csrfToken;
+        appState.mode = 'tf';
+        saveState(true);
+        renderAll();
+        showToast('TF 운영진 대시보드로 진입했습니다.', 'success');
+        return;
+      }
+    } catch (e) {}
     openPinModal();
   }
 }
 
 function openPinModal() {
-  document.getElementById('pin-error-msg').classList.add('hidden');
-  document.getElementById('input-tf-pin').value = '';
+  const errorEl = document.getElementById('pin-error-msg');
+  if (errorEl) errorEl.classList.add('hidden');
+  const inputEl = document.getElementById('input-tf-pin');
+  if (inputEl) inputEl.value = '';
   document.getElementById('modal-pin').classList.remove('hidden');
-  setTimeout(() => document.getElementById('input-tf-pin').focus(), 50);
+  setTimeout(() => inputEl?.focus(), 50);
 }
 
 function closePinModal() {
   document.getElementById('modal-pin').classList.add('hidden');
 }
 
-function submitPinLogin(e) {
+async function submitPinLogin(e) {
   e.preventDefault();
-  const val = document.getElementById('input-tf-pin').value.trim();
+  const errorEl = document.getElementById('pin-error-msg');
+  const inputEl = document.getElementById('input-tf-pin');
+  const submitBtn = document.getElementById('btn-submit-tf-pin');
+  const val = (inputEl ? inputEl.value : '').trim();
+
+  if (errorEl) errorEl.classList.add('hidden');
+
   if (!val) {
-    document.getElementById('pin-error-msg').classList.remove('hidden');
+    if (errorEl) {
+      errorEl.textContent = '비밀번호를 입력해 주세요.';
+      errorEl.classList.remove('hidden');
+    }
     return;
   }
-  // 관리자 PIN이 이미 설정되어 있는 경우 불일치 시 거부
-  if (appState.settings.adminPin && appState.settings.adminPin !== val) {
-    document.getElementById('pin-error-msg').classList.remove('hidden');
-    return;
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '인증 확인 중...';
   }
-  // TF 로그인 성공 시 입력된 PIN을 저장하여 /api/grade 호출 시 x-tf-pin으로 전송
-  appState.settings.adminPin = val;
-  appState.tfUnlocked = true;
-  appState.mode = 'tf';
-  closePinModal();
-  saveState(true);
-  renderAll();
-  showToast('TF 운영진 전용 대시보드가 열렸습니다.', 'success');
+
+  try {
+    const res = await fetch('/api/auth?action=login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ pin: val })
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data.error || `TF 인증에 실패했습니다 (${res.status}).`);
+    }
+
+    appState.tfUnlocked = true;
+    appState.csrfToken = data.csrfToken || '';
+    appState.mode = 'tf';
+    closePinModal();
+    saveState(true);
+    renderAll();
+    showToast('TF 운영진 전용 대시보드가 열렸습니다 (서버 세션 활성화).', 'success');
+  } catch (err) {
+    if (errorEl) {
+      errorEl.textContent = err.message || '인증에 실패했습니다.';
+      errorEl.classList.remove('hidden');
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '대시보드 열기';
+    }
+  }
+}
+
+async function logoutTfSession() {
+  try {
+    await fetch('/api/auth?action=logout', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+  } catch (e) {}
+  appState.tfUnlocked = false;
+  appState.csrfToken = null;
+  switchMode('participant');
+  showToast('TF 운영진 세션이 안전하게 종료되었습니다.', 'info');
 }
 
 function openSettingsModal() {
@@ -3418,7 +3477,6 @@ function openSettingsModal() {
   if (pin1El) pin1El.value = pins[1] || '';
   if (pin2El) pin2El.value = pins[2] || '';
   if (pin3El) pin3El.value = pins[3] || '';
-  document.getElementById('setting-admin-pin').value = appState.settings.adminPin || '';
   document.getElementById('modal-settings').classList.remove('hidden');
 }
 
@@ -3429,6 +3487,7 @@ function closeSettingsModal() {
 function saveSettingsModal() {
   appState.settings.cloudDbUrl = document.getElementById('setting-cloud-url').value.trim();
   delete appState.settings.apiKey;
+  delete appState.settings.adminPin;
   appState.settings.aiModel = document.getElementById('setting-ai-model').value;
   appState.settings.aiPersona = document.getElementById('setting-ai-persona').value;
   appState.teams[1].name = document.getElementById('setting-team-1').value.trim() || '1팀';
@@ -3442,7 +3501,6 @@ function saveSettingsModal() {
     2: pin2El ? pin2El.value.trim() : '',
     3: pin3El ? pin3El.value.trim() : ''
   };
-  appState.settings.adminPin = document.getElementById('setting-admin-pin').value.trim();
   saveState();
   closeSettingsModal();
   renderAll();
@@ -3710,9 +3768,6 @@ document.addEventListener('DOMContentLoaded', () => {
     appState.settings.cloudDbUrl = dbParam;
     saveState(true);
   }
-  if (params.get('tf') === '1' && !appState.tfUnlocked) {
-    setTimeout(() => openPinModal(), 200);
-  }
 
   // URL 파라미터(?team=1&pin=1111) 팀 자동 인증
   const teamParam = params.get('team');
@@ -3733,6 +3788,31 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isAuthed && [1, 2, 3].includes(savedTeam)) {
     appState.selectedTeamId = savedTeam;
   }
+
+  // 서버 TF 인증 세션 자동 확인 (/api/auth?action=me)
+  fetch('/api/auth?action=me', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.authenticated && data.csrfToken) {
+        appState.tfUnlocked = true;
+        appState.csrfToken = data.csrfToken;
+        if (params.get('tf') === '1') {
+          appState.mode = 'tf';
+        }
+        renderAll();
+      } else {
+        appState.tfUnlocked = false;
+        appState.csrfToken = null;
+        if (params.get('tf') === '1') {
+          openPinModal();
+        }
+      }
+    })
+    .catch(() => {
+      if (params.get('tf') === '1') {
+        openPinModal();
+      }
+    });
 
   renderAll();
   pullFromCloudDb();

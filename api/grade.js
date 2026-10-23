@@ -285,17 +285,49 @@ function sanitizeGradingResponse(missionNum, parsed) {
   };
 }
 
+const crypto = require('crypto');
+
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://nsrzhqcxmejnstlfjhed.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_xkn_YhxEOR0kn7coRE9faA_0LH2lD56';
 const SUPABASE_TABLE = 'jeju_mission_state';
 
 // In-memory L1 cache fallback
 const l1RateLimitMap = new Map();
-const l1AuthFailuresMap = new Map();
 
-async function checkSharedSecurity(clientIp, isAuthAttemptValid) {
+function verifyToken(token, secret) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [data, sig] = parts;
+  try {
+    const expectedSig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) {
+      return null;
+    }
+    const payload = JSON.parse(Buffer.from(data, 'base64url').toString('utf8'));
+    if (payload.exp && payload.exp < Date.now()) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      const key = parts.shift().trim();
+      list[key] = decodeURIComponent(parts.join('='));
+    });
+  }
+  return list;
+}
+
+async function checkSessionRateLimit(sessionKey) {
   const now = Date.now();
-  let auditData = { ipLimits: {}, authFailures: {} };
+  let auditData = { sessionLimits: {} };
 
   try {
     const controller = new AbortController();
@@ -312,92 +344,40 @@ async function checkSharedSecurity(clientIp, isAuthAttemptValid) {
       const rows = await fetchRes.json();
       if (rows?.[0]?.data) {
         auditData = rows[0].data;
-        if (!auditData.ipLimits) auditData.ipLimits = {};
-        if (!auditData.authFailures) auditData.authFailures = {};
+        if (!auditData.sessionLimits) auditData.sessionLimits = {};
       }
     }
   } catch (e) {
-    // Supabase 지연 시 L1 인메모리 캐시 병행 활용
-    auditData = {
-      ipLimits: Object.fromEntries(l1RateLimitMap),
-      authFailures: Object.fromEntries(l1AuthFailuresMap)
-    };
+    auditData = { sessionLimits: Object.fromEntries(l1RateLimitMap) };
   }
 
-  // 1. IP 인증 실패 잠금 검사 (10분 내 5회 이상 실패 시 차단)
-  const failRecord = auditData.authFailures[clientIp];
-  if (failRecord && failRecord.lockedUntil && failRecord.lockedUntil > now) {
-    const remainSec = Math.ceil((failRecord.lockedUntil - now) / 1000);
-    return {
-      allowed: false,
-      status: 403,
-      error: `반복된 TF 인증 실패로 인해 해당 IP의 접근이 차단되었습니다. (${remainSec}초 후 재시도 가능)`
-    };
-  }
-
-  // 2. 인증 실패 시 시도 횟수 증가 및 잠금 기록
-  if (!isAuthAttemptValid) {
-    const currentFails = (failRecord && failRecord.resetAt > now) ? (failRecord.count + 1) : 1;
-    const isNowLocked = (currentFails >= 5);
-    const updatedFail = {
-      count: currentFails,
-      resetAt: now + 10 * 60 * 1000,
-      lockedUntil: isNowLocked ? (now + 10 * 60 * 1000) : null
-    };
-    auditData.authFailures[clientIp] = updatedFail;
-    l1AuthFailuresMap.set(clientIp, updatedFail);
-
-    saveSecurityAuditAsync(auditData);
-
-    return {
-      allowed: false,
-      status: 401,
-      error: isNowLocked
-        ? 'TF 관리자 PIN 5회 연속 오류로 인해 해당 IP가 10분간 차단되었습니다.'
-        : `TF 운영진 인증 실패 (오류 ${currentFails}/5회). 올바른 x-tf-pin 헤더를 제공해 주세요.`
-    };
-  }
-
-  // 3. 인증 성공 시 실패 이력 초기화
-  if (auditData.authFailures[clientIp]) {
-    delete auditData.authFailures[clientIp];
-    l1AuthFailuresMap.delete(clientIp);
-  }
-
-  // 4. IP별 호출 횟수 제한 (공유 저장소 기준 1분당 최대 20회)
-  const limitRecord = auditData.ipLimits[clientIp];
+  // 행사장 동일 Wi-Fi 고려: IP 대신 인증된 TF 세션별로 1분당 최대 30회 독립 할당
+  const limitRecord = auditData.sessionLimits[sessionKey];
   if (limitRecord && limitRecord.resetAt > now) {
-    if (limitRecord.count >= 20) {
+    if (limitRecord.count >= 30) {
       return {
         allowed: false,
         status: 429,
-        error: '단시간 내 채점 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요. (공유 저장소 기준 1분당 최대 20회)'
+        error: '단시간 내 채점 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요. (세션당 1분 최대 30회)'
       };
     }
     limitRecord.count++;
-    l1RateLimitMap.set(clientIp, limitRecord);
+    l1RateLimitMap.set(sessionKey, limitRecord);
   } else {
     const newRecord = { count: 1, resetAt: now + 60 * 1000 };
-    auditData.ipLimits[clientIp] = newRecord;
-    l1RateLimitMap.set(clientIp, newRecord);
+    auditData.sessionLimits[sessionKey] = newRecord;
+    l1RateLimitMap.set(sessionKey, newRecord);
   }
 
   // 만료된 오래된 레코드 정리
-  for (const [ip, rec] of Object.entries(auditData.ipLimits)) {
+  for (const [key, rec] of Object.entries(auditData.sessionLimits)) {
     if (rec.resetAt < now) {
-      delete auditData.ipLimits[ip];
-      l1RateLimitMap.delete(ip);
-    }
-  }
-  for (const [ip, rec] of Object.entries(auditData.authFailures)) {
-    if ((!rec.lockedUntil || rec.lockedUntil < now) && rec.resetAt < now) {
-      delete auditData.authFailures[ip];
-      l1AuthFailuresMap.delete(ip);
+      delete auditData.sessionLimits[key];
+      l1RateLimitMap.delete(key);
     }
   }
 
   saveSecurityAuditAsync(auditData);
-
   return { allowed: true };
 }
 
@@ -429,22 +409,38 @@ module.exports = async function handler(req, res) {
     return res.status(413).json({ error: '요청 본문 크기가 너무 큽니다. (최대 4.5MB 초과)' });
   }
 
-  // 2. TF 운영진 인증 검증 (하드코딩 제거: 서버 환경변수 TF_ADMIN_PIN 미설정 시 즉시 거부)
+  // 2. TF_ADMIN_PIN 미설정 시 거부 (하드코딩 제거: 서버 환경변수 필수)
   const serverAdminPin = (process.env.TF_ADMIN_PIN || '').trim();
+  const sessionSecret = (process.env.SESSION_SECRET || serverAdminPin || '').trim();
   if (!serverAdminPin) {
     return res.status(500).json({
       error: '서버 환경변수(TF_ADMIN_PIN)가 설정되어 있지 않아 보안상 채점 요청을 거부합니다. Vercel 프로젝트 대시보드(Settings > Environment Variables)에서 TF_ADMIN_PIN을 등록해 주세요.'
     });
   }
 
-  const clientPin = (req.headers['x-tf-pin'] || req.body?.adminPin || '').trim();
-  const isAuthValid = Boolean(clientPin && clientPin === serverAdminPin);
+  // 3. TF 통합 세션 인증 검증 (HttpOnly 쿠키 + CSRF 방어)
+  const cookies = parseCookies(req);
+  const session = verifyToken(cookies.tf_session, sessionSecret);
 
-  // 3. 공유 저장소(Supabase) 기반 IP 호출 제한 및 반복 실패 잠금 검사
-  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
-  const secCheck = await checkSharedSecurity(clientIp, isAuthValid);
-  if (!secCheck.allowed) {
-    return res.status(secCheck.status).json({ error: secCheck.error });
+  if (!session || session.role !== 'tf_admin') {
+    return res.status(401).json({
+      error: 'TF 운영진 인증 세션이 없거나 만료되었습니다. TF 대시보드에 먼저 로그인해 주세요.'
+    });
+  }
+
+  // CSRF 방어: 요청 헤더 x-csrf-token과 세션 내 토큰 대조
+  const clientCsrf = req.headers['x-csrf-token'];
+  if (!clientCsrf || clientCsrf !== session.csrfToken) {
+    return res.status(403).json({
+      error: '유효하지 않은 요청입니다 (CSRF 검증 실패). 페이지를 새로고침한 후 다시 시도해 주세요.'
+    });
+  }
+
+  // 4. 공유 저장소(Supabase) 기반 세션별 호출 제한 (동일 Wi-Fi 복수 TF 충돌 방지)
+  const sessionQuotaKey = `session_${session.sessionId || 'default'}`;
+  const rateCheck = await checkSessionRateLimit(sessionQuotaKey);
+  if (!rateCheck.allowed) {
+    return res.status(rateCheck.status).json({ error: rateCheck.error });
   }
 
   const { missionNum, teamName, photo, itemPhotos, photoVersion, aiModel, aiPersona } = req.body || {};
@@ -454,7 +450,7 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: '유효한 AI 심사 미션 번호(1, 2, 4, 5)가 아닙니다.' });
   }
 
-  // 4. API 키 보호: 오직 Vercel 서버 환경변수(OPENAI_API_KEY)만 사용 (클라이언트 전달 키 불허)
+  // 5. API 키 보호: 오직 Vercel 서버 환경변수(OPENAI_API_KEY)만 사용
   const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) {
     return res.status(500).json({
