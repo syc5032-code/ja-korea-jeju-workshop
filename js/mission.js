@@ -605,6 +605,48 @@ function getMissionPromptConfig(missionNum, teamName) {
 }`
     };
   }
+  if (missionNum === 2) {
+    return {
+      title: '[미션 2] 제주 발견 (20점 만점)',
+      systemPrompt: `당신은 '2026 JA Korea 제주 리트릿' 2번 미션 [제주 발견 (5종 중 3종 + 히든 1종)] 정밀 사진 판독 AI 심사위원입니다. ${personaText}
+참가팀 '${teamName}'이 제출한 사진들을 아래 [인증 대상 항목 정의 및 엄격한 판별 기준]에 맞춰 1:1로 엄격하게 대조하여 채점하세요.
+
+[인증 대상 항목 정의 및 엄격한 판별 기준]
+■ 흔한 5종 (최대 3종 인정, 1종당 5점 = 최대 15점):
+- stone: '현무암 돌담' (제주 특유의 검은색 구멍 숭숭 뚫린 화산석 돌담. 일반 시멘트 벽, 실내 벽, 자갈바닥, 새/동물 그림, 잡초 등은 절대 불인정)
+- tangerine: '귤 / 귤나무' (실제 감귤 열매 또는 감귤나무. 키위, 사과, 바나나, 주스캔 등 다른 과일이나 가짜는 절대 불인정!)
+- sea: '제주 바다' (실제 제주 해변, 파도, 수평선 바다 풍경. 수영장, 호수, 욕조 등은 불인정)
+- palm: '야자수' (실제 야자나무. 일반 가로수, 소나무 등은 불인정)
+- sign: "'제주' 글자 간판·표지" (실제 간판이나 이정표에 '제주' 또는 'JEJU' 글자가 명확히 적힌 것)
+
+■ 히든 4종 (최대 1종 인정, 인정 시 +5점 보너스):
+- harubang: '돌하르방' (제주 전통 돌하르방 석상)
+- jeongnang: '정낭' (제주 전통 대문 통나무와 정주석)
+- bangsatap: '방사탑' (마을 액운을 막는 제주 둥근 돌탑)
+- haenyeo: '해녀 조형물/벽화' (물질 도구를 든 해녀 동상, 조각, 또는 벽화)
+
+[심사 지침]
+제출된 각 사진을 해당 사진이 지정된 항목(ID)의 기준과 1:1로 엄격하게 대조하세요.
+팀이 특정 항목으로 등록했더라도 사진 속 실제 대상과 일치하지 않는 엉뚱한 사진(예: 키위 사진 올리고 귤 등록, 새 일러스트 올리고 돌담 등록 등)은 단호하게 불인정(탈락) 처리하세요.
+실제로 기준에 확실하게 부합하는 항목만 verifiedCommon 및 verifiedHidden에 넣으세요.
+- verifiedCommon: 실제로 식별 통과된 흔한 5종의 ID 배열 (최대 3개까지만 인정, 예: ["stone", "sea"])
+- verifiedHidden: 실제로 식별 통과된 히든 항목의 ID (없거나 불일치 시 null, 예: "harubang" 또는 null)
+- commonScore: Math.min(3, verifiedCommon.length) * 5 (최대 15점)
+- hiddenScore: verifiedHidden ? 5 : 0 (최대 5점)
+- totalScore: commonScore + hiddenScore (0 ~ 20점)
+- oneLineReview: 1:1 사진 판독 근거를 담은 60자 내외의 재치 있고 솔직한 심사평 (예: "현무암 돌담과 제주 바다 완벽 인증(+10), 돌하르방 히든 미션 성공(+5) 총 15점 획득!")
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{
+  "verifiedCommon": ["stone", "sea"],
+  "verifiedHidden": "harubang",
+  "commonScore": 10,
+  "hiddenScore": 5,
+  "totalScore": 15,
+  "oneLineReview": "현무암 돌담과 제주 바다 완벽 인증(+10), 돌하르방 히든 미션 성공(+5) 총 15점 획득!"
+}`
+    };
+  }
   if (missionNum === 4) {
     return {
       title: '[미션 4] 팀별 주인공 사진 (30점 만점)',
@@ -2312,11 +2354,16 @@ function renderTfDashboardView() {
                   <span class="text-sm font-black text-[#0097A7]">${sc.total}점 <span class="text-[11px] font-normal text-slate-400">(일반 ${sc.commonScore} + 히든 ${sc.hiddenScore})</span></span>
                 </div>
 
-                <!-- AI Grade Button -->
-                <button id="btn-ai-grade-${tid}-2" onclick="runAiGradeMission2(${tid})" ${hasPhotos ? '' : 'disabled'} class="w-full py-2 px-3 rounded-xl ${hasPhotos ? 'bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-xs' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} text-xs font-extrabold transition flex items-center justify-center gap-1.5">
-                  <span>🤖</span>
-                  <span>${isGraded ? '사진 재판독 & 채점' : '제출 사진 AI 정밀 판독'}</span>
-                </button>
+                <!-- AI Grade & Prompt Copy Buttons -->
+                <div class="flex items-center gap-1.5">
+                  <button id="btn-ai-grade-${tid}-2" onclick="runAiGradeMission2(${tid})" ${hasPhotos ? '' : 'disabled'} class="flex-1 py-2 px-3 rounded-xl ${hasPhotos ? 'bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-xs' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} text-xs font-extrabold transition flex items-center justify-center gap-1.5">
+                    <span>🤖</span>
+                    <span>${isGraded ? '사진 재판독 & 채점' : '제출 사진 AI 정밀 판독'}</span>
+                  </button>
+                  <button onclick="copyAiPromptToClipboard(${tid}, 2)" class="py-2 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold" title="ChatGPT용 프롬프트 복사">
+                    📋 프롬프트
+                  </button>
+                </div>
 
                 ${team.m2.oneLineReview ? `
                   <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed font-medium">
