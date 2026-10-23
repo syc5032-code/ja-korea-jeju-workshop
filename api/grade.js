@@ -285,23 +285,57 @@ function sanitizeGradingResponse(missionNum, parsed) {
   };
 }
 
+// In-memory rate limiting map (IP -> { count, resetAt })
+const rateLimitMap = new Map();
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'POST 메서드만 허용됩니다.' });
   }
 
-  const { missionNum, teamName, photo, itemPhotos, photoVersion, aiModel, aiPersona, clientApiKey } = req.body || {};
+  // 1. 요청 크기 제한 (최대 4.5MB Vercel Serverless Payload 제한 준수)
+  const rawBodyStr = JSON.stringify(req.body || {});
+  if (rawBodyStr.length > 4.5 * 1024 * 1024) {
+    return res.status(413).json({ error: '요청 본문 크기가 너무 큽니다. (최대 4.5MB 초과)' });
+  }
+
+  // 2. TF 운영진 인증 검증 (서버 환경변수 TF_ADMIN_PIN 또는 기본값 '2026')
+  const serverAdminPin = (process.env.TF_ADMIN_PIN || '2026').trim();
+  const clientPin = (req.headers['x-tf-pin'] || req.body?.adminPin || '').trim();
+
+  if (!clientPin || clientPin !== serverAdminPin) {
+    return res.status(401).json({
+      error: 'TF 운영진 인증이 필요합니다. 올바른 TF 인증 핀(x-tf-pin 헤더)을 제공해 주세요.'
+    });
+  }
+
+  // 3. 호출 횟수 제한 (IP별 1분당 최대 20회)
+  const clientIp = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  const now = Date.now();
+  const ipRecord = rateLimitMap.get(clientIp);
+  if (ipRecord && ipRecord.resetAt > now) {
+    if (ipRecord.count >= 20) {
+      return res.status(429).json({
+        error: '단시간 내 채점 요청 한도를 초과했습니다. 잠시 후 다시 시도해 주세요. (1분당 최대 20회)'
+      });
+    }
+    ipRecord.count++;
+  } else {
+    rateLimitMap.set(clientIp, { count: 1, resetAt: now + 60000 });
+  }
+
+  const { missionNum, teamName, photo, itemPhotos, photoVersion, aiModel, aiPersona } = req.body || {};
   const mNum = Number(missionNum);
 
   if (![1, 2, 4, 5].includes(mNum)) {
     return res.status(400).json({ error: '유효한 AI 심사 미션 번호(1, 2, 4, 5)가 아닙니다.' });
   }
 
-  // Priority: Server Environment Variable -> Request header -> clientApiKey fallback
-  const apiKey = (process.env.OPENAI_API_KEY || req.headers['x-api-key'] || clientApiKey || '').trim();
+  // 4. API 키 보호: 오직 Vercel 서버 환경변수(OPENAI_API_KEY)만 사용 (클라이언트 전달 키 불허)
+  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
   if (!apiKey) {
     return res.status(500).json({
-      error: 'OpenAI API 키가 서버 환경변수(OPENAI_API_KEY)에 설정되어 있지 않습니다.'
+      error: 'OpenAI API 키가 서버 환경변수(OPENAI_API_KEY)에 설정되어 있지 않습니다. Vercel 프로젝트 대시보드(Settings > Environment Variables)에서 키를 등록해 주세요.'
     });
   }
 

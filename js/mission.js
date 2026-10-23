@@ -228,7 +228,6 @@ function getInitialState() {
     },
     settings: {
       adminPin: '2026',
-      apiKey: '',
       aiModel: 'gpt-4o',
       aiPersona: 'warm',
       cloudDbUrl: '',
@@ -263,22 +262,26 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return base;
     const parsed = JSON.parse(raw);
+    const cleanSettings = {
+      ...base.settings,
+      ...(parsed.settings || {}),
+      teamPins: {
+        1: '',
+        2: '',
+        3: '',
+        ...((parsed.settings && parsed.settings.teamPins) || {})
+      }
+    };
+    // 보안 조치: 기존 localStorage에 저장되어 있던 apiKey 안전 삭제 (운영 데이터 유지)
+    delete cleanSettings.apiKey;
+
     return {
       ...base,
       ...parsed,
       mode: 'participant',
       tfUnlocked: false,
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
-      settings: {
-        ...base.settings,
-        ...(parsed.settings || {}),
-        teamPins: {
-          1: '',
-          2: '',
-          3: '',
-          ...((parsed.settings && parsed.settings.teamPins) || {})
-        }
-      },
+      settings: cleanSettings,
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
       m6Config: { ...base.m6Config, ...(parsed.m6Config || {}) },
       teams: sanitizeTeams(parsed.teams || base.teams)
@@ -424,9 +427,9 @@ async function pullFromCloudDb() {
     if (row && row.data && row.updated_at > (appState.updatedAt || 0)) {
       const remote = row.data;
       appState.updatedAt = row.updated_at;
-      const localApiKey = appState.settings.apiKey;
       if (remote.settings) {
-        appState.settings = { ...appState.settings, ...remote.settings, apiKey: localApiKey };
+        appState.settings = { ...appState.settings, ...remote.settings };
+        delete appState.settings.apiKey;
       }
       if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
       if (remote.m3Config) appState.m3Config = remote.m3Config;
@@ -949,104 +952,43 @@ function sanitizeGradingResponse(missionNum, parsed) {
 }
 
 async function callAiGradingApi(payload) {
-  // 1. 서버 엔드포인트 /api/grade 우선 호출 (OpenAI API 키 서버 보호)
+  // 운영 보안 정책: 브라우저 직접 OpenAI 호출 및 클라이언트 키 전달을 완전히 차단하고,
+  // 오직 TF 인증 헤더(x-tf-pin)를 갖춘 Vercel 서버리스 엔드포인트(/api/grade)만을 통해 채점
+  const tfAdminPin = (appState.settings.adminPin || '2026').trim();
+
+  let res;
   try {
-    const res = await fetch('/api/grade', {
+    res = await fetch('/api/grade', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(appState.settings.apiKey ? { 'x-api-key': appState.settings.apiKey } : {})
+        'x-tf-pin': tfAdminPin
       },
-      body: JSON.stringify({
-        ...payload,
-        clientApiKey: appState.settings.apiKey || ''
-      })
+      body: JSON.stringify(payload)
     });
-
-    if (res.ok) {
-      return await res.json();
-    }
-
-    if (res.status !== 404 && res.status !== 405) {
-      const errJson = await res.json().catch(() => ({}));
-      throw new Error(errJson?.error || `서버 AI 오류 (${res.status})`);
-    }
-  } catch (err) {
-    if (!err.message.includes('Failed to fetch') && !err.message.includes('404')) {
-      throw err;
-    }
+  } catch (netErr) {
+    throw new Error('AI 심사 서버(/api/grade)에 연결할 수 없습니다. Vercel 네트워크 상태를 확인하시거나 [📋 프롬프트 복사] 버튼을 사용하여 ChatGPT로 수동 판정해 주세요.');
   }
 
-  // 2. 로컬 브라우저 Fallback (로컬 정적 웹서버 실행 환경용)
-  const apiKey = (appState.settings.apiKey || '').trim();
-  if (!apiKey) {
-    throw new Error('서버 API(/api/grade)에 연결할 수 없으며, 로컬 설정에 OpenAI API 키가 없습니다. 설정 창에서 API 키를 입력해주세요.');
+  if (res.ok) {
+    return await res.json();
   }
 
-  const { missionNum, teamName, photo, itemPhotos, aiModel } = payload;
-  const cfg = getMissionPromptConfig(missionNum, teamName);
-  const model = aiModel || appState.settings.aiModel || 'gpt-4o';
-  let userContent = [];
-
-  if (missionNum === 2) {
-    const photoEntries = Object.entries(itemPhotos || {}).filter(([k, src]) => Boolean(src));
-    userContent.push({
-      type: 'text',
-      text: `${teamName}의 2번 미션 [제주 발견] 항목별 제출 사진 ${photoEntries.length}장입니다. 각 사진이 지정된 항목에 실제로 부합하는지 1:1로 정밀하게 검증하여 채점해주세요.`
-    });
-    photoEntries.forEach(([itemId, src], idx) => {
-      const isHidden = JEJU_HIDDEN_ITEMS.some(x => x.id === itemId);
-      const meta = (isHidden ? JEJU_HIDDEN_ITEMS : JEJU_COMMON_ITEMS).find(x => x.id === itemId);
-      const itemLabel = meta ? meta.label : itemId;
-      const catName = isHidden ? '히든 미션 (+5점)' : '흔한 제주 5종 (+5점)';
-      userContent.push({
-        type: 'text',
-        text: `[제출 사진 #${idx + 1}] 팀이 등록한 대상 항목: 【${catName} - ${itemLabel} (항목 ID: ${itemId})】`
-      });
-      userContent.push({
-        type: 'image_url',
-        image_url: { url: src, detail: 'high' }
-      });
-    });
-  } else {
-    userContent.push({
-      type: 'text',
-      text: `${teamName}의 ${cfg.title} 제출 사진입니다. 1단계 유효성 판정 후 유효한 경우에만 루브릭 기준에 맞춰 채점해주세요.`
-    });
-    userContent.push({
-      type: 'image_url',
-      image_url: { url: photo, detail: 'high' }
-    });
+  const errJson = await res.json().catch(() => ({}));
+  if (res.status === 401) {
+    throw new Error(`TF 운영진 인증 실패 (401): ${errJson?.error || 'TF 비밀번호(2026)를 확인해 주세요.'}`);
+  }
+  if (res.status === 413) {
+    throw new Error(`사진 용량 초과 (413): ${errJson?.error || '사진 파일 용량이 너무 큽니다 (최대 4.5MB).'}`);
+  }
+  if (res.status === 429) {
+    throw new Error(`요청 한도 초과 (429): ${errJson?.error || '1분당 최대 20회 채점 가능합니다. 잠시 후 다시 시도해 주세요.'}`);
+  }
+  if (res.status === 404 || res.status === 405) {
+    throw new Error('AI 자동 심사는 Vercel 배포 환경(/api/grade)에서만 제공됩니다. 로컬 환경에서는 [📋 프롬프트 복사] 기능을 이용해 주세요.');
   }
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: cfg.systemPrompt },
-        { role: 'user', content: userContent }
-      ],
-      temperature: 0.2,
-      max_tokens: 600
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(errData?.error?.message || `OpenAI API 오류 (${response.status})`);
-  }
-
-  const data = await response.json();
-  const rawContent = data.choices?.[0]?.message?.content;
-  if (!rawContent) throw new Error('AI 응답 본문이 비어 있습니다.');
-  const parsed = JSON.parse(rawContent);
-  return sanitizeGradingResponse(missionNum, parsed);
+  throw new Error(errJson?.error || `서버 AI 채점 오류 (${res.status})`);
 }
 
 async function runAiGradeMission(teamId, missionNum) {
@@ -1236,32 +1178,50 @@ function resolveNeedsReview(teamId, missionNum, newStatus) {
   const mKey = `m${missionNum}`;
   const m = team[mKey];
 
+  const guideMap = {
+    1: '미션 1 [여행 포스터] 만점 25점 (vibe 4~8 + chemistry 6~9 + poster 5~8)',
+    4: '미션 4 [팀별 주인공] 만점 30점 (heroFocus 6~12 + teamwork 6~10 + creativity 5~8)',
+    5: '미션 5 [그림자 JA] 만점 10점 (base 4 + jaShape 2~4 + teamwork 1~2)'
+  };
+  const maxMap = { 1: 25, 4: 30, 5: 10 };
+
   if (newStatus === 'valid') {
-    const maxMap = { 1: 25, 4: 30, 5: 10 };
     const defaultScore = missionNum === 1 ? 20 : missionNum === 4 ? 25 : 8;
-    const inputVal = prompt(`[${team.name} 미션 ${missionNum}] TF 수동 인정 점수를 입력하세요 (0~${maxMap[missionNum]}점):`, m.score !== null ? m.score : defaultScore);
+    const inputVal = prompt(`[${team.name} 미션 ${missionNum} TF 수동 인정]\n${guideMap[missionNum]}\n\n부여할 최종 점수를 입력하세요 (0~${maxMap[missionNum]}점):`, m.score !== null ? m.score : defaultScore);
     if (inputVal === null) return;
     const num = Math.max(0, Math.min(maxMap[missionNum], Number(inputVal) || 0));
+
+    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] TF 수동 인정 사유를 입력하세요:`, 'TF 현장 육안 검토 결과 미션 취지 인정');
+    if (reasonInput === null) return;
+
+    const reviewerInput = prompt(`심사자 성명/직책을 입력하세요:`, 'TF 운영진') || 'TF 운영진';
+
     m.status = 'valid';
     m.score = num;
     m.graded = true;
+    m.reason = reasonInput;
+    m.oneLineReview = `[TF 수동 인정] ${reasonInput} (${num}점 부여)`;
     m.manualReview = {
-      reviewer: 'TF 운영진',
+      reviewer: reviewerInput,
       reviewedAt: formatNowTime(true),
-      reason: 'TF 육안 검토 후 수동 인정',
+      reason: reasonInput,
       action: 'approved',
       assignedScore: num
     };
     showToast(`${team.name} 미션 ${missionNum}: TF 수동 인정 완료 (${num}점)`, 'success');
   } else if (newStatus === 'invalid') {
-    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 불인정 사유를 입력하세요:`, 'TF 현장 확인 결과 미션 기준 미달');
+    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 불인정 사유를 입력하세요:`, 'TF 현장 육안 확인 결과 미션 기준 미달');
     if (reasonInput === null) return;
+
+    const reviewerInput = prompt(`심사자 성명/직책을 입력하세요:`, 'TF 운영진') || 'TF 운영진';
+
     m.status = 'invalid';
     m.score = 0;
     m.graded = true;
     m.reason = reasonInput;
+    m.oneLineReview = `[TF 수동 불인정] ${reasonInput}`;
     m.manualReview = {
-      reviewer: 'TF 운영진',
+      reviewer: reviewerInput,
       reviewedAt: formatNowTime(true),
       reason: reasonInput,
       action: 'rejected',
@@ -3427,7 +3387,6 @@ function submitPinLogin(e) {
 
 function openSettingsModal() {
   document.getElementById('setting-cloud-url').value = appState.settings.cloudDbUrl || '';
-  document.getElementById('setting-api-key').value = appState.settings.apiKey || '';
   document.getElementById('setting-ai-model').value = appState.settings.aiModel || 'gpt-4o';
   document.getElementById('setting-ai-persona').value = appState.settings.aiPersona || 'warm';
   document.getElementById('setting-team-1').value = appState.teams[1].name;
@@ -3450,7 +3409,7 @@ function closeSettingsModal() {
 
 function saveSettingsModal() {
   appState.settings.cloudDbUrl = document.getElementById('setting-cloud-url').value.trim();
-  appState.settings.apiKey = document.getElementById('setting-api-key').value.trim();
+  delete appState.settings.apiKey;
   appState.settings.aiModel = document.getElementById('setting-ai-model').value;
   appState.settings.aiPersona = document.getElementById('setting-ai-persona').value;
   appState.teams[1].name = document.getElementById('setting-team-1').value.trim() || '1팀';

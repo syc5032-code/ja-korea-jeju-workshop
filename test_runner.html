@@ -2,13 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Jeju Retreat Mission AI Grading - Automated Regression Test Suite</title>
+  <title>Jeju Retreat Mission AI Grading - Comprehensive Regression & Validation Suite</title>
 </head>
 <body>
-  <h1>Jeju Retreat Mission AI Grading Regression Test Suite</h1>
+  <h1>Jeju Retreat Mission AI Grading - Comprehensive Regression & Validation Suite</h1>
   <pre id="test-output">Running tests...</pre>
 
-  <!-- Load dependencies and mission.js -->
   <script src="js/mission.js"></script>
   <script>
     (function () {
@@ -32,187 +31,308 @@
         assert(pass, testName, `Expected: ${JSON.stringify(expected)}, Actual: ${JSON.stringify(actual)}`);
       }
 
-      console.log('Starting regression tests...');
+      console.log('Starting comprehensive regression tests...');
 
       try {
-        // --- Test Group 1: Data Model & Schema ---
+        // =========================================================================
+        // CATEGORY 1: 데이터 모델 및 초기화 기본 검증
+        // =========================================================================
         const defPhoto = createDefaultMissionPhotoData();
-        assert(defPhoto.status === 'none', 'Default photo status is "none"');
-        assert(defPhoto.photoVersion === 0, 'Default photoVersion is 0');
-        assert(defPhoto.score === null, 'Default score is null');
-        assert(defPhoto.graded === false, 'Default graded is false');
-        assert(defPhoto.observations === '', 'Default observations is empty string');
-        assert(defPhoto.reason === '', 'Default reason is empty string');
-        assert(defPhoto.manualReview === null, 'Default manualReview is null');
+        assert(defPhoto.status === 'none', '기본 사진 status는 "none"이어야 함');
+        assert(defPhoto.photoVersion === 0, '기본 photoVersion은 0이어야 함');
+        assert(defPhoto.score === null, '기본 score는 null이어야 함');
+        assert(defPhoto.graded === false, '기본 graded는 false이어야 함');
+        assert(defPhoto.observations === '', '기본 observations는 빈 문자열이어야 함');
+        assert(defPhoto.reason === '', '기본 reason은 빈 문자열이어야 함');
+        assert(defPhoto.manualReview === null, '기본 manualReview는 null이어야 함');
 
-        // --- Test Group 2: SanitizeGradingResponse (Two-Stage AI Validation) ---
-        // 2.1 Mission 1
-        // Valid photo
-        const m1Valid = sanitizeGradingResponse(1, {
-          status: 'valid',
-          observations: '제주 협재해변에서 5명의 팀원이 활짝 웃고 있음',
-          reason: '인물과 제주 배경이 명확한 여행 포스터',
-          subScores: { vibe: 8, chemistry: 9, poster: 8 },
-          totalScore: 25,
-          oneLineReview: '완벽한 포스터입니다!'
-        });
-        assertEqual(m1Valid.status, 'valid', 'M1 valid: status is valid');
-        assertEqual(m1Valid.totalScore, 25, 'M1 valid: totalScore is 25');
-        assertEqual(m1Valid.subScores, { vibe: 8, chemistry: 9, poster: 8 }, 'M1 valid: subScores match');
-
-        // Invalid photo (Kiwi test case: False Positive Bug Fix)
+        // =========================================================================
+        // CATEGORY 2: 다양한 오답/무효 사진의 0점 확정 검증 (최저점 오부여 방지)
+        // =========================================================================
+        // 2.1 [미션 1] 과일(키위) 단독 사진 -> invalid (0점, 15점 최저점 부여 금지)
         const m1Kiwi = sanitizeGradingResponse(1, {
           status: 'invalid',
-          observations: '도마 위에 올려진 키위 과일 사진',
-          reason: '인물이 전혀 없는 과일 단독 사진으로 포스터 평가 불가',
+          observations: '도마 위에 깎아 놓은 키위 과일 사진',
+          reason: '인물이 전혀 없는 과일 사진으로 여행 포스터 평가 대상 아님',
           subScores: { vibe: 4, chemistry: 6, poster: 5 },
-          totalScore: 15, // AI tried to give 15
-          oneLineReview: '과일 사진입니다.'
+          totalScore: 15
         });
-        assertEqual(m1Kiwi.status, 'invalid', 'M1 Kiwi: status is invalid');
-        assertEqual(m1Kiwi.totalScore, 0, 'M1 Kiwi: totalScore is strictly 0 (not 15!)');
-        assertEqual(m1Kiwi.subScores, null, 'M1 Kiwi: subScores is null');
+        assertEqual(m1Kiwi.status, 'invalid', 'M1 과일(키위): status = invalid');
+        assertEqual(m1Kiwi.totalScore, 0, 'M1 과일(키위): 15점 기본점 부여 없이 0점 확정');
+        assertEqual(m1Kiwi.subScores, null, 'M1 과일(키위): subScores = null');
 
-        // Needs Review photo (Blurry / synthetic artifact)
-        const m1Review = sanitizeGradingResponse(1, {
-          status: 'needs_review',
-          observations: '심한 흔들림 및 인물 왜곡',
-          reason: '식별 불가로 TF 육안 검토 필요',
+        // 2.2 [미션 1] 동물(반려견) 단독 사진 -> invalid (0점)
+        const m1Dog = sanitizeGradingResponse(1, {
+          status: 'invalid',
+          observations: '풀밭에 앉아 있는 강아지 단독 사진',
+          reason: '팀원이 포함되지 않은 동물 사진',
+          totalScore: 18
+        });
+        assertEqual(m1Dog.status, 'invalid', 'M1 동물(반려견): status = invalid');
+        assertEqual(m1Dog.totalScore, 0, 'M1 동물(반려견): 0점 확정');
+
+        // 2.3 [미션 1] 음식/커피잔 사진 -> invalid (0점)
+        const m1Food = sanitizeGradingResponse(1, {
+          status: 'invalid',
+          observations: '카페 테이블 위 커피잔과 디저트 케이크',
+          reason: '인물 없는 음식 사진',
+          totalScore: 16
+        });
+        assertEqual(m1Food.status, 'invalid', 'M1 음식/디저트: status = invalid');
+        assertEqual(m1Food.totalScore, 0, 'M1 음식/디저트: 0점 확정');
+
+        // 2.4 [미션 1] 인물 없는 순수 풍경 사진 -> invalid (0점)
+        const m1Scenery = sanitizeGradingResponse(1, {
+          status: 'invalid',
+          observations: '인물이 전혀 없는 제주 바다 수평선 풍경',
+          reason: '인물 여행 포스터 조건 미달',
           totalScore: 20
         });
-        assertEqual(m1Review.status, 'needs_review', 'M1 needs_review: status is needs_review');
-        assertEqual(m1Review.totalScore, null, 'M1 needs_review: totalScore is null');
+        assertEqual(m1Scenery.status, 'invalid', 'M1 순수 풍경: status = invalid');
+        assertEqual(m1Scenery.totalScore, 0, 'M1 순수 풍경: 0점 확정');
 
-        // 2.2 Mission 4 (Hero photo)
-        // Valid
-        const m4Valid = sanitizeGradingResponse(4, {
-          status: 'valid',
-          observations: '가운데 팀원을 나머지 팀원들이 우러러보는 포즈',
-          subScores: { heroFocus: 12, teamwork: 10, creativity: 8 },
-          totalScore: 30
+        // 2.5 [미션 1] 영수증/문서 사진 -> invalid (0점)
+        const m1Doc = sanitizeGradingResponse(1, {
+          status: 'invalid',
+          observations: '식당 영수증 종이 문서',
+          reason: '무관한 서류 사진',
+          totalScore: 15
         });
-        assertEqual(m4Valid.status, 'valid', 'M4 valid: status is valid');
-        assertEqual(m4Valid.totalScore, 30, 'M4 valid: totalScore is 30');
+        assertEqual(m1Doc.status, 'invalid', 'M1 문서/영수증: status = invalid');
+        assertEqual(m1Doc.totalScore, 0, 'M1 문서/영수증: 0점 확정');
 
-        // Invalid (Kiwi test case: False Positive Bug Fix)
+        // 2.6 [미션 4] 과일(키위) 단독 사진 -> invalid (0점, 17점 최저점 부여 금지)
         const m4Kiwi = sanitizeGradingResponse(4, {
           status: 'invalid',
-          observations: '과일 키위 사진',
+          observations: '키위 과일 근접 사진',
           reason: '인물 및 주인공 연출 전무',
           subScores: { heroFocus: 6, teamwork: 6, creativity: 5 },
           totalScore: 17
         });
-        assertEqual(m4Kiwi.status, 'invalid', 'M4 Kiwi: status is invalid');
-        assertEqual(m4Kiwi.totalScore, 0, 'M4 Kiwi: totalScore is strictly 0 (not 17!)');
-        assertEqual(m4Kiwi.subScores, null, 'M4 Kiwi: subScores is null');
+        assertEqual(m4Kiwi.status, 'invalid', 'M4 과일(키위): status = invalid');
+        assertEqual(m4Kiwi.totalScore, 0, 'M4 과일(키위): 17점 최저점 부여 없이 0점 확정');
+        assertEqual(m4Kiwi.subScores, null, 'M4 과일(키위): subScores = null');
 
-        // 2.3 Mission 5 (Shadow JA)
-        // Valid real attempt
-        const m5Valid = sanitizeGradingResponse(5, {
+        // 2.7 [미션 4] 동물 또는 물건 사진 -> invalid (0점)
+        const m4Object = sanitizeGradingResponse(4, {
+          status: 'invalid',
+          observations: '스타리아 렌터카 차량 단독 사진',
+          reason: '사람이 없는 차량 사진',
+          totalScore: 20
+        });
+        assertEqual(m4Object.status, 'invalid', 'M4 차량/물건: status = invalid');
+        assertEqual(m4Object.totalScore, 0, 'M4 차량/물건: 0점 확정');
+
+        // 2.8 [미션 5] 바다/키위 등 무관한 사진 -> invalid (0점, 기본 4점/7점 부여 금지)
+        const m5Kiwi = sanitizeGradingResponse(5, {
+          status: 'invalid',
+          observations: '키위 과일 사진',
+          reason: '신체 그림자 JA 시도 없음',
+          subScores: { base: 4, jaShape: 2, teamwork: 1 },
+          totalScore: 7
+        });
+        assertEqual(m5Kiwi.status, 'invalid', 'M5 과일(키위): status = invalid');
+        assertEqual(m5Kiwi.totalScore, 0, 'M5 과일(키위): 기본점 4점/최저 7점 부여 없이 0점 확정');
+        assertEqual(m5Kiwi.subScores, null, 'M5 과일(키위): subScores = null');
+
+        // 2.9 [미션 5] 종이에 인쇄된 "JA" 글자 타이포그래피 -> invalid (0점)
+        const m5Printed = sanitizeGradingResponse(5, {
+          status: 'invalid',
+          observations: 'A4 용지에 검은색 마커로 인쇄/작성된 JA 텍스트 사진',
+          reason: '신체 그림자 시도가 아닌 인쇄/필기 텍스트',
+          totalScore: 8
+        });
+        assertEqual(m5Printed.status, 'invalid', 'M5 인쇄된 JA 텍스트: status = invalid');
+        assertEqual(m5Printed.totalScore, 0, 'M5 인쇄된 JA 텍스트: 0점 확정');
+
+        // 2.10 [미션 2] 일반 시멘트 벽을 '현무암 돌담'으로 제출 -> 불인정
+        const m2StoneWall = sanitizeGradingResponse(2, {
+          results: [{
+            itemId: 'stone',
+            status: 'invalid',
+            accepted: false,
+            recognizedItem: '일반 콘크리트 미장 벽',
+            reason: '제주 화산석 현무암 특징 부재'
+          }],
+          summaryReview: '일반 벽으로 판독됨'
+        });
+        assertEqual(m2StoneWall.results[0].status, 'invalid', 'M2 일반 콘크리트벽: status = invalid');
+        assertEqual(m2StoneWall.results[0].accepted, false, 'M2 일반 콘크리트벽: accepted = false');
+
+        // 2.11 [미션 2] 키위를 '귤/귤나무'로 제출 -> 불인정
+        const m2KiwiTangerine = sanitizeGradingResponse(2, {
+          results: [{
+            itemId: 'tangerine',
+            status: 'invalid',
+            accepted: false,
+            recognizedItem: '골드키위',
+            reason: '골드키위로 식별되어 감귤 조건 미달'
+          }],
+          summaryReview: '과일 불일치'
+        });
+        assertEqual(m2KiwiTangerine.results[0].status, 'invalid', 'M2 키위 과일: status = invalid');
+        assertEqual(m2KiwiTangerine.results[0].accepted, false, 'M2 키위 과일: accepted = false');
+
+        // 2.12 [미션 2] 실내 수영장을 '제주 바다'로 제출 -> 불인정
+        const m2Pool = sanitizeGradingResponse(2, {
+          results: [{
+            itemId: 'sea',
+            status: 'invalid',
+            accepted: false,
+            recognizedItem: '호텔 실내 수영장',
+            reason: '자연 바다가 아닌 인공 수영장 타일'
+          }],
+          summaryReview: '수영장 불인정'
+        });
+        assertEqual(m2Pool.results[0].status, 'invalid', 'M2 수영장: status = invalid');
+        assertEqual(m2Pool.results[0].accepted, false, 'M2 수영장: accepted = false');
+
+        // =========================================================================
+        // CATEGORY 3: 정상 및 저완성도 사진의 오탈락 방지 검증 (Valid 보장)
+        // =========================================================================
+        // 3.1 [미션 1] 실내 카페/식당에서 찍은 팀 여행 사진 -> valid (vibe 최저 4점 부여하되 인정)
+        const m1Indoor = sanitizeGradingResponse(1, {
           status: 'valid',
-          observations: '아스팔트 바닥에 몸으로 만든 J와 A 그림자',
+          observations: '실내 카페 테이블에 모여 앉아 여행 중 미소 짓는 팀원 4명',
+          reason: '실내이나 여행 중 팀원 모습으로 인정 대상',
+          subScores: { vibe: 4, chemistry: 7, poster: 6 },
+          totalScore: 17
+        });
+        assertEqual(m1Indoor.status, 'valid', 'M1 실내 팀 사진: valid 인정');
+        assertEqual(m1Indoor.subScores.vibe, 4, 'M1 실내 팀 사진: vibe 최저 4점 반영');
+        assertEqual(m1Indoor.totalScore, 17, 'M1 실내 팀 사진: 17점 부여');
+
+        // 3.2 [미션 1] 어색한 표정 및 평범한 구도의 실내 최저 완성도 사진 -> valid (최저 15점 합격)
+        const m1Low = sanitizeGradingResponse(1, {
+          status: 'valid',
+          observations: '실내 복도에서 어색한 표정으로 서 있는 팀원들, 다소 치우친 셀카 구도',
+          reason: '완성도는 낮으나 인물 여행 사진으로 유효함',
+          subScores: { vibe: 4, chemistry: 6, poster: 5 },
+          totalScore: 15
+        });
+        assertEqual(m1Low.status, 'valid', 'M1 최저 완성도: valid 인정');
+        assertEqual(m1Low.totalScore, 15, 'M1 최저 완성도: 루브릭 최소 15점 정상 부여');
+
+        // 3.3 [미션 1] 촬영자 1인이 빠져 3명만 나온 사진 -> valid (인원수 감점/탈락 금지)
+        const m1MissingOne = sanitizeGradingResponse(1, {
+          status: 'valid',
+          observations: '야외에서 3명의 팀원이 활짝 웃고 있음 (1명 촬영 중 추정)',
+          reason: '촬영자 제외 인원수 무관 유효 사진 인정',
+          subScores: { vibe: 8, chemistry: 9, poster: 7 },
+          totalScore: 24
+        });
+        assertEqual(m1MissingOne.status, 'valid', 'M1 촬영자 1인 제외: valid 정상 인정');
+        assertEqual(m1MissingOne.totalScore, 24, 'M1 촬영자 1인 제외: 인원수 감점 없이 24점');
+
+        // 3.4 [미션 4] 주인공이 모호하고 팀원 리액션이 얌전한 단체사진 -> valid (최저 17점 합격)
+        const m4Low = sanitizeGradingResponse(4, {
+          status: 'valid',
+          observations: '모두 평범하게 서 있어 중앙 인물이 주인공인지 모호하고 팀원 반응이 조용함',
+          reason: '독보적 원탑 연출은 약하나 팀원 단체사진으로 유효함',
+          subScores: { heroFocus: 6, teamwork: 6, creativity: 5 },
+          totalScore: 17
+        });
+        assertEqual(m4Low.status, 'valid', 'M4 리액션 약한 사진: valid 인정');
+        assertEqual(m4Low.totalScore, 17, 'M4 리액션 약한 사진: 루브릭 최소 17점 정상 부여');
+
+        // 3.5 [미션 5] 신체 그림자 시도이나 JA 글자가 불분명한 사진 -> valid (최저 7점 합격)
+        const m5Low = sanitizeGradingResponse(5, {
+          status: 'valid',
+          observations: '아스팔트에 몸을 굽혀 만든 그림자 시도, J와 A 형태 구분이 모호함',
+          reason: '실제 신체 협동 그림자 시도 확인됨',
+          subScores: { base: 4, jaShape: 2, teamwork: 1 },
+          totalScore: 7
+        });
+        assertEqual(m5Low.status, 'valid', 'M5 형태 모호한 실제 그림자: valid 인정');
+        assertEqual(m5Low.totalScore, 7, 'M5 형태 모호한 실제 그림자: 루브릭 최소 7점 정상 부여');
+
+        // 3.6 [미션 5] 완성도 높은 정상 그림자 사진 -> valid (10점 만점)
+        const m5Perfect = sanitizeGradingResponse(5, {
+          status: 'valid',
+          observations: '선명한 J와 A 글자가 완벽히 식별되는 신체 그림자 협동',
           subScores: { base: 4, jaShape: 4, teamwork: 2 },
           totalScore: 10
         });
-        assertEqual(m5Valid.status, 'valid', 'M5 valid: status is valid');
-        assertEqual(m5Valid.totalScore, 10, 'M5 valid: totalScore is 10');
+        assertEqual(m5Perfect.status, 'valid', 'M5 완성도 높은 그림자: valid 인정');
+        assertEqual(m5Perfect.totalScore, 10, 'M5 완성도 높은 그림자: 10점 만점');
 
-        // Valid low scoring attempt
-        const m5Low = sanitizeGradingResponse(5, {
-          status: 'valid',
-          observations: 'JA 형태가 약간 불분명한 그림자',
-          subScores: { base: 4, jaShape: 2, teamwork: 1 },
-          totalScore: 7
-        });
-        assertEqual(m5Low.status, 'valid', 'M5 low valid: status is valid');
-        assertEqual(m5Low.totalScore, 7, 'M5 low valid: totalScore is 7');
-
-        // Invalid (Kiwi or Sea scenery without body shadow: Bug Fix)
-        const m5Invalid = sanitizeGradingResponse(5, {
-          status: 'invalid',
-          observations: '바다 풍경 또는 과일 사진',
-          reason: '신체 그림자 JA 만들기 시도 없음',
-          subScores: { base: 4, jaShape: 2, teamwork: 1 },
-          totalScore: 7
-        });
-        assertEqual(m5Invalid.status, 'invalid', 'M5 invalid: status is invalid');
-        assertEqual(m5Invalid.totalScore, 0, 'M5 invalid: totalScore is strictly 0 (not 4 or 7!)');
-        assertEqual(m5Invalid.subScores, null, 'M5 invalid: subScores is null');
-
-        // Needs Review (AI generated / unnatural shadow connection: Bug Fix)
-        const m5AiGen = sanitizeGradingResponse(5, {
+        // =========================================================================
+        // CATEGORY 4: 판독 불가 및 합성 의심 사진의 needs_review (점수 null 보류)
+        // =========================================================================
+        // 4.1 [미션 5] AI 생성 이미지 의심 (신체와 그림자 연결 부자연스러움) -> needs_review (null)
+        const m5AiFake = sanitizeGradingResponse(5, {
           status: 'needs_review',
-          observations: '신체와 그림자의 연결이 부자연스럽고 광원 모순',
-          reason: 'AI 생성 이미지 합성 의심으로 TF 확인 필요',
+          observations: '다리와 그림자 발목 접점이 공중에 떠 있고 그림자 윤곽에 생성형 AI 특유의 인공적 노이즈 관찰',
+          reason: 'AI 합성/생성 이미지 의심으로 TF 현장 원본 확인 필요',
           totalScore: 10
         });
-        assertEqual(m5AiGen.status, 'needs_review', 'M5 AI generated: status is needs_review');
-        assertEqual(m5AiGen.totalScore, null, 'M5 AI generated: totalScore is null (not 10!)');
+        assertEqual(m5AiFake.status, 'needs_review', 'M5 AI 합성 의심: status = needs_review');
+        assertEqual(m5AiFake.totalScore, null, 'M5 AI 합성 의심: 점수 확정 없이 null');
+        assertEqual(m5AiFake.subScores, null, 'M5 AI 합성 의심: subScores = null');
 
-        // 2.4 Mission 2 (Jeju Discovery Item-by-item)
-        const m2Results = sanitizeGradingResponse(2, {
-          results: [
-            { itemId: 'tangerine', status: 'invalid', accepted: false, recognizedItem: '키위', reason: '키위로 확인되어 감귤 불인정' },
-            { itemId: 'stone', status: 'valid', accepted: true, recognizedItem: '현무암 돌담', reason: '화산석 돌담 확인' },
-            { itemId: 'sea', status: 'needs_review', accepted: false, recognizedItem: '실내 수영장 의심', reason: '제주 바다 여부 불확실' }
-          ],
-          summaryReview: '일부 항목 불인정'
+        // 4.2 [미션 1] 심한 야간 흔들림/블러로 피사체 식별 불가 -> needs_review (null)
+        const m1Blur = sanitizeGradingResponse(1, {
+          status: 'needs_review',
+          observations: '광량 부족으로 심한 모션 블러, 인물 얼굴 및 배경 확인 불가',
+          reason: '식별 불가로 TF 육안 확인 필요',
+          totalScore: 18
         });
-        assertEqual(m2Results.results[0].status, 'invalid', 'M2 item: tangerine with kiwi is invalid');
-        assertEqual(m2Results.results[0].accepted, false, 'M2 item: tangerine with kiwi is not accepted');
-        assertEqual(m2Results.results[1].status, 'valid', 'M2 item: stone is valid');
-        assertEqual(m2Results.results[1].accepted, true, 'M2 item: stone is accepted');
-        assertEqual(m2Results.results[2].status, 'needs_review', 'M2 item: unclear sea is needs_review');
-        assertEqual(m2Results.results[2].accepted, false, 'M2 item: unclear sea is not accepted');
+        assertEqual(m1Blur.status, 'needs_review', 'M1 심한 블러: status = needs_review');
+        assertEqual(m1Blur.totalScore, null, 'M1 심한 블러: totalScore = null');
 
-        // --- Test Group 3: Score Calculation & Leaderboard Rules ---
-        // Setup mock team
-        const mockTeam = {
+        // 4.3 [미션 2] 원경의 모호한 해안가 풍경 -> needs_review (accepted: false)
+        const m2SeaReview = sanitizeGradingResponse(2, {
+          results: [{
+            itemId: 'sea',
+            status: 'needs_review',
+            accepted: false,
+            recognizedItem: '안개 낀 먼 수평선',
+            reason: '해무로 인해 실제 바다인지 저수지인지 구분이 모호함'
+          }],
+          summaryReview: '바다 확인 보류'
+        });
+        assertEqual(m2SeaReview.results[0].status, 'needs_review', 'M2 모호한 바다: status = needs_review');
+        assertEqual(m2SeaReview.results[0].accepted, false, 'M2 모호한 바다: accepted = false');
+
+        // =========================================================================
+        // CATEGORY 5: 점수 합산 및 리더보드 격리 (needs_review 총점 미합산 검증)
+        // =========================================================================
+        const testTeam = {
           id: 1,
           name: '1팀',
-          m1: { photo: 'data:image/svg+xml,...', status: 'needs_review', score: null, graded: false },
+          m1: { photo: 'data:img1', status: 'needs_review', score: null, graded: false }, // 보류
           m2: {
-            photos: ['p1', 'p2', 'p3', 'p4', 'p5'],
-            itemPhotos: {
-              stone: 'data:mock_stone',
-              sea: 'data:mock_sea',
-              palm: 'data:mock_palm',
-              sign: 'data:mock_sign',
-              harubang: 'data:mock_harubang'
-            },
-            verifiedCommon: ['stone', 'sea', 'palm', 'sign'], // 4 common
-            verifiedHidden: 'harubang',
+            photos: ['p1', 'p2', 'p3', 'p4'],
+            itemPhotos: { stone: 'd1', tangerine: 'd2', sea: 'd3', palm: 'd4' },
+            verifiedCommon: ['stone', 'tangerine', 'sea', 'palm'], // 4개 중 3개 캡
+            verifiedHidden: null,
             graded: true
           },
           m3: { kakaoSubmitted: false },
-          m4: { photo: 'data:image/svg+xml,...', status: 'invalid', score: 0, graded: true },
-          m5: { photo: 'data:image/svg+xml,...', status: 'valid', score: 9, graded: true }
+          m4: { photo: 'data:img4', status: 'invalid', score: 0, graded: true }, // 0점
+          m5: { photo: 'data:img5', status: 'valid', score: 8, graded: true }   // 8점
         };
-        appState.teams[1] = mockTeam;
+        appState.teams[1] = testTeam;
 
-        // M2 score capping
-        const m2Score = getMission2Score(mockTeam);
-        assertEqual(m2Score.commonScore, 15, 'M2 score: common is capped at 3 items (15 points)');
-        assertEqual(m2Score.hiddenScore, 5, 'M2 score: hidden is 5 points');
-        assertEqual(m2Score.total, 20, 'M2 score: total is 20 points');
-
-        // getTeamScoreSummary: needs_review must NOT be added to grandTotal
         const summary = getTeamScoreSummary(1);
-        assertEqual(summary.m1, null, 'Team summary: m1 display is null (needs_review)');
-        assertEqual(summary.m1Raw, 0, 'Team summary: m1 confirmed score is 0');
-        assertEqual(summary.m4, 0, 'Team summary: m4 display is 0 (invalid)');
-        assertEqual(summary.m5, 9, 'Team summary: m5 display is 9 (valid)');
-        assertEqual(summary.regularTotal, 15 + 0 + 0, 'Team summary: regularTotal = 15(M2) + 0(M1) + 0(M3) + 0(M4)');
-        assertEqual(summary.bonusTotal, 5 + 9, 'Team summary: bonusTotal = 5(M2 hidden) + 9(M5)');
-        assertEqual(summary.grandTotal, 29, 'Team summary: grandTotal = 15 + 14 = 29');
+        assertEqual(summary.m1, null, '팀 요약: m1 표시는 null (보류)');
+        assertEqual(summary.m1Raw, 0, '팀 요약: m1 확정 합산 점수는 0점 (제외)');
+        assertEqual(summary.m2Common, 15, '팀 요약: m2 일반 4종 중 3종 최대 15점 캡');
+        assertEqual(summary.m4, 0, '팀 요약: m4 invalid 0점 반영');
+        assertEqual(summary.m5, 8, '팀 요약: m5 valid 8점 반영');
+        assertEqual(summary.regularTotal, 15, '팀 요약: 정규점수 = M2(15) + M1(0) + M3(0) + M4(0) = 15점');
+        assertEqual(summary.bonusTotal, 8, '팀 요약: 보너스 = M5(8점)');
+        assertEqual(summary.grandTotal, 23, '팀 요약: grandTotal = 15 + 8 = 23점 (M1 미합산)');
 
-        // --- Test Group 4: Bug Regression - M2 Deletion & Re-upload without Auto-bonus ---
-        // Prepare team with graded M2
+        // =========================================================================
+        // CATEGORY 6: 사진 교체/삭제 시 상태 초기화 및 비동기 폐기 검증
+        // =========================================================================
+        // 6.1 M2 불인정 키위 삭제 후 재등록 시 자동 인정되지 않는지 검증
         appState.teams[2] = {
           id: 2,
           name: '2팀',
           m2: {
-            photos: ['data:image/svg+xml,...'],
+            photos: ['p1'],
             itemPhotos: {},
             itemPhotoVersions: {},
             itemResults: {},
@@ -222,101 +342,92 @@
             score: 0
           }
         };
+        const t2 = appState.teams[2];
+        // 사진 재업로드 발생 시뮬레이션
+        t2.m2.itemPhotos['tangerine'] = 'data:new_photo';
+        t2.m2.itemPhotoVersions['tangerine'] = 2;
+        t2.m2.itemResults['tangerine'] = { status: 'pending', accepted: false, recognizedItem: '', reason: '' };
+        assert(!t2.m2.verifiedCommon.includes('tangerine'), '재업로드 시 자동 verifiedCommon 추가 차단 확인');
+        assertEqual(getMission2Score(t2).total, 0, '재업로드 직후 점수는 0점 유지');
 
-        // Simulate uploading a photo for 'tangerine' on an already graded team
-        // Mock file input
-        const fakeFile = new Blob(['fake image content'], { type: 'image/jpeg' });
-        const fakeInput = { files: [fakeFile], value: 'fake.jpg' };
-
-        // Test synchronous upload simulation (matching uploadM2ItemPhoto logic)
-        const team2 = appState.teams[2];
-        const prevCommonCount = team2.m2.verifiedCommon.length;
-        team2.m2.itemPhotos['tangerine'] = 'data:image/jpeg;base64,mock';
-        team2.m2.itemPhotoVersions['tangerine'] = (team2.m2.itemPhotoVersions['tangerine'] || 0) + 1;
-        team2.m2.itemResults['tangerine'] = {
-          status: 'pending',
-          accepted: false,
-          recognizedItem: '',
-          observations: '',
-          reason: '',
-          review: ''
-        };
-        // Ensure NOT in verifiedCommon
-        assert(!team2.m2.verifiedCommon.includes('tangerine'), 'Bug Fix: Re-uploaded M2 item is NOT automatically verified');
-        const scAfterUpload = getMission2Score(team2);
-        assertEqual(scAfterUpload.total, 0, 'Bug Fix: Score remains 0 after re-upload before AI grading');
-
-        // --- Test Group 5: Bug Regression - Photo Replacement State Reset ---
+        // 6.2 사진 교체 시 이전 심사평/점수 리셋 및 photoVersion 증가 검증
         appState.teams[3] = {
           id: 3,
           name: '3팀',
           m1: {
-            photo: 'data:image/jpeg;base64,oldPhoto',
+            photo: 'data:old',
             photoVersion: 1,
             status: 'valid',
             score: 25,
             graded: true,
-            observations: '이전 사진 관찰',
-            reason: '이전 인정 사유',
-            subScores: { vibe: 8, chemistry: 9, poster: 8 },
-            oneLineReview: '이전 심사평',
-            manualReview: null
+            observations: '과거 관찰',
+            reason: '과거 사유',
+            oneLineReview: '과거 심사평'
           }
         };
-
         const t3m1 = appState.teams[3].m1;
-        // Simulate photo replacement
-        t3m1.photo = 'data:image/jpeg;base64,newPhoto';
+        // 사진 교체 로직 실행 시뮬레이션 (handlePhotoUpload 동일)
+        t3m1.photo = 'data:new';
         t3m1.photoVersion = (t3m1.photoVersion || 0) + 1;
         t3m1.status = 'pending';
         t3m1.score = null;
         t3m1.graded = false;
         t3m1.observations = '';
         t3m1.reason = '';
-        t3m1.subScores = null;
         t3m1.oneLineReview = '';
 
-        assertEqual(t3m1.photoVersion, 2, 'Bug Fix: photoVersion incremented on replace');
-        assertEqual(t3m1.status, 'pending', 'Bug Fix: status reset to pending on replace');
-        assertEqual(t3m1.score, null, 'Bug Fix: score reset to null on replace');
-        assertEqual(t3m1.graded, false, 'Bug Fix: graded reset to false on replace');
-        assertEqual(t3m1.oneLineReview, '', 'Bug Fix: previous review cleared on replace');
+        assertEqual(t3m1.photoVersion, 2, '사진 교체 시 photoVersion = 2 증가');
+        assertEqual(t3m1.status, 'pending', '사진 교체 시 status = pending 리셋');
+        assertEqual(t3m1.score, null, '사진 교체 시 score = null 리셋');
+        assertEqual(t3m1.graded, false, '사진 교체 시 graded = false 리셋');
+        assertEqual(t3m1.oneLineReview, '', '사진 교체 시 이전 심사평 완전 삭제');
 
-        // Simulate stale version response discard
+        // 6.3 늦게 도착한 구버전(v1) 비동기 응답 폐기 검증
         const staleResponseVersion = 1;
-        const currentVersion = t3m1.photoVersion;
-        const shouldDiscard = (staleResponseVersion !== currentVersion);
-        assert(shouldDiscard, 'Bug Fix: AI response from stale version is discarded');
+        const currentVersion = t3m1.photoVersion; // 2
+        assert(staleResponseVersion !== currentVersion, '구버전 비동기 응답 버전 불일치 감지 및 폐기 성공');
 
-        // --- Test Group 6: Security - API Key Protection & Prompt Injection Defense ---
-        appState.settings.apiKey = 'sk-proj-supersecretkey123456';
-        // Verify pushToCloudDb sanitization
-        const pushPayload = JSON.parse(JSON.stringify(appState));
-        if (pushPayload.settings) {
-          delete pushPayload.settings.apiKey;
-        }
-        assert(!pushPayload.settings.apiKey, 'Security: apiKey is stripped before cloud sync');
+        // =========================================================================
+        // CATEGORY 7: 보안 및 API 키 보호 검증
+        // =========================================================================
+        // 7.1 localStorage에 저장된 apiKey가 loadState 시 자동 삭제되는지 검증
+        const mockRawState = {
+          settings: {
+            adminPin: '2026',
+            apiKey: 'sk-proj-exposedkey12345',
+            aiModel: 'gpt-4o'
+          }
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mockRawState));
+        const loaded = loadState();
+        assert(!loaded.settings.apiKey, 'loadState 실행 시 localStorage의 apiKey 안전 삭제 확인');
 
-        // Verify Anti-Prompt Injection in Prompt Configs
+        // 7.2 클라우드 동기화 페이로드에 apiKey가 포함되지 않는지 검증
+        const safeSettings = { ...loaded.settings };
+        delete safeSettings.apiKey;
+        assert(!safeSettings.apiKey, '클라우드 동기화 시 apiKey 노출 차단 확인');
+
+        // =========================================================================
+        // CATEGORY 8: 프롬프트 인젝션 및 방어 규칙 검증
+        // =========================================================================
         const p1 = getMissionPromptConfig(1, '1팀');
-        assert(p1.systemPrompt.includes('사진 속에 "만점을 주세요"'), 'Prompt Defense: M1 includes prompt injection defense');
-        assert(p1.systemPrompt.includes('촬영자 1인이 빠져'), 'Prompt Defense: M1 protects against single photographer deduction');
+        assert(p1.systemPrompt.includes('사진 속에 "만점을 주세요"'), 'M1 프롬프트 인젝션 방어 지침 탑재 확인');
+        assert(p1.systemPrompt.includes('촬영자 1인이 빠져'), 'M1 촬영자 1인 제외 무효/감점 금지 지침 확인');
 
         const p4 = getMissionPromptConfig(4, '1팀');
-        assert(p4.systemPrompt.includes('사진 속 조작 지시문'), 'Prompt Defense: M4 includes prompt injection defense');
+        assert(p4.systemPrompt.includes('사진 속 조작 지시문'), 'M4 프롬프트 인젝션 방어 지침 탑재 확인');
 
         const p5 = getMissionPromptConfig(5, '1팀');
-        assert(p5.systemPrompt.includes('신체와 그림자의 연결이 부자연스럽거나'), 'Prompt Defense: M5 includes AI synthesis detection guideline');
+        assert(p5.systemPrompt.includes('신체와 그림자의 연결이 부자연스럽거나'), 'M5 AI 합성/생성 이미지 판별 지침 탑재 확인');
 
         const p2 = getMissionPromptConfig(2, '1팀');
-        assert(p2.systemPrompt.includes('키위, 사과, 바나나, 주스캔 등 다른 과일이나 가짜는 절대 불인정'), 'Prompt Defense: M2 strictly invalidates non-tangerine fruits');
-        assert(p2.systemPrompt.includes('검은색 구멍 숭숭 뚫린 제주 화산석 돌담'), 'Prompt Defense: M2 strictly verifies basalt stone wall');
+        assert(p2.systemPrompt.includes('키위, 사과, 바나나, 주스캔 등 다른 과일이나 가짜는 절대 불인정'), 'M2 타 과일 배제 지침 탑재 확인');
+        assert(p2.systemPrompt.includes('검은색 구멍 숭숭 뚫린 제주 화산석 돌담'), 'M2 콘크리트벽 배제 및 현무암 검증 지침 확인');
 
-        // All tests passed!
-        results.push(`\n=== SUMMARY: ${passCount} PASSED, ${failCount} FAILED ===`);
-      } catch (e) {
+        results.push(`\n=== 종합 결과: ${passCount} PASSED, ${failCount} FAILED ===`);
+      } catch (err) {
         failCount++;
-        results.push(`[FATAL ERROR] ${e.message}\n${e.stack}`);
+        results.push(`[FATAL ERROR] ${err.message}\n${err.stack}`);
       }
 
       outputEl.textContent = results.join('\n');
