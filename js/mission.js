@@ -257,6 +257,7 @@ function getInitialState() {
     tfUnlocked: false,
     tfFilter: 'all',
     ceremonySlide: 'missions',
+    tfGuideOpen: { 1: false, 2: false, 4: false, 5: false },
     scheduleConfig: {
       forceOpenAll: true,
       manualOpen: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true }
@@ -290,6 +291,11 @@ let m6TimerInterval = null;
 let m6RemainingSeconds = 180;
 let isSyncingCloud = false;
 
+function toggleTfGuideOpen(mNum, isOpen) {
+  if (!appState.tfGuideOpen) appState.tfGuideOpen = {};
+  appState.tfGuideOpen[mNum] = Boolean(isOpen);
+}
+
 function loadState() {
   try {
     const base = getInitialState();
@@ -315,6 +321,7 @@ function loadState() {
       ...parsed,
       mode: 'participant',
       tfUnlocked: false,
+      tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
       settings: cleanSettings,
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
@@ -1056,6 +1063,18 @@ async function runAiGradeMission(teamId, missionNum) {
     return;
   }
 
+  // 심사위원이 수동으로 확정한 점수가 있을 경우 덮어쓰기 전 확인
+  if (mData.manualReview) {
+    const rev = mData.manualReview.reviewer || 'TF 심사위원';
+    const time = mData.manualReview.reviewedAt || '';
+    const reason = mData.manualReview.reason || '수동 점수 확정';
+    const curScore = mData.score !== null ? `${mData.score}점` : '미정';
+    const confirmMsg = `[${team.name} 미션 ${missionNum} AI 재채점 확인]\n이미 ${rev}님이 수동으로 확정한 점수가 있습니다.\n\n• 확정 점수: ${curScore}\n• 확정 사유: ${reason}\n• 확정 시각: ${time}\n\nAI 재채점 결과로 수동 확정 점수를 덮어쓰시겠습니까?`;
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+  }
+
   const targetVersion = mData.photoVersion || '';
   const btn = document.getElementById(`btn-ai-grade-${teamId}-${missionNum}`);
   if (btn) {
@@ -1125,6 +1144,18 @@ async function runAiGradeMission2(teamId) {
   if (photoEntries.length === 0) {
     showToast(`${team.name}의 2번 미션에 등록된 사진이 없습니다.`, 'error');
     return;
+  }
+
+  // 심사위원이 수동으로 확정한 항목이 있을 경우 덮어쓰기 전 확인
+  const hasManualM2 = Object.values(team.m2?.itemResults || {}).some(r => Boolean(r?.manualReview)) || Boolean(team.m2?.manualReview);
+  if (hasManualM2) {
+    const rev = team.m2?.manualReview?.reviewer || 'TF 심사위원';
+    const time = team.m2?.manualReview?.reviewedAt || '';
+    const reason = team.m2?.manualReview?.reason || '항목 수동 조정';
+    const confirmMsg = `[${team.name} 미션 2 AI 재판독 확인]\n이미 ${rev}님이 수동으로 확정/조정한 항목이 있습니다.\n\n• 수동 기록: ${reason}\n• 확정 시각: ${time}\n\nAI 재판독 결과로 수동 확정 내역을 덮어쓰시겠습니까?`;
+    if (!confirm(confirmMsg)) {
+      return;
+    }
   }
 
   // 요청 시점의 각 항목별 사진 버전 스냅샷
@@ -1268,43 +1299,53 @@ function resolveNeedsReview(teamId, missionNum, newStatus) {
     if (inputVal === null) return;
     const num = Math.max(0, Math.min(maxMap[missionNum], Number(inputVal) || 0));
 
-    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] TF 수동 인정 사유를 입력하세요:`, 'TF 현장 육안 검토 결과 미션 취지 인정');
+    const reviewerInput = prompt(`심사위원(수정자) 성명/직책을 입력하세요:`, m.manualReview?.reviewer || 'TF 심사위원');
+    if (reviewerInput === null) return;
+
+    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] TF 수동 인정 사유를 입력하세요:`, m.manualReview?.reason || 'TF 현장 육안 검토 결과 미션 취지 인정');
     if (reasonInput === null) return;
 
-    const reviewerInput = prompt(`심사자 성명/직책을 입력하세요:`, 'TF 운영진') || 'TF 운영진';
+    const revName = (reviewerInput || 'TF 심사위원').trim();
+    const revReason = (reasonInput || 'TF 현장 육안 검토 결과 미션 취지 인정').trim();
+    const timeStr = formatNowTime(true);
 
     m.status = 'valid';
     m.score = num;
     m.graded = true;
-    m.reason = reasonInput;
-    m.oneLineReview = `[TF 수동 인정] ${reasonInput} (${num}점 부여)`;
+    m.reason = revReason;
+    m.oneLineReview = `[TF 수동 인정] ${revReason} (${num}점 부여 - ${revName})`;
     m.manualReview = {
-      reviewer: reviewerInput,
-      reviewedAt: formatNowTime(true),
-      reason: reasonInput,
+      reviewer: revName,
+      reviewedAt: timeStr,
+      reason: revReason,
       action: 'approved',
       assignedScore: num
     };
-    showToast(`${team.name} 미션 ${missionNum}: TF 수동 인정 완료 (${num}점)`, 'success');
+    showToast(`${team.name} 미션 ${missionNum}: TF 수동 인정 완료 (${num}점, ${revName})`, 'success');
   } else if (newStatus === 'invalid') {
-    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 불인정 사유를 입력하세요:`, 'TF 현장 육안 확인 결과 미션 기준 미달');
+    const reviewerInput = prompt(`심사위원(수정자) 성명/직책을 입력하세요:`, m.manualReview?.reviewer || 'TF 심사위원');
+    if (reviewerInput === null) return;
+
+    const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 불인정 사유를 입력하세요:`, m.manualReview?.reason || 'TF 현장 육안 확인 결과 미션 기준 미달');
     if (reasonInput === null) return;
 
-    const reviewerInput = prompt(`심사자 성명/직책을 입력하세요:`, 'TF 운영진') || 'TF 운영진';
+    const revName = (reviewerInput || 'TF 심사위원').trim();
+    const revReason = (reasonInput || 'TF 현장 육안 확인 결과 미션 기준 미달').trim();
+    const timeStr = formatNowTime(true);
 
     m.status = 'invalid';
     m.score = 0;
     m.graded = true;
-    m.reason = reasonInput;
-    m.oneLineReview = `[TF 수동 불인정] ${reasonInput}`;
+    m.reason = revReason;
+    m.oneLineReview = `[TF 수동 불인정] ${revReason} (${revName})`;
     m.manualReview = {
-      reviewer: reviewerInput,
-      reviewedAt: formatNowTime(true),
-      reason: reasonInput,
+      reviewer: revName,
+      reviewedAt: timeStr,
+      reason: revReason,
       action: 'rejected',
       assignedScore: 0
     };
-    showToast(`${team.name} 미션 ${missionNum}: TF 수동 불인정(0점) 처리 완료`, 'info');
+    showToast(`${team.name} 미션 ${missionNum}: TF 수동 불인정(0점) 처리 완료 (${revName})`, 'info');
   }
   saveState();
   renderAll();
@@ -1313,31 +1354,52 @@ function resolveNeedsReview(teamId, missionNum, newStatus) {
 function toggleM2CommonItem(teamId, itemId) {
   const team = appState.teams[teamId];
   if (!team || !team.m2) return;
+  const itemObj = JEJU_COMMON_ITEMS.find(x => x.id === itemId) || { label: itemId };
   team.m2.verifiedCommon = team.m2.verifiedCommon || [];
   const vIdx = team.m2.verifiedCommon.indexOf(itemId);
-  let nowAccepted = false;
-  if (vIdx >= 0) {
-    team.m2.verifiedCommon.splice(vIdx, 1);
-    nowAccepted = false;
-  } else {
-    if (team.m2.verifiedCommon.length >= 3) {
-      showToast('흔한 제주 5종은 최대 3종까지만 인정 가능합니다.', 'info');
-      return;
-    }
-    team.m2.verifiedCommon.push(itemId);
-    nowAccepted = true;
+  const willAccept = (vIdx < 0);
+
+  if (willAccept && team.m2.verifiedCommon.length >= 3) {
+    showToast('흔한 제주 5종은 최대 3종까지만 인정 가능합니다.', 'info');
+    return;
   }
+
+  const defaultReviewer = team.m2.itemResults?.[itemId]?.manualReview?.reviewer || team.m2.manualReview?.reviewer || 'TF 심사위원';
+  const reviewerInput = prompt(`[${team.name} 미션 2 - ${itemObj.label}] ${willAccept ? '수동 인정(+5점)' : '수동 불인정 전환'}\n수정자(심사위원) 성명/직책:`, defaultReviewer);
+  if (reviewerInput === null) return;
+
+  const defaultReason = willAccept ? 'TF 현장 육안 확인 결과 정상 인정' : 'TF 현장 확인 결과 불인정/취소';
+  const reasonInput = prompt(`[${team.name} 미션 2 - ${itemObj.label}] 변경 사유:`, defaultReason);
+  if (reasonInput === null) return;
+
+  if (willAccept) {
+    team.m2.verifiedCommon.push(itemId);
+  } else {
+    team.m2.verifiedCommon.splice(vIdx, 1);
+  }
+
+  const timeStr = formatNowTime(true);
+  const revName = (reviewerInput || 'TF 심사위원').trim();
+  const revReason = (reasonInput || defaultReason).trim();
 
   if (!team.m2.itemResults) team.m2.itemResults = {};
   team.m2.itemResults[itemId] = {
     ...(team.m2.itemResults[itemId] || {}),
-    status: nowAccepted ? 'valid' : 'invalid',
-    accepted: nowAccepted,
+    status: willAccept ? 'valid' : 'invalid',
+    accepted: willAccept,
     manualReview: {
-      reviewer: 'TF 운영진',
-      reviewedAt: formatNowTime(true),
-      action: nowAccepted ? 'manual_accept' : 'manual_reject'
+      reviewer: revName,
+      reviewedAt: timeStr,
+      reason: revReason,
+      action: willAccept ? 'manual_accept' : 'manual_reject'
     }
+  };
+
+  team.m2.manualReview = {
+    reviewer: revName,
+    reviewedAt: timeStr,
+    reason: `[${itemObj.label}] ${willAccept ? '수동 인정(+5점)' : '수동 불인정'}: ${revReason}`,
+    action: 'manual_override'
   };
 
   const commonScore = Math.min(3, team.m2.verifiedCommon.length) * 5;
@@ -1346,26 +1408,56 @@ function toggleM2CommonItem(teamId, itemId) {
   team.m2.graded = true;
   saveState();
   renderAll();
-  showToast(`TF 수동 변경: ${nowAccepted ? '인정 (+5점)' : '불인정 (0점)'}`, 'success');
+  showToast(`TF 수동 변경: ${itemObj.label} ${willAccept ? '인정 (+5점)' : '불인정 (0점)'} (${revName})`, 'success');
 }
 
 function selectM2HiddenItem(teamId, itemId) {
   const team = appState.teams[teamId];
   if (!team || !team.m2) return;
-  const nowAccepted = (team.m2.verifiedHidden !== itemId);
-  team.m2.verifiedHidden = nowAccepted ? itemId : null;
+  const itemObj = JEJU_HIDDEN_ITEMS.find(x => x.id === itemId) || { label: itemId };
+  const willAccept = (team.m2.verifiedHidden !== itemId);
+
+  const defaultReviewer = team.m2.itemResults?.[itemId]?.manualReview?.reviewer || team.m2.manualReview?.reviewer || 'TF 심사위원';
+  const reviewerInput = prompt(`[${team.name} 미션 2 히든 - ${itemObj.label}] ${willAccept ? '히든 수동 인정(+5점)' : '히든 인정 취소'}\n수정자(심사위원) 성명/직책:`, defaultReviewer);
+  if (reviewerInput === null) return;
+
+  const defaultReason = willAccept ? 'TF 현장 육안 확인 결과 히든 인정' : 'TF 히든 수동 취소';
+  const reasonInput = prompt(`[${team.name} 미션 2 히든 - ${itemObj.label}] 변경 사유:`, defaultReason);
+  if (reasonInput === null) return;
+
+  team.m2.verifiedHidden = willAccept ? itemId : null;
+  const timeStr = formatNowTime(true);
+  const revName = (reviewerInput || 'TF 심사위원').trim();
+  const revReason = (reasonInput || defaultReason).trim();
 
   if (!team.m2.itemResults) team.m2.itemResults = {};
   team.m2.itemResults[itemId] = {
     ...(team.m2.itemResults[itemId] || {}),
-    status: nowAccepted ? 'valid' : 'invalid',
-    accepted: nowAccepted,
+    status: willAccept ? 'valid' : 'invalid',
+    accepted: willAccept,
     manualReview: {
-      reviewer: 'TF 운영진',
-      reviewedAt: formatNowTime(true),
-      action: nowAccepted ? 'manual_accept' : 'manual_reject'
+      reviewer: revName,
+      reviewedAt: timeStr,
+      reason: revReason,
+      action: willAccept ? 'manual_accept' : 'manual_reject'
     }
   };
+
+  team.m2.manualReview = {
+    reviewer: revName,
+    reviewedAt: timeStr,
+    reason: `[히든: ${itemObj.label}] ${willAccept ? '수동 인정(+5점)' : '수동 취소'}: ${revReason}`,
+    action: 'manual_override'
+  };
+
+  const commonScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
+  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
+  team.m2.score = commonScore + hiddenScore;
+  team.m2.graded = true;
+  saveState();
+  renderAll();
+  showToast(`TF 히든 수동 변경: ${itemObj.label} ${willAccept ? '인정 (+5점)' : '불인정 (0점)'} (${revName})`, 'success');
+}
 
   const commonScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
   const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
@@ -2494,11 +2586,11 @@ function setTfMissionFilter(filterVal) {
   renderTfDashboardView();
 }
 
-function updateAiManualScore(teamId, missionNum, newScore) {
+function applyManualScore(teamId, missionNum, val, reviewer, reason) {
+  const team = appState.teams[teamId];
   const mKey = `m${missionNum}`;
-  const maxMap = { 1: 25, 4: 30, 5: 10 };
-  const val = Math.max(0, Math.min(maxMap[missionNum], Number(newScore) || 0));
-  const m = appState.teams[teamId][mKey];
+  const m = team[mKey];
+
   m.score = val;
   m.graded = true;
   if (val > 0) {
@@ -2506,15 +2598,76 @@ function updateAiManualScore(teamId, missionNum, newScore) {
   } else if (val === 0 && m.photo && m.status !== 'needs_review') {
     m.status = 'invalid';
   }
+
+  const revName = (reviewer || 'TF 심사위원').trim();
+  const revReason = (reason || 'TF 심사위원 점수 수동 조정').trim();
+  const timeStr = formatNowTime(true);
+
   m.manualReview = {
-    reviewer: 'TF 운영진',
-    reviewedAt: formatNowTime(true),
-    reason: '점수 직접 수기 입력',
+    reviewer: revName,
+    reviewedAt: timeStr,
+    reason: revReason,
     action: val > 0 ? 'approved' : 'rejected',
     assignedScore: val
   };
+  m.oneLineReview = `[TF 수동 확정] ${revReason} (${val}점 부여 - ${revName})`;
+
   saveState();
-  renderTfLeaderboard();
+  renderAll();
+  showToast(`${team.name} 미션 ${missionNum}: ${val}점 수동 확정 완료 (${revName})`, 'success');
+}
+
+function updateAiManualScore(teamId, missionNum, newScore) {
+  const team = appState.teams[teamId];
+  const mKey = `m${missionNum}`;
+  const maxMap = { 1: 25, 4: 30, 5: 10 };
+  const maxScore = maxMap[missionNum] || 25;
+  const val = Math.max(0, Math.min(maxScore, Number(newScore) || 0));
+  const m = team[mKey];
+
+  // 만약 기존 확정 점수와 완전히 동일하면 불필요한 prompt 방지
+  if (m.score === val && m.manualReview) {
+    return;
+  }
+
+  const defaultReviewer = m.manualReview?.reviewer || 'TF 심사위원';
+  const reviewerInput = prompt(`[${team.name} 미션 ${missionNum}] 점수를 ${val}점으로 수동 확정/수정합니다.\n심사위원(수정자) 성명/직책을 입력해 주세요:`, defaultReviewer);
+  if (reviewerInput === null) {
+    renderAll();
+    return;
+  }
+
+  const defaultReason = m.manualReview?.reason || 'TF 심사위원 현장 육안 점수 확정';
+  const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 점수 수동 확정/수정 사유를 입력해 주세요:`, defaultReason);
+  if (reasonInput === null) {
+    renderAll();
+    return;
+  }
+
+  applyManualScore(teamId, missionNum, val, reviewerInput, reasonInput);
+}
+
+function openManualScoreModal(teamId, missionNum) {
+  const team = appState.teams[teamId];
+  const mKey = `m${missionNum}`;
+  const m = team[mKey];
+  const maxMap = { 1: 25, 4: 30, 5: 10 };
+  const maxScore = maxMap[missionNum] || 25;
+
+  const defaultScore = m.score !== null ? m.score : (missionNum === 1 ? 20 : missionNum === 4 ? 25 : 8);
+  const scoreInput = prompt(`[${team.name} 미션 ${missionNum} 점수 수동 확정/수정]\n부여할 최종 점수를 입력하세요 (0 ~ ${maxScore}점):`, defaultScore);
+  if (scoreInput === null) return;
+  const val = Math.max(0, Math.min(maxScore, Number(scoreInput) || 0));
+
+  const defaultReviewer = m.manualReview?.reviewer || 'TF 심사위원';
+  const reviewerInput = prompt(`[${team.name} 미션 ${missionNum}] 심사위원(수정자) 성명/직책:`, defaultReviewer);
+  if (reviewerInput === null) return;
+
+  const defaultReason = m.manualReview?.reason || 'TF 심사위원 현장 육안 평가 점수 확정';
+  const reasonInput = prompt(`[${team.name} 미션 ${missionNum}] 수동 점수 확정 사유:`, defaultReason);
+  if (reasonInput === null) return;
+
+  applyManualScore(teamId, missionNum, val, reviewerInput, reasonInput);
 }
 
 function updateAiOneLineReview(teamId, missionNum, text) {
@@ -2727,6 +2880,95 @@ function renderTfLeaderboard() {
   }
 }
 
+function renderTfMissionScoringGuide(missionNum) {
+  const guideConfigs = {
+    1: {
+      summary: "제주 분위기 4~8 + 팀 케미 6~9 + 포스터 구도 5~8",
+      rubrics: [
+        { label: "제주 분위기", score: "4 ~ 8점", desc: "제주 랜드마크·자연 배경의 조화 및 여행의 분위기" },
+        { label: "팀 케미", score: "6 ~ 9점", desc: "팀원들의 생동감 있는 표정, 활기찬 에너지와 호흡" },
+        { label: "포스터 구도", score: "5 ~ 8점", desc: "영화나 여행 포스터 같은 완성도 있는 구도" }
+      ]
+    },
+    2: {
+      summary: "일반 항목 최대 3종 × 5점 + 히든 최대 1종 × 5점",
+      rubrics: [
+        { label: "일반 항목", score: "최대 3종 × 5점 (최대 15점)", desc: "흔한 제주 5종(돌담, 바람/풍차, 귤/한라봉, 말, 야자수) 중 유효한 최대 3종 인정" },
+        { label: "히든 항목", score: "최대 1종 × 5점 (최대 5점)", desc: "숨겨진 제주 4종 중 최초 발견 1종에 보너스 5점 인정" }
+      ]
+    },
+    4: {
+      summary: "주인공 연출 6~12 + 팀원 리액션 6~10 + 재치·스토리 5~8",
+      rubrics: [
+        { label: "주인공 연출", score: "6 ~ 12점", desc: "한 사람이 사진의 독보적 원탑 주인공으로 돋보이는 연출" },
+        { label: "팀원 리액션", score: "6 ~ 10점", desc: "주인공을 극적으로 몰아주는 팀원들의 리액션과 연기력" },
+        { label: "재치·스토리", score: "5 ~ 8점", desc: "유쾌하고 기발한 상황 설정, 웃음을 자아내는 스토리텔링" }
+      ]
+    },
+    5: {
+      summary: "실제 글자 연출 시도 기본 4 + JA 가독성 2~4 + 신체 협동 1~2",
+      rubrics: [
+        { label: "실제 글자 연출 시도 기본", score: "4점 고정", desc: "실제 신체 그림자로 글자(JA)를 만들려는 연출 시도 확인 필수 (시도 부재 시 0점)" },
+        { label: "JA 가독성", score: "2 ~ 4점", desc: "두 글자 모두 식별 미흡(2점) / 한 글자 선명(3점) / 두 글자 모두 뚜렷(4점)" },
+        { label: "신체 협동", score: "1 ~ 2점", desc: "팔다리 맞댐/결합 등 복합 협동(2점) / 단순 포즈(1점) · 단순 다인원 그림자는 2점 불가" }
+      ]
+    }
+  };
+
+  const cfg = guideConfigs[missionNum];
+  if (!cfg) return '';
+
+  const isOpen = Boolean(appState.tfGuideOpen?.[missionNum]);
+  const gridColsClass = cfg.rubrics.length === 2 ? 'grid grid-cols-1 md:grid-cols-2 gap-2' : 'grid grid-cols-1 md:grid-cols-3 gap-2';
+
+  return `
+    <details class="group my-3 rounded-2xl border border-slate-200/90 bg-gradient-to-r from-slate-50 to-sky-50/40 p-3.5 text-xs shadow-2xs transition" ${isOpen ? 'open' : ''} ontoggle="toggleTfGuideOpen(${missionNum}, this.open)">
+      <summary class="flex cursor-pointer items-center justify-between font-extrabold text-[#1D5266] select-none list-none">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded-md bg-[#1D5266] text-white text-[11px]">📋</span>
+          <span class="text-xs sm:text-sm font-black text-[#1D5266]">심사위원용 간단 채점 기준표</span>
+          <span class="text-[11px] font-bold text-[#0097A7] bg-white px-2 py-0.5 rounded-full border border-[#0097A7]/30">${cfg.summary}</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold group-open:text-[#0097A7]">
+          <span class="hidden sm:inline">${isOpen ? '기준표 접기' : '기준표 펼쳐보기'}</span>
+          <span class="transform transition-transform duration-200 group-open:rotate-180">▼</span>
+        </div>
+      </summary>
+
+      <div class="mt-3 pt-3 border-t border-slate-200/80 space-y-3">
+        <!-- Rubric Breakdown Cards -->
+        <div class="${gridColsClass}">
+          ${cfg.rubrics.map(r => `
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold text-slate-800 text-xs">${r.label}</span>
+                <span class="font-black text-[#0097A7] text-xs bg-[#E0F7FA] px-1.5 py-0.5 rounded">${r.score}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-snug">${r.desc}</p>
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Common Guide & Principles -->
+        <div class="p-3 rounded-xl bg-amber-50/90 border border-amber-200/90 space-y-2 text-slate-700">
+          <div class="font-black text-amber-900 text-xs flex items-center gap-1">
+            <span>⚖️</span><span>공통 안내</span>
+          </div>
+          <ul class="text-[11px] text-amber-950 space-y-1 pl-4 list-disc leading-relaxed">
+            <li><b>미션과 무관한 사진은 0점, 판단이 어려우면 TF 검토.</b></li>
+            <li><b>최소점수는 유효한 제출물에만 적용.</b></li>
+            <li><b>촬영자 제외 등 인원수 부족으로 감점하지 않음.</b></li>
+          </ul>
+          <div class="pt-1.5 mt-1 border-t border-amber-200/80 text-[11px] font-extrabold text-[#1D5266] flex items-center gap-1.5">
+            <span>💡</span>
+            <span>AI 점수는 참고이며 최종 점수는 TF 심사위원이 수정할 수 있습니다.</span>
+          </div>
+        </div>
+      </div>
+    </details>
+  `;
+}
+
 function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
   const mKey = `m${missionNum}`;
   return `
@@ -2742,6 +2984,8 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
         </div>
         ${renderMissionScheduleToggleBadge(missionNum)}
       </div>
+
+      ${renderTfMissionScoringGuide(missionNum)}
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
         ${[1, 2, 3].map(tid => {
@@ -2853,9 +3097,12 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
                     <label class="text-xs font-extrabold text-slate-700">확정 점수 (만점 ${maxScore}점)</label>
                     ${m.status === 'needs_review' ? '<span class="block text-[10px] text-amber-600 font-bold leading-none">검토 전 미합산 (null)</span>' : ''}
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-1.5">
                     <input type="number" min="0" max="${maxScore}" value="${m.score !== null ? m.score : ''}" placeholder="미정" onchange="updateAiManualScore(${tid}, ${missionNum}, this.value)" class="w-16 px-2 py-1 rounded-lg border border-slate-300 text-right font-extrabold text-sm text-[#0097A7] bg-white" />
                     <span class="text-xs font-bold text-slate-500">점</span>
+                    <button type="button" onclick="openManualScoreModal(${tid}, ${missionNum})" class="text-[10px] font-extrabold px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition flex items-center gap-0.5 shadow-2xs" title="심사위원 수동 점수 확정 (사유·수정자 기록)">
+                      <span>✏️</span><span>수동확정</span>
+                    </button>
                   </div>
                 </div>
                 ${m.subScores && Object.keys(m.subScores).length > 0 && m.status === 'valid' ? `
@@ -2870,8 +3117,15 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
                   <textarea rows="2" onchange="updateAiOneLineReview(${tid}, ${missionNum}, this.value)" placeholder="AI 채점 시 자동 기록되며 직접 수정도 가능합니다." class="w-full p-2 rounded-lg border border-slate-200 text-xs bg-white text-slate-700">${m.oneLineReview || ''}</textarea>
                 </div>
                 ${m.manualReview ? `
-                  <div class="text-[10px] text-slate-400 font-medium">
-                    ✏️ ${m.manualReview.reviewer} 수동 조정 (${m.manualReview.reviewedAt || ''})
+                  <div class="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[10px] text-amber-900 space-y-1">
+                    <div class="font-extrabold flex items-center justify-between text-amber-950">
+                      <span class="flex items-center gap-1"><span>✏️</span><span>TF 심사위원 수동 확정 (${m.manualReview.assignedScore ?? m.score}점)</span></span>
+                      <span class="font-mono text-[9px] text-amber-700 bg-white/70 px-1.5 py-0.5 rounded border border-amber-200/60">${m.manualReview.reviewedAt || ''}</span>
+                    </div>
+                    <div class="text-[10px] leading-snug">
+                      <span class="font-bold text-amber-950">수정자:</span> ${m.manualReview.reviewer || 'TF 심사위원'} &nbsp;|&nbsp;
+                      <span class="font-bold text-amber-950">사유:</span> ${m.manualReview.reason || '수동 점수 확정'}
+                    </div>
                   </div>
                 ` : ''}
               </div>
@@ -2914,6 +3168,9 @@ function renderTfDashboardView() {
             <p class="text-xs text-slate-500 mt-1">10/30(금) 13:00 오픈 ~ 17:30 마감 · 🤖 GPT-4o Vision이 업로드된 사진을 판독하여 키위 등 다른 과일이나 엉뚱한 사진 제출을 자동 감지합니다.</p>
           </div>
         </div>
+
+        ${renderTfMissionScoringGuide(2)}
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           ${[1, 2, 3].map(tid => {
             const team = appState.teams[tid];
@@ -2988,6 +3245,19 @@ function renderTfDashboardView() {
                 ${team.m2.oneLineReview ? `
                   <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed font-medium">
                     <span class="text-[#0097A7] font-bold">🤖 AI 심사평: </span>${team.m2.oneLineReview}
+                  </div>
+                ` : ''}
+
+                ${team.m2.manualReview ? `
+                  <div class="p-2.5 rounded-xl bg-amber-50/80 border border-amber-200 text-[10px] text-amber-900 space-y-1">
+                    <div class="font-extrabold flex items-center justify-between text-amber-950">
+                      <span class="flex items-center gap-1"><span>✏️</span><span>TF 심사위원 수동 확정 내역</span></span>
+                      <span class="font-mono text-[9px] text-amber-700 bg-white/70 px-1.5 py-0.5 rounded border border-amber-200/60">${team.m2.manualReview.reviewedAt || ''}</span>
+                    </div>
+                    <div class="text-[10px] leading-snug">
+                      <span class="font-bold text-amber-950">수정자:</span> ${team.m2.manualReview.reviewer || 'TF 심사위원'} &nbsp;|&nbsp;
+                      <span class="font-bold text-amber-950">내용:</span> ${team.m2.manualReview.reason || '수동 조정'}
+                    </div>
                   </div>
                 ` : ''}
 
