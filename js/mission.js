@@ -417,6 +417,8 @@ function sanitizeKatalkMessage(m, defaultM) {
   return {
     ...defaultM,
     ...m,
+    displayVersion: (typeof m.displayVersion === 'number' && m.displayVersion >= 1) ? m.displayVersion : 1,
+    baselineInfo: m.baselineInfo || null,
     scheduledDate: m.scheduledDate || defaultM.scheduledDate,
     scheduledTime: m.scheduledTime || defaultM.scheduledTime,
     status: (m.status && ['draft', 'reserved', 'sent'].includes(m.status)) ? m.status : 'draft',
@@ -3676,8 +3678,18 @@ async function saveKatalkSingleToServer(id, patch, options = {}) {
       body: JSON.stringify({
         action: 'update_single',
         messageId: id,
-        patch,
+        patch: {
+          ...patch,
+          clientUpdatedAt: (() => {
+            const m = (appState.katalkMessages || []).find(x => x.id === id);
+            return m ? m.updatedAt : null;
+          })()
+        },
         expectedVersion: katalkServerState ? katalkServerState.version : null,
+        expectedMessageVersion: (() => {
+          const m = (appState.katalkMessages || []).find(x => x.id === id);
+          return m ? m.version : null;
+        })(),
         updaterName: getTfOperatorName(),
         forceOverwrite: options.forceOverwrite || false
       })
@@ -3721,7 +3733,9 @@ async function saveKatalkSingleToServer(id, patch, options = {}) {
       delete katalkFailedSaves[id];
 
       if (ind) {
-        ind.innerHTML = `<span class="text-emerald-600 font-bold">💾 서버 저장 완료 (v${json.data.version})</span>`;
+        const savedMsg = json.data.messages?.find(m => m.id === id);
+        const dispV = savedMsg ? (savedMsg.displayVersion || 1) : 1;
+        ind.innerHTML = `<span class="text-emerald-600 font-bold">💾 서버 저장 완료 (v${dispV})</span>`;
         setTimeout(() => { if (ind) ind.innerHTML = ''; }, 3000);
       }
       renderAllKatalkViews();
@@ -4254,10 +4268,11 @@ function renderKatalkMessagesCards(searchTerm = '') {
 
         <!-- Card Footer Audit Info -->
         <div class="pt-1 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-2">
-          <div class="flex items-center gap-2">
-            <span>버전: <strong>v${m.version || 1}</strong></span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span>버전: <strong>v${m.displayVersion || 1}</strong></span>
             <span>·</span>
             <span>최근 수정: <strong>${escapeHtml(m.updatedBy || '시스템')}</strong> (${m.updatedAt ? new Date(m.updatedAt).toLocaleTimeString('ko-KR') : '-'})</span>
+            ${m.baselineInfo ? `<span class="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-medium">${escapeHtml(m.baselineInfo.note || '새 기준본 v1')}</span>` : ''}
           </div>
           <div>
             ${m.status === 'reserved' && m.reservedBy ? `<span class="text-amber-800 font-bold">예약 등록: ${escapeHtml(m.reservedBy)} (${m.reservedAt})</span>` : ''}

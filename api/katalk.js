@@ -419,6 +419,7 @@ module.exports = async function handler(req, res) {
     const {
       action,
       expectedVersion,
+      expectedMessageVersion,
       updaterName,
       messageId,
       patch,
@@ -437,19 +438,36 @@ module.exports = async function handler(req, res) {
       const serverVersion = current.version || 1;
 
       // 동시 수정 충돌 감지 (Optimistic Concurrency Control)
-      if (expectedVersion !== undefined && expectedVersion !== null && !forceOverwrite) {
-        if (Number(expectedVersion) < serverVersion) {
-          // 단일 메시지 수정의 경우, 해당 메시지가 실제로 변경되었는지 정밀 대조
-          if (action === 'update_single' && messageId) {
-            const targetMsg = current.messages.find(m => m.id === Number(messageId));
-            if (targetMsg && targetMsg.version > Number(expectedVersion)) {
-              return res.status(409).json({
-                conflict: true,
-                error: `[동시 수정 충돌 안내] 다른 TF(${targetMsg.updatedBy || '운영진'})가 ${new Date(targetMsg.updatedAt || Date.now()).toLocaleTimeString('ko-KR')}에 이 공지를 먼저 수정했습니다. 서버 최신 내용을 확인한 후 다시 저장해 주세요.`,
-                serverData: current
-              });
+      // 오래된 브라우저 탭이 최신 문구를 조용히 덮어쓰지 못하도록 엄격히 검증
+      if (!forceOverwrite) {
+        if (action === 'update_single' && messageId) {
+          const targetMsg = current.messages.find(m => m.id === Number(messageId));
+          const clientMsgVer = expectedMessageVersion !== undefined && expectedMessageVersion !== null
+            ? Number(expectedMessageVersion)
+            : null;
+
+          let isConflict = false;
+          if (targetMsg) {
+            if (clientMsgVer !== null && targetMsg.version > clientMsgVer) {
+              isConflict = true;
+            } else if (expectedVersion !== undefined && expectedVersion !== null && Number(expectedVersion) < serverVersion) {
+              // 전역 버전이 이전 버전인 경우, 해당 메시지가 클라이언트가 알고 있던 시각보다 이후에 서버에서 수정되었는지 확인
+              const clientTime = (patch && patch.clientUpdatedAt) ? Number(patch.clientUpdatedAt) : 0;
+              if (targetMsg.updatedAt && targetMsg.updatedAt > clientTime) {
+                isConflict = true;
+              }
             }
-          } else if (action === 'set_manager' || action === 'reset_all') {
+          }
+
+          if (isConflict) {
+            return res.status(409).json({
+              conflict: true,
+              error: `[동시 수정 충돌 안내] 다른 TF(${targetMsg.updatedBy || '운영진'})가 ${new Date(targetMsg.updatedAt || Date.now()).toLocaleTimeString('ko-KR')}에 이 공지를 먼저 수정했습니다. 서버 최신 내용을 확인한 후 다시 저장해 주세요.`,
+              serverData: current
+            });
+          }
+        } else if (action === 'set_manager' || action === 'reset_all') {
+          if (expectedVersion !== undefined && expectedVersion !== null && Number(expectedVersion) < serverVersion) {
             return res.status(409).json({
               conflict: true,
               error: `[동시 수정 충돌 안내] 다른 TF가 먼저 공지 관리 설정을 수정했습니다. 최신 상태를 새로고침해 주세요.`,
@@ -471,13 +489,26 @@ module.exports = async function handler(req, res) {
 
         const msg = current.messages[idx];
         const p = patch || {};
+        let contentOrScheduleChanged = false;
 
-        // 내용 변경
-        if (typeof p.content === 'string') msg.content = p.content;
+        // 내용 변경 (공백·개행 정규화 금지: 클라이언트가 보낸 문자열 그대로 유지)
+        if (typeof p.content === 'string' && p.content !== msg.content) {
+          msg.content = p.content;
+          contentOrScheduleChanged = true;
+        }
         // 일정 변경
-        if (typeof p.scheduledDate === 'string') msg.scheduledDate = p.scheduledDate;
-        if (typeof p.scheduledTime === 'string') msg.scheduledTime = p.scheduledTime;
-        if (typeof p.title === 'string') msg.title = p.title;
+        if (typeof p.scheduledDate === 'string' && p.scheduledDate !== msg.scheduledDate) {
+          msg.scheduledDate = p.scheduledDate;
+          contentOrScheduleChanged = true;
+        }
+        if (typeof p.scheduledTime === 'string' && p.scheduledTime !== msg.scheduledTime) {
+          msg.scheduledTime = p.scheduledTime;
+          contentOrScheduleChanged = true;
+        }
+        if (typeof p.title === 'string' && p.title !== msg.title) {
+          msg.title = p.title;
+          contentOrScheduleChanged = true;
+        }
 
         // 상태 변경
         if (p.status && ['draft', 'reserved', 'sent'].includes(p.status)) {
@@ -493,6 +524,7 @@ module.exports = async function handler(req, res) {
               scheduledDate: msg.scheduledDate,
               scheduledTime: msg.scheduledTime,
               version: msg.version || 1,
+              displayVersion: msg.displayVersion || 1,
               savedAt: now,
               savedBy: cleanUpdater
             };
@@ -514,6 +546,7 @@ module.exports = async function handler(req, res) {
             scheduledDate: msg.scheduledDate,
             scheduledTime: msg.scheduledTime,
             version: msg.version || 1,
+            displayVersion: msg.displayVersion || 1,
             savedAt: now,
             savedBy: cleanUpdater
           };
@@ -521,6 +554,14 @@ module.exports = async function handler(req, res) {
           msg.reconfirmedAt = new Date(now).toLocaleString('ko-KR');
         }
 
+        // 표시 버전 관리: 실제 본문이나 일정이 수정될 때만 v1 -> v2, v3처럼 증가
+        if (contentOrScheduleChanged) {
+          msg.displayVersion = (msg.displayVersion || 1) + 1;
+        } else if (!msg.displayVersion) {
+          msg.displayVersion = 1;
+        }
+
+        // 동시성 제어용 내부 버전: 절대 낮추거나 초기화하지 않고 매 변경마다 1씩 증가
         msg.version = (msg.version || 1) + 1;
         msg.updatedAt = now;
         msg.updatedBy = cleanUpdater;
