@@ -33,6 +33,229 @@ const JEJU_HIDDEN_ITEMS = [
 
 const N_POEM_WORDS = ['제이에이', '귤하르방', '돌하르방', '제주바람', '오메기떡'];
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+const DEFAULT_KATALK_MESSAGES = [
+  {
+    id: 1,
+    time: "1일차 21:30",
+    badge: "🌙 1일차 밤",
+    title: "🌙 [1일차 21:30] 레크리에이션 직후: 모바일 미션앱 사전 팀 등록 안내",
+    notes: "정각 단톡방 발송",
+    content: `[🍊 2026 JA Korea 제주 리트릿 — 조별 미션앱 사전 등록 안내]
+
+임직원 여러분, 오늘 저녁 레크리에이션 배틀 수고 많으셨습니다! 🎉
+내일 신나는 2일차 투어와 함께 진행될 <One JA 조별 미션앱>을 사전 오픈합니다.
+
+내일 아침 출발 전 원활한 진행을 위해, 지금 각 팀별로 접속하여 [팀 등록]을 마쳐주세요! 👇
+🔗 미션 웹앱 바로가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+📌 [오늘 밤 30초 사전 등록 방법]
+1. 링크 접속 후 우리 팀(1팀 / 2팀 / 3팀) 선택
+2. 각 팀의 대표 1명이 오늘 정해진 <우리 팀명>과 <비밀번호 4자리>를 입력하고 [팀 등록 완료] 클릭!
+3. 정해진 4자리 비밀번호를 팀원들에게 공유하면, 팀원들도 비번만 치고 즉시 입장 완료!
+
+※ 오늘 밤 한 번만 로그인해 두시면 스마트폰에 자동 저장되어, 내일은 비밀번호 입력 없이 바로 미션을 즐기실 수 있습니다.
+모두 편안한 밤 되시고, 내일 아침 설레는 투어로 뵙겠습니다! 굿밤 되세요! 🌙🍊`
+  },
+  {
+    id: 2,
+    time: "2일차 09:00",
+    badge: "🚗 출발",
+    title: "🚗 [2일차 09:00] 출발 안내: 2일차 미션 데이 스타트!",
+    notes: "정각 단톡방 발송",
+    content: `[🍊 2026 JA Korea 제주 리트릿 — 2일차 미션 데이 스타트!]
+
+상쾌한 제주의 아침입니다! 🌿
+전용 스타리아와 함께하는 서남부 힐링 투어 & One JA 조별 미션 데이가 드디어 시작됩니다.
+
+어젯밤 등록하신 팀 전용 미션 화면이 준비되어 있으니, 이동하시면서 앱을 가볍게 둘러보세요!
+🔗 미션 웹앱 바로가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+⏰ [첫 번째 미션 오픈 예고]
+잠시 후 09:20에 <미션 1>이 오픈됩니다! 과연 어떤 미션일까요?
+
+차량 전담 기사님과 함께 안전하고 행복한 여행 되시길 바랍니다. 출발합니다! 🚗💨✨`
+  },
+  {
+    id: 3,
+    time: "09:20",
+    badge: "📸 미션 1",
+    title: "📸 [09:20] 미션 1 오픈 안내 (마감 12:30)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 1 오픈! 🎬]
+
+지금 미션 웹앱에 첫 번째 미션인 <미션 1>이 오픈되었습니다!
+어떤 미션인지 지금 바로 웹앱에 접속하여 확인하고 도전해 보세요! 
+
+⏰ 제출 마감: 오늘 12:30까지
+🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+※ 웹앱 카드 상단에 [💡 AI 심사위원이 보는 3대 핵심 채점 기준]이 안내되어 있으니 꼭 확인 후 촬영해 주세요! 📸✨`
+  },
+  {
+    id: 4,
+    time: "12:00",
+    badge: "⏰ 마감임박",
+    title: "⏰ [12:00] 미션 1 마감 30분 전 리마인드",
+    notes: "정각 단톡방 발송",
+    content: `[미션 1 마감 30분 전 안내 ⏰]
+
+<미션 1> 제출 마감이 30분 남았습니다!
+점심 식사 전, 촬영하신 사진을 미션 웹앱에 꼭 업로드해 주세요!
+
+• 마감 시각: 12:30 칼마감 (이후 AI 심사 돌입!)
+🔗 미션 웹앱 바로가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+맛있는 점심 식사 되세요! 🍱😋`
+  },
+  {
+    id: 5,
+    time: "13:00",
+    badge: "🔍 미션 2",
+    title: "🔍 [13:00] 미션 2 오픈 안내 (마감 17:30)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 2 오픈! 🔎]
+
+오후 일정을 여는 <미션 2>가 지금 오픈되었습니다!
+과연 어떤 보물찾기 미션일까요? 지금 바로 웹앱에서 확인해 보세요!
+
+⏰ 제출 마감: 오늘 17:30까지
+📍 참여 방법: 미션 웹앱에서 항목 확인 ➡️ 각 버튼을 눌러 사진 1:1 등록!
+🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+※ 억지로 찾으러 가지 마시고 이동 동선 안에서 자연스럽게 발견해 보세요! 🚗💨`
+  },
+  {
+    id: 6,
+    time: "14:30",
+    badge: "🎬 미션 3",
+    title: "🎬 [14:30] 미션 3 깜짝 오픈 안내 (동영상 마감 15:15)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 3 깜짝 오픈! ⚡]
+
+드디어 기다리던 깜짝 미션, <미션 3>이 오픈되었습니다!
+지금 바로 웹앱에서 미션 내용과 오늘의 제시어를 확인하고, 완성된 동영상을 이 단톡방에 올려주세요!
+
+⏰ 동영상 제출 마감: 15:15까지 (단 45분간!)
+📍 참여 방법: 웹앱에서 제시어 확인 ➡️ 동영상 촬영 ➡️ [카톡 단톡방]에 영상 업로드 ➡️ 웹앱에서 [제출 완료 체크] 클릭!
+🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+15:15에 영상 접수가 마감되면 곧바로 상호 투표가 시작됩니다! 🎬🔥`
+  },
+  {
+    id: 7,
+    time: "15:15",
+    badge: "🗳️ 투표",
+    title: "🗳️ [15:15] 미션 3 상호 투표 시작 안내 (투표 마감 15:30)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 3 상호 투표 시작! 🗳️]
+
+모든 팀의 센스 넘치는 영상이 단톡방에 접수되었습니다!
+단톡방 영상을 감상하신 후, 지금 바로 미션 웹앱에서 가장 마음에 드는 팀에 투표해 주세요!
+
+⏰ 투표 마감: 15:30까지 (15분간)
+📍 투표 방법: 미션 웹앱 접속 ➡️ [미션 3] 카드 ➡️ [센스 만점 타 팀 투표하기] 클릭!
+(※ 공정성을 위해 본인 팀에는 투표할 수 없습니다.)
+🔗 투표하러 가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+여러분의 한 표가 우승팀을 결정합니다! 지금 바로 투표하세요! 🏃‍♂️💨`
+  },
+  {
+    id: 8,
+    time: "15:30",
+    badge: "👑 미션 4",
+    title: "👑 [15:30] 미션 4 오픈 안내 (마감 17:30)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 4 오픈! 👑]
+
+지금 미션 웹앱에 <미션 4>가 오픈되었습니다!
+어떤 흥미진진한 단체 미션인지 지금 바로 웹앱에서 확인하고 도전해 보세요!
+
+⏰ 제출 마감: 오늘 17:30까지
+🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+팀원들의 멋진 호흡과 연기력을 기대합니다! 😆🙌`
+  },
+  {
+    id: 9,
+    time: "16:00",
+    badge: "🌟 미션 5",
+    title: "🌟 [16:00] 미션 5 보너스 오픈 안내 (마감 17:30)",
+    notes: "정각 단톡방 발송",
+    content: `[미션 5 오픈! (보너스 미션) 🌟]
+
+보너스 점수를 획득할 수 있는 <미션 5>가 지금 오픈되었습니다!
+지금 바로 웹앱에 접속해 미션 내용을 확인해 보세요!
+
+⏰ 제출 마감: 오늘 17:30까지
+🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+※ 날씨나 주변 상황이 여의치 않은 경우, 웹앱에서 [🌥️ 패스하기]를 누르시면 감점 없이 0점 처리됩니다. 안전이 최우선입니다! 🏖️✨`
+  },
+  {
+    id: 10,
+    time: "17:00",
+    badge: "🚨 마감임박",
+    title: "🚨 [17:00] 전체 야외 미션 마감 30분 전 리마인드",
+    notes: "정각 단톡방 발송",
+    content: `[야외 전체 미션 마감 30분 전! 🚨]
+
+오후 17:30에 모든 야외 미션(미션 2, 4, 5) 접수가 최종 마감됩니다!
+웹앱에 접속하셔서 아직 제출하지 못했거나 수정하고 싶은 사진이 없는지 최종 점검해 주세요!
+
+• 최종 마감: 17:30 칼마감 (이후 AI 심사 돌입!)
+🔗 미션 점검하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+모두 숙소(헤르멘하우스)까지 안전하게 복귀하시길 바랍니다! 🚗🏡`
+  },
+  {
+    id: 11,
+    time: "17:30",
+    badge: "🏁 마감/만찬",
+    title: "🏁 [17:30] 야외 미션 최종 마감 & 저녁 일정 안내",
+    notes: "정각 단톡방 발송",
+    content: `[야외 미션 최종 마감! 수고하셨습니다 👏]
+
+2일차 조별 야외 미션이 모두 종료되었습니다!
+하루 동안 열정적으로 미션에 참여해 주신 모든 임직원분들께 감사드립니다.
+
+지금부터 TF 운영팀과 GPT AI 심사위원단의 정밀 채점이 진행됩니다.
+최종 결과는 저녁 19:30 만찬 시상식에서 대형 스크린으로 대공개됩니다!
+
+📌 [저녁 일정 안내]
+• 18:30: 헤르멘하우스 바베큐 만찬 & 미션 6 깜짝 골든벨 현장 퀴즈
+• 19:30: One JA 제주 리트릿 어워즈 (시상식 및 베스트 컷 감상)
+
+숙소에서 편안히 쉬시고 맛있는 흑돼지 바베큐 파티에서 뵙겠습니다! 🥩🍷✨`
+  },
+  {
+    id: 12,
+    time: "18:30",
+    badge: "🔔 미션 6",
+    title: "🔔 [18:30] 미션 6 현장 골든벨 퀴즈 오픈",
+    notes: "정각 단톡방 발송",
+    content: `[미션 6 현장 골든벨 오픈! 🔔]
+
+헤르멘하우스 만찬장 스페셜 미션 <미션 6>이 지금 오픈되었습니다!
+지금 바로 웹앱에 접속해 미션을 확인하고 정답을 제출해 주세요!
+
+⏰ 제한 시간: 단 3분! (타이머 카운트다운 시작)
+📍 참여 방법: 미션 웹앱 ➡️ [미션 6] 카드 ➡️ 본인 이름과 정답 입력 후 [제출] 클릭!
+🔗 미션 참여하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+
+가장 많이 맞추고 가장 빨리 제출한 1등에게는 스페셜 개인 선물이 주어집니다! 지금 관찰하세요! 👀⚡`
+  }
+];
+
 function createDefaultMissionPhotoData(defaultSubs = null) {
   return {
     photo: '',
@@ -258,6 +481,7 @@ function getInitialState() {
     tfFilter: 'all',
     ceremonySlide: 'missions',
     tfGuideOpen: { 1: false, 2: false, 4: false, 5: false },
+    katalkMessages: JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES)),
     scheduleConfig: {
       forceOpenAll: true,
       manualOpen: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true }
@@ -322,6 +546,9 @@ function loadState() {
       mode: 'participant',
       tfUnlocked: false,
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
+      katalkMessages: (Array.isArray(parsed.katalkMessages) && parsed.katalkMessages.length > 0)
+        ? parsed.katalkMessages
+        : JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES)),
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
       settings: cleanSettings,
       m3Config: { ...base.m3Config, ...(parsed.m3Config || {}) },
@@ -3128,6 +3355,176 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
   `;
 }
 
+function renderKatalkMessagesCards(searchTerm = '') {
+  const list = appState.katalkMessages || DEFAULT_KATALK_MESSAGES;
+  const term = (searchTerm || '').trim().toLowerCase();
+
+  const filtered = term ? list.filter(m => {
+    return (m.title || '').toLowerCase().includes(term) ||
+           (m.content || '').toLowerCase().includes(term) ||
+           (m.time || '').toLowerCase().includes(term) ||
+           (m.notes || '').toLowerCase().includes(term);
+  }) : list;
+
+  if (filtered.length === 0) {
+    return `
+      <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <p class="text-sm font-bold">검색어와 일치하는 공지 문구가 없습니다.</p>
+        <button onclick="clearKatalkSearch()" class="mt-2 text-xs text-[#0097A7] font-bold underline">검색 초기화</button>
+      </div>
+    `;
+  }
+
+  return filtered.map(m => `
+    <div id="katalk-card-${m.id}" class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 transition hover:border-[#1D5266]/40">
+      <!-- Top Meta Row -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+        <div class="flex items-center gap-2 flex-wrap min-w-0">
+          <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs tracking-tight shrink-0">
+            #${m.id} · ${m.badge || m.time}
+          </span>
+          <span class="text-xs sm:text-sm font-extrabold text-[#1D5266] truncate">${escapeHtml(m.title)}</span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
+            ${escapeHtml(m.notes || '단톡방 발송')}
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="btn-copy-katalk-${m.id}" type="button" onclick="copyKatalkMessage(${m.id})" class="px-3.5 py-1.5 rounded-xl bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] text-xs font-black shadow-xs flex items-center gap-1.5 transition">
+            <span>📋</span><span>카톡 복사</span>
+          </button>
+          <button type="button" onclick="resetSingleKatalkMessage(${m.id})" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 text-[11px] font-bold transition" title="이 공지만 엑셀 원본 문구로 복구">
+            원본 복구
+          </button>
+        </div>
+      </div>
+
+      <!-- Textarea for Direct Editing -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-[11px] text-slate-500 font-bold px-0.5">
+          <span>💬 공지 본문 내용 (직접 수정 시 브라우저에 자동 저장):</span>
+          <span id="saved-indicator-${m.id}" class="text-[10px] text-emerald-600 font-bold"></span>
+        </div>
+        <textarea id="katalk-text-${m.id}" rows="6" oninput="handleKatalkContentChange(${m.id}, this.value)" class="w-full p-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans bg-slate-50/60 focus:bg-white focus:border-[#1D5266] focus:ring-1 focus:ring-[#1D5266] focus:outline-none transition resize-y">${escapeHtml(m.content)}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterKatalkMessages(term) {
+  renderAllKatalkViews(term);
+}
+
+function clearKatalkSearch() {
+  const input = document.getElementById('katalk-search-input');
+  if (input) input.value = '';
+  renderAllKatalkViews('');
+}
+
+function renderAllKatalkViews(term = null) {
+  if (term === null) {
+    const input = document.getElementById('katalk-search-input');
+    term = input ? input.value : '';
+  }
+  const modalList = document.getElementById('katalk-messages-list-modal');
+  if (modalList) {
+    modalList.innerHTML = renderKatalkMessagesCards(term);
+  }
+  const pageContainer = document.getElementById('katalk-messages-page-list');
+  if (pageContainer) {
+    pageContainer.innerHTML = renderKatalkMessagesCards(term);
+  }
+}
+
+async function copyKatalkMessage(id) {
+  const list = appState.katalkMessages || DEFAULT_KATALK_MESSAGES;
+  const msg = list.find(m => m.id === id);
+  if (!msg) return;
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(msg.content);
+    } else {
+      const ta = document.getElementById(`katalk-text-${id}`);
+      if (ta) {
+        ta.select();
+        document.execCommand('copy');
+      }
+    }
+
+    const btns = document.querySelectorAll(`[id^="btn-copy-katalk-${id}"]`);
+    btns.forEach(btn => {
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span>✅</span><span>복사 완료!</span>';
+      btn.classList.add('bg-emerald-500', 'text-white');
+      btn.classList.remove('bg-[#FEE500]', 'text-[#3C1E1E]');
+      setTimeout(() => {
+        btn.innerHTML = orig;
+        btn.classList.remove('bg-emerald-500', 'text-white');
+        btn.classList.add('bg-[#FEE500]', 'text-[#3C1E1E]');
+      }, 2000);
+    });
+
+    showToast(`[#${id} 공지] 카톡 문구가 클립보드에 복사되었습니다! 단톡방에 [Ctrl+V] 하세요.`, 'success');
+  } catch (err) {
+    showToast(`[#${id} 공지] 복사 실패: 본문을 직접 드래그하여 복사해 주세요.`, 'error');
+  }
+}
+
+function handleKatalkContentChange(id, newContent) {
+  if (!appState.katalkMessages) {
+    appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
+  }
+  const msg = appState.katalkMessages.find(m => m.id === id);
+  if (msg) {
+    msg.content = newContent;
+    saveState();
+
+    const ind = document.getElementById(`saved-indicator-${id}`);
+    if (ind) {
+      ind.textContent = '💾 실시간 저장됨';
+      setTimeout(() => { if (ind) ind.textContent = ''; }, 2000);
+    }
+  }
+}
+
+function resetSingleKatalkMessage(id) {
+  const orig = DEFAULT_KATALK_MESSAGES.find(m => m.id === id);
+  if (!orig) return;
+  if (!confirm(`[#${id} 공지] 문구를 엑셀 원본 내용으로 복구하시겠습니까?`)) return;
+
+  if (!appState.katalkMessages) {
+    appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
+  }
+  const msg = appState.katalkMessages.find(m => m.id === id);
+  if (msg) {
+    msg.content = orig.content;
+    msg.title = orig.title;
+    saveState();
+    renderAllKatalkViews();
+    showToast(`[#${id} 공지] 엑셀 원본 문구로 복구되었습니다.`, 'info');
+  }
+}
+
+function resetKatalkMessagesToDefault() {
+  if (!confirm('모든 카톡 공지 문구를 엑셀 원본 내용으로 초기화하시겠습니까?\n직접 수정한 내용은 원본으로 덮어씌워집니다.')) return;
+  appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
+  saveState();
+  renderAllKatalkViews();
+  showToast('전체 12건의 카톡 공지 문구가 엑셀 원본으로 초기화되었습니다.', 'success');
+}
+
+function openKatalkMessagesModal() {
+  const modal = document.getElementById('modal-katalk-messages');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  renderAllKatalkViews();
+}
+
+function closeKatalkMessagesModal() {
+  const modal = document.getElementById('modal-katalk-messages');
+  if (modal) modal.classList.add('hidden');
+}
+
 function renderTfDashboardView() {
   renderTfLeaderboard();
   const f = appState.tfFilter;
@@ -3135,6 +3532,34 @@ function renderTfDashboardView() {
   if (!container) return;
 
   const blocks = [];
+
+  if (f === 'katalk') {
+    blocks.push(`
+      <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/70">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs">💬 Katalk_Messages</span>
+              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">단톡방 카카오톡 공지 문구 관리 (총 12건)</h2>
+              <span class="text-xs font-extrabold text-[#0097A7] bg-[#E0F7FA] px-2.5 py-0.5 rounded-full">원클릭 복사 & 실시간 내용 수정</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">
+              각 시간대별 공지 문구를 원클릭 <strong>[📋 카톡 복사]</strong>하여 단톡방에 바로 전송하세요. 수정하신 문구는 브라우저에 자동 저장됩니다.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="resetKatalkMessagesToDefault()" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+              🔄 원본 문구 전체 초기화
+            </button>
+          </div>
+        </div>
+
+        <div id="katalk-messages-page-list" class="space-y-4 mt-4">
+          ${renderKatalkMessagesCards()}
+        </div>
+      </div>
+    `);
+  }
 
   if (f === 'all' || f === 1) {
     blocks.push(renderAiMissionPanel(

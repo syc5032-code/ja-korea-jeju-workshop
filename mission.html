@@ -216,6 +216,10 @@
               <span>🤖</span>
               <span>제출 사진 일괄 AI 채점</span>
             </button>
+            <button type="button" onclick="openKatalkMessagesModal()" class="inline-flex items-center gap-1.5 text-xs font-black px-3.5 py-2 rounded-xl bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] shadow-sm transition">
+              <span>💬</span>
+              <span>카톡 공지 문구 (복붙·수정)</span>
+            </button>
             <button onclick="exportCsvReport()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition">
               <span>📊</span>
               <span>엑셀(CSV) 저장</span>
@@ -264,6 +268,7 @@
         <button onclick="setTfMissionFilter(4)" id="tf-tab-4" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">4. 팀별 주인공 (AI 30점)</button>
         <button onclick="setTfMissionFilter(5)" id="tf-tab-5" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-slate-600 hover:bg-[#F5F2E8] transition">5. 그림자 JA (AI +10점)</button>
         <button onclick="setTfMissionFilter(6)" id="tf-tab-6" class="tf-filter-btn shrink-0 text-xs font-bold px-3.5 py-2 rounded-xl text-[#F27A24] hover:bg-[#FFF3E8] transition">6. 저녁 개인미션 (최다 1명)</button>
+        <button onclick="setTfMissionFilter('katalk')" id="tf-tab-katalk" class="tf-filter-btn shrink-0 text-xs font-extrabold px-3.5 py-2 rounded-xl text-[#3C1E1E] bg-[#FEE500]/60 hover:bg-[#FEE500] border border-[#FEE500] transition">💬 카톡 공지 (12종)</button>
       </div>
 
       <!-- TF Mission Control Panels (1 ~ 6) -->
@@ -325,6 +330,52 @@
           대시보드 열기
         </button>
       </form>
+    </div>
+  </div>
+
+  <!-- TF KakaoTalk Announcement Messages Modal -->
+  <div id="modal-katalk-messages" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 shadow-2xl border border-[#E6E1D3] my-6 max-h-[92vh] flex flex-col">
+      <!-- Modal Header -->
+      <div class="flex items-start justify-between pb-4 border-b border-slate-200 shrink-0">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs">💬 Katalk_Messages</span>
+            <h3 class="text-base sm:text-xl font-extrabold text-[#1D3C34]">단톡방 카카오톡 공지 문구 관리</h3>
+            <span class="text-xs text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-full">총 12건</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">
+            원클릭 <strong>[📋 카톡 복사]</strong>로 단톡방에 바로 붙여넣으세요. 필요시 문구를 직접 수정하면 자동 저장됩니다.
+          </p>
+        </div>
+        <button type="button" onclick="closeKatalkMessagesModal()" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none" title="닫기">✕</button>
+      </div>
+
+      <!-- Quick Filter & Search Bar -->
+      <div class="py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 flex-1 min-w-[220px]">
+          <span class="text-xs text-slate-400">🔍</span>
+          <input type="text" id="katalk-search-input" oninput="filterKatalkMessages(this.value)" placeholder="공지 제목 또는 본문 검색 (예: 12:30, 마감, 미션 1, 투표)..." class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:border-[#1D3C34] focus:outline-none" />
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" onclick="resetKatalkMessagesToDefault()" class="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="엑셀 원본 문구로 전체 되돌리기">
+            🔄 원본 문구 전체 초기화
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable Announcement List -->
+      <div id="katalk-messages-list-modal" class="overflow-y-auto custom-scrollbar flex-1 py-4 space-y-4">
+        <!-- Rendered by JS -->
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 shrink-0">
+        <span>💡 수정된 내용은 브라우저에 자동 저장되며 새로고침 후에도 유지됩니다.</span>
+        <button type="button" onclick="closeKatalkMessagesModal()" class="px-4 py-2 rounded-xl bg-[#1D3C34] text-white font-extrabold hover:bg-[#142B25] transition">
+          닫기
+        </button>
+      </div>
     </div>
   </div>
 
