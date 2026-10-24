@@ -1459,15 +1459,6 @@ function selectM2HiddenItem(teamId, itemId) {
   showToast(`TF 히든 수동 변경: ${itemObj.label} ${willAccept ? '인정 (+5점)' : '불인정 (0점)'} (${revName})`, 'success');
 }
 
-  const commonScore = Math.min(3, (team.m2.verifiedCommon || []).length) * 5;
-  const hiddenScore = team.m2.verifiedHidden ? 5 : 0;
-  team.m2.score = commonScore + hiddenScore;
-  team.m2.graded = true;
-  saveState();
-  renderAll();
-  showToast(`TF 히든 수동 변경: ${nowAccepted ? '인정 (+5점)' : '불인정 (0점)'}`, 'success');
-}
-
 function copyAiPromptToClipboard(teamId, missionNum) {
   const team = appState.teams[teamId];
   const cfg = getMissionPromptConfig(missionNum, team.name);
