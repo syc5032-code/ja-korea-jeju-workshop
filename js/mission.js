@@ -47,9 +47,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 1,
     time: "1일차 21:30",
+    scheduledDate: "2026-09-21",
+    scheduledTime: "21:30",
     badge: "🌙 1일차 밤",
     title: "🌙 [1일차 21:30] 레크리에이션 직후: 모바일 미션앱 사전 팀 등록 안내",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[🍊 2026 JA Korea 제주 리트릿 — 조별 미션앱 사전 등록 안내]
 
 임직원 여러분, 오늘 저녁 레크리에이션 배틀 수고 많으셨습니다! 🎉
@@ -69,9 +82,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 2,
     time: "2일차 09:00",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "09:00",
     badge: "🚗 출발",
     title: "🚗 [2일차 09:00] 출발 안내: 2일차 미션 데이 스타트!",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[🍊 2026 JA Korea 제주 리트릿 — 2일차 미션 데이 스타트!]
 
 상쾌한 제주의 아침입니다! 🌿
@@ -88,9 +114,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 3,
     time: "09:20",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "09:20",
     badge: "📸 미션 1",
     title: "📸 [09:20] 미션 1 오픈 안내 (마감 12:30)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 1 오픈! 🎬]
 
 지금 미션 웹앱에 첫 번째 미션인 <미션 1>이 오픈되었습니다!
@@ -104,9 +143,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 4,
     time: "12:00",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "12:00",
     badge: "⏰ 마감임박",
     title: "⏰ [12:00] 미션 1 마감 30분 전 리마인드",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 1 마감 30분 전 안내 ⏰]
 
 <미션 1> 제출 마감이 30분 남았습니다!
@@ -120,9 +172,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 5,
     time: "13:00",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "13:00",
     badge: "🔍 미션 2",
     title: "🔍 [13:00] 미션 2 오픈 안내 (마감 17:30)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 2 오픈! 🔎]
 
 오후 일정을 여는 <미션 2>가 지금 오픈되었습니다!
@@ -137,9 +202,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 6,
     time: "14:30",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "14:30",
     badge: "🎬 미션 3",
     title: "🎬 [14:30] 미션 3 깜짝 오픈 안내 (동영상 마감 15:15)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 3 깜짝 오픈! ⚡]
 
 드디어 기다리던 깜짝 미션, <미션 3>이 오픈되었습니다!
@@ -154,9 +232,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 7,
     time: "15:15",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "15:15",
     badge: "🗳️ 투표",
     title: "🗳️ [15:15] 미션 3 상호 투표 시작 안내 (투표 마감 15:30)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 3 상호 투표 시작! 🗳️]
 
 모든 팀의 센스 넘치는 영상이 단톡방에 접수되었습니다!
@@ -172,9 +263,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 8,
     time: "15:30",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "15:30",
     badge: "👑 미션 4",
     title: "👑 [15:30] 미션 4 오픈 안내 (마감 17:30)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 4 오픈! 👑]
 
 지금 미션 웹앱에 <미션 4>가 오픈되었습니다!
@@ -188,9 +292,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 9,
     time: "16:00",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "16:00",
     badge: "🌟 미션 5",
     title: "🌟 [16:00] 미션 5 보너스 오픈 안내 (마감 17:30)",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 5 오픈! (보너스 미션) 🌟]
 
 보너스 점수를 획득할 수 있는 <미션 5>가 지금 오픈되었습니다!
@@ -204,9 +321,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 10,
     time: "17:00",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "17:00",
     badge: "🚨 마감임박",
     title: "🚨 [17:00] 전체 야외 미션 마감 30분 전 리마인드",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[야외 전체 미션 마감 30분 전! 🚨]
 
 오후 17:30에 모든 야외 미션(미션 2, 4, 5) 접수가 최종 마감됩니다!
@@ -220,9 +350,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 11,
     time: "17:30",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "17:30",
     badge: "🏁 마감/만찬",
     title: "🏁 [17:30] 야외 미션 최종 마감 & 저녁 일정 안내",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[야외 미션 최종 마감! 수고하셨습니다 👏]
 
 2일차 조별 야외 미션이 모두 종료되었습니다!
@@ -240,9 +383,22 @@ const DEFAULT_KATALK_MESSAGES = [
   {
     id: 12,
     time: "18:30",
+    scheduledDate: "2026-09-22",
+    scheduledTime: "18:30",
     badge: "🔔 미션 6",
     title: "🔔 [18:30] 미션 6 현장 골든벨 퀴즈 오픈",
     notes: "정각 단톡방 발송",
+    status: "draft",
+    reservedBy: null,
+    reservedAt: null,
+    sentConfirmedBy: null,
+    sentConfirmedAt: null,
+    reservedSnapshot: null,
+    reconfirmedBy: null,
+    reconfirmedAt: null,
+    version: 1,
+    updatedBy: "시스템 초기화",
+    updatedAt: null,
     content: `[미션 6 현장 골든벨 오픈! 🔔]
 
 헤르멘하우스 만찬장 스페셜 미션 <미션 6>이 지금 오픈되었습니다!
@@ -255,6 +411,37 @@ const DEFAULT_KATALK_MESSAGES = [
 가장 많이 맞추고 가장 빨리 제출한 1등에게는 스페셜 개인 선물이 주어집니다! 지금 관찰하세요! 👀⚡`
   }
 ];
+
+function sanitizeKatalkMessage(m, defaultM) {
+  if (!m || typeof m !== 'object') return { ...defaultM };
+  return {
+    ...defaultM,
+    ...m,
+    scheduledDate: m.scheduledDate || defaultM.scheduledDate,
+    scheduledTime: m.scheduledTime || defaultM.scheduledTime,
+    status: (m.status && ['draft', 'reserved', 'sent'].includes(m.status)) ? m.status : 'draft',
+    reservedBy: m.reservedBy || null,
+    reservedAt: m.reservedAt || null,
+    sentConfirmedBy: m.sentConfirmedBy || null,
+    sentConfirmedAt: m.sentConfirmedAt || null,
+    reservedSnapshot: (m.reservedSnapshot && typeof m.reservedSnapshot === 'object') ? m.reservedSnapshot : null,
+    reconfirmedBy: m.reconfirmedBy || null,
+    reconfirmedAt: m.reconfirmedAt || null,
+    version: m.version || 1,
+    updatedBy: m.updatedBy || '시스템',
+    updatedAt: m.updatedAt || null
+  };
+}
+
+function sanitizeKatalkMessages(list) {
+  if (!Array.isArray(list) || list.length === 0) {
+    return JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
+  }
+  return DEFAULT_KATALK_MESSAGES.map(def => {
+    const existing = list.find(x => x.id === def.id);
+    return sanitizeKatalkMessage(existing, def);
+  });
+}
 
 function createDefaultMissionPhotoData(defaultSubs = null) {
   return {
@@ -547,7 +734,7 @@ function loadState() {
       tfUnlocked: false,
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
       katalkMessages: (Array.isArray(parsed.katalkMessages) && parsed.katalkMessages.length > 0)
-        ? parsed.katalkMessages
+        ? sanitizeKatalkMessages(parsed.katalkMessages)
         : JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES)),
       scheduleConfig: { ...base.scheduleConfig, ...(parsed.scheduleConfig || {}) },
       settings: cleanSettings,
@@ -3355,84 +3542,743 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
   `;
 }
 
+let katalkServerState = null;
+let katalkSyncStatus = 'synced'; // 'synced' | 'saving' | 'loading' | 'error' | 'conflict'
+let katalkSyncError = '';
+let katalkCurrentFilter = 'all'; // 'all' | 'draft' | 'reserved' | 'sent' | 'warn'
+let katalkSearchTerm = '';
+const katalkEditDebounceTimers = {};
+const katalkFailedSaves = {};
+let katalkPollingInterval = null;
+
+function getTfOperatorName() {
+  return localStorage.getItem('tf_operator_name') || '송영채 TF';
+}
+
+function setTfOperatorName(name) {
+  const clean = String(name || '').trim();
+  if (clean) {
+    localStorage.setItem('tf_operator_name', clean);
+  }
+}
+
+function changeMyTfNamePrompt() {
+  const current = getTfOperatorName();
+  const input = prompt('사용하실 본인의 TF 성명을 입력해 주세요 (공지 예약 및 발송 확인 기록에 남습니다):', current);
+  if (input && input.trim()) {
+    setTfOperatorName(input.trim());
+    renderAllKatalkViews();
+    showToast(`내 TF 성명이 [${input.trim()}]으로 설정되었습니다.`, 'info');
+  }
+}
+
+function getKatalkAssignedManager() {
+  return (katalkServerState && katalkServerState.assignedManager) || '송영채 TF';
+}
+
+async function changeKatalkManagerPrompt() {
+  const current = getKatalkAssignedManager();
+  const input = prompt('단톡방 카카오톡 예약 메시지를 전담하여 등록할 [공통 예약 담당자] 성명을 입력해 주세요:\n(※ 중복 예약을 방지하기 위해 단 1명만 지정합니다)', current);
+  if (input && input.trim()) {
+    await saveKatalkManagerToServer(input.trim());
+  }
+}
+
+function formatKstDateLabel(dateStr, timeStr) {
+  if (!dateStr || !timeStr) return '-';
+  try {
+    const [y, m, d] = dateStr.split('-');
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    const dt = new Date(Number(y), Number(m) - 1, Number(d));
+    const dayName = days[dt.getDay()] || '';
+    return `${y}년 ${Number(m)}월 ${Number(d)}일(${dayName}) ${timeStr} KST`;
+  } catch (e) {
+    return `${dateStr} ${timeStr} KST`;
+  }
+}
+
+function getKatalkReservationWarning(m) {
+  if (!m || !m.reservedSnapshot || (m.status !== 'reserved' && m.status !== 'sent')) {
+    return null;
+  }
+  const snap = m.reservedSnapshot;
+  const diffs = [];
+  if (snap.content !== m.content) {
+    diffs.push('공지 본문');
+  }
+  if (snap.scheduledDate !== m.scheduledDate || snap.scheduledTime !== m.scheduledTime) {
+    diffs.push('발송 일정(날짜/시간)');
+  }
+  return diffs.length > 0 ? diffs.join(', ') : null;
+}
+
+async function fetchKatalkServerState(silent = false) {
+  if (appState.mode !== 'tf' || !appState.tfUnlocked) return;
+  if (!silent) {
+    katalkSyncStatus = 'loading';
+    updateAllKatalkSyncBadges();
+  }
+  try {
+    const res = await fetch('/api/katalk', {
+      method: 'GET',
+      credentials: 'same-origin'
+    });
+    if (res.status === 401) {
+      katalkSyncStatus = 'error';
+      katalkSyncError = 'TF 세션 인증이 필요합니다.';
+      updateAllKatalkSyncBadges();
+      return;
+    }
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const json = await res.json();
+    if (json.ok && json.data) {
+      const serverData = json.data;
+      const prevVersion = katalkServerState ? katalkServerState.version : 0;
+      katalkServerState = serverData;
+
+      const activeEl = document.activeElement;
+      const isUserTyping = activeEl && activeEl.id && activeEl.id.startsWith('katalk-text-');
+
+      if (!isUserTyping || (serverData.version || 1) > prevVersion) {
+        appState.katalkMessages = sanitizeKatalkMessages(serverData.messages);
+        saveState(true);
+      }
+      katalkSyncStatus = 'synced';
+      katalkSyncError = '';
+      renderAllKatalkViews();
+    }
+  } catch (err) {
+    katalkSyncStatus = 'error';
+    katalkSyncError = err.message || '서버 연결 실패';
+    updateAllKatalkSyncBadges();
+  }
+}
+
+async function saveKatalkSingleToServer(id, patch, options = {}) {
+  katalkSyncStatus = 'saving';
+  updateAllKatalkSyncBadges();
+
+  const ind = document.getElementById(`saved-indicator-${id}`);
+  if (ind) {
+    ind.innerHTML = '<span class="text-amber-600 font-bold">⏳ 서버 저장 중...</span>';
+  }
+
+  try {
+    const res = await fetch('/api/katalk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': appState.csrfToken || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'update_single',
+        messageId: id,
+        patch,
+        expectedVersion: katalkServerState ? katalkServerState.version : null,
+        updaterName: getTfOperatorName(),
+        forceOverwrite: options.forceOverwrite || false
+      })
+    });
+
+    if (res.status === 409) {
+      katalkSyncStatus = 'conflict';
+      const confData = await res.json().catch(() => ({}));
+      const msgText = confData.error || '다른 TF가 이 공지를 먼저 수정했습니다.';
+      if (confirm(`${msgText}\n\n[확인]을 누르면 서버의 최신 공지 내용을 불러옵니다.\n[취소]를 누르면 내 변경사항을 유지합니다.`)) {
+        if (confData.serverData) {
+          katalkServerState = confData.serverData;
+          appState.katalkMessages = sanitizeKatalkMessages(confData.serverData.messages);
+          saveState(true);
+          katalkSyncStatus = 'synced';
+          renderAllKatalkViews();
+        } else {
+          await fetchKatalkServerState(false);
+        }
+        return;
+      } else {
+        katalkSyncStatus = 'error';
+        katalkSyncError = '동시 수정 충돌 (미저장)';
+        updateAllKatalkSyncBadges();
+        return;
+      }
+    }
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || `서버 오류 (${res.status})`);
+    }
+
+    const json = await res.json();
+    if (json.ok && json.data) {
+      katalkServerState = json.data;
+      appState.katalkMessages = sanitizeKatalkMessages(json.data.messages);
+      saveState(true);
+      katalkSyncStatus = 'synced';
+      katalkSyncError = '';
+      delete katalkFailedSaves[id];
+
+      if (ind) {
+        ind.innerHTML = `<span class="text-emerald-600 font-bold">💾 서버 저장 완료 (v${json.data.version})</span>`;
+        setTimeout(() => { if (ind) ind.innerHTML = ''; }, 3000);
+      }
+      renderAllKatalkViews();
+    }
+  } catch (err) {
+    katalkSyncStatus = 'error';
+    katalkSyncError = err.message;
+    katalkFailedSaves[id] = { id, patch };
+    if (ind) {
+      ind.innerHTML = `<span class="text-rose-600 font-bold">❌ 저장 실패 <button type="button" onclick="retryKatalkSave(${id})" class="underline ml-1">재시도</button></span>`;
+    }
+    updateAllKatalkSyncBadges();
+    showToast(`[#${id} 공지] 서버 저장 실패: ${err.message}`, 'error');
+  }
+}
+
+async function saveKatalkManagerToServer(newManager) {
+  try {
+    const res = await fetch('/api/katalk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': appState.csrfToken || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'set_manager',
+        assignedManager: newManager,
+        expectedVersion: katalkServerState ? katalkServerState.version : null,
+        updaterName: getTfOperatorName()
+      })
+    });
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || `서버 오류 (${res.status})`);
+    }
+    const json = await res.json();
+    if (json.ok && json.data) {
+      katalkServerState = json.data;
+      renderAllKatalkViews();
+      showToast(`단톡방 공통 예약 담당자가 [${newManager}]님으로 지정되었습니다.`, 'success');
+    }
+  } catch (err) {
+    showToast(`예약 담당자 변경 실패: ${err.message}`, 'error');
+  }
+}
+
+function retryKatalkSave(id) {
+  const failed = katalkFailedSaves[id];
+  if (failed && failed.patch) {
+    saveKatalkSingleToServer(id, failed.patch);
+  } else {
+    const msg = (appState.katalkMessages || []).find(m => m.id === id);
+    if (msg) {
+      saveKatalkSingleToServer(id, {
+        content: msg.content,
+        scheduledDate: msg.scheduledDate,
+        scheduledTime: msg.scheduledTime,
+        status: msg.status
+      });
+    }
+  }
+}
+
+function handleKatalkContentInput(id, newContent) {
+  const msg = (appState.katalkMessages || []).find(m => m.id === id);
+  if (msg) {
+    msg.content = newContent;
+    saveState(true);
+
+    const ind = document.getElementById(`saved-indicator-${id}`);
+    if (ind) {
+      ind.innerHTML = '<span class="text-slate-400 font-bold">⏳ 입력 중...</span>';
+    }
+
+    // Check warning in real-time
+    const warnBox = document.getElementById(`katalk-warn-box-${id}`);
+    const warning = getKatalkReservationWarning(msg);
+    if (warnBox) {
+      if (warning) {
+        warnBox.classList.remove('hidden');
+        const reasonSpan = document.getElementById(`katalk-warn-reason-${id}`);
+        if (reasonSpan) reasonSpan.textContent = `(${warning} 변경됨)`;
+      } else {
+        warnBox.classList.add('hidden');
+      }
+    }
+
+    if (katalkEditDebounceTimers[id]) {
+      clearTimeout(katalkEditDebounceTimers[id]);
+    }
+    katalkEditDebounceTimers[id] = setTimeout(() => {
+      saveKatalkSingleToServer(id, { content: newContent });
+    }, 700);
+  }
+}
+
+function handleKatalkScheduleChange(id, field, value) {
+  const msg = (appState.katalkMessages || []).find(m => m.id === id);
+  if (msg) {
+    msg[field] = value;
+    saveState(true);
+    saveKatalkSingleToServer(id, { [field]: value });
+  }
+}
+
+function handleKatalkStatusChange(id, newStatus) {
+  const msg = (appState.katalkMessages || []).find(m => m.id === id);
+  if (!msg) return;
+
+  const updater = getTfOperatorName();
+  const nowStr = new Date().toLocaleString('ko-KR', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const patch = { status: newStatus };
+  if (newStatus === 'reserved') {
+    patch.reservedBy = updater;
+    patch.reservedAt = nowStr;
+    msg.status = 'reserved';
+    msg.reservedBy = updater;
+    msg.reservedAt = nowStr;
+    msg.reservedSnapshot = {
+      content: msg.content,
+      scheduledDate: msg.scheduledDate,
+      scheduledTime: msg.scheduledTime,
+      version: msg.version || 1,
+      savedAt: Date.now(),
+      savedBy: updater
+    };
+    showToast(`[#${id} 공지] 카톡 예약 등록 완료로 체크되었습니다. (예약 당시 본문/일정이 기록됨)`, 'info');
+  } else if (newStatus === 'sent') {
+    patch.sentConfirmedBy = updater;
+    patch.sentConfirmedAt = nowStr;
+    msg.status = 'sent';
+    msg.sentConfirmedBy = updater;
+    msg.sentConfirmedAt = nowStr;
+    showToast(`[#${id} 공지] 실제 발송 확인 완료로 체크되었습니다. (${updater})`, 'success');
+  } else {
+    msg.status = 'draft';
+    msg.reservedSnapshot = null;
+  }
+
+  saveState(true);
+  saveKatalkSingleToServer(id, patch);
+}
+
+function reconfirmKatalkReservation(id) {
+  const msg = (appState.katalkMessages || []).find(m => m.id === id);
+  if (!msg) return;
+
+  const updater = getTfOperatorName();
+  const nowStr = new Date().toLocaleString('ko-KR', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  msg.reservedSnapshot = {
+    content: msg.content,
+    scheduledDate: msg.scheduledDate,
+    scheduledTime: msg.scheduledTime,
+    version: msg.version || 1,
+    savedAt: Date.now(),
+    savedBy: updater
+  };
+  msg.reconfirmedBy = updater;
+  msg.reconfirmedAt = nowStr;
+  saveState(true);
+
+  saveKatalkSingleToServer(id, { reconfirm: true });
+  showToast(`[#${id} 공지] 카톡 예약 내용 재확인이 완료되어 불일치 경고가 해제되었습니다.`, 'success');
+}
+
+async function resetSingleKatalkMessage(id) {
+  const orig = DEFAULT_KATALK_MESSAGES.find(m => m.id === id);
+  if (!orig) return;
+  if (!confirm(`[#${id} 공지] 문구를 엑셀 원본 내용으로 복구하시겠습니까?\n\n※ 서버의 공통 문구도 엑셀 원본으로 변경되며 다른 모든 TF 기기에도 즉시 반영됩니다.`)) return;
+
+  try {
+    const res = await fetch('/api/katalk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': appState.csrfToken || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'reset_single',
+        messageId: id,
+        expectedVersion: katalkServerState ? katalkServerState.version : null,
+        updaterName: getTfOperatorName()
+      })
+    });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      katalkServerState = json.data;
+      appState.katalkMessages = sanitizeKatalkMessages(json.data.messages);
+      saveState(true);
+      renderAllKatalkViews();
+      showToast(`[#${id} 공지] 엑셀 원본 문구로 복구 및 서버 저장이 완료되었습니다.`, 'info');
+    }
+  } catch (err) {
+    showToast(`초기화 실패: ${err.message}`, 'error');
+  }
+}
+
+async function resetKatalkMessagesToDefault() {
+  if (!confirm('모든 카톡 공지 문구(전체 12건)를 엑셀 원본 내용으로 초기화하시겠습니까?\n\n※ 서버의 공통 문구도 엑셀 원본으로 변경되며 다른 모든 TF 기기에도 즉시 반영됩니다.')) return;
+
+  try {
+    const res = await fetch('/api/katalk', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-csrf-token': appState.csrfToken || ''
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        action: 'reset_all',
+        expectedVersion: katalkServerState ? katalkServerState.version : null,
+        updaterName: getTfOperatorName()
+      })
+    });
+    const json = await res.json();
+    if (json.ok && json.data) {
+      katalkServerState = json.data;
+      appState.katalkMessages = sanitizeKatalkMessages(json.data.messages);
+      saveState(true);
+      renderAllKatalkViews();
+      showToast('전체 12건의 카톡 공지 문구가 엑셀 원본으로 초기화되었습니다.', 'success');
+    }
+  } catch (err) {
+    showToast(`전체 초기화 실패: ${err.message}`, 'error');
+  }
+}
+
+function setKatalkFilter(newFilter) {
+  katalkCurrentFilter = newFilter;
+  renderAllKatalkViews();
+}
+
+function filterKatalkMessages(term) {
+  katalkSearchTerm = term || '';
+  const modalList = document.getElementById('katalk-cards-container-modal');
+  if (modalList) modalList.innerHTML = renderKatalkMessagesCards(katalkSearchTerm);
+  const pageList = document.getElementById('katalk-cards-container-page');
+  if (pageList) pageList.innerHTML = renderKatalkMessagesCards(katalkSearchTerm);
+}
+
+function clearKatalkSearch() {
+  katalkSearchTerm = '';
+  const in1 = document.getElementById('katalk-search-input-modal');
+  if (in1) in1.value = '';
+  const in2 = document.getElementById('katalk-search-input-page');
+  if (in2) in2.value = '';
+  filterKatalkMessages('');
+}
+
+function updateAllKatalkSyncBadges() {
+  const badges = document.querySelectorAll('[data-katalk-sync-badge]');
+  badges.forEach(badge => {
+    if (katalkSyncStatus === 'saving') {
+      badge.innerHTML = '⏳ 서버 저장 중...';
+      badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-800 border border-amber-300';
+    } else if (katalkSyncStatus === 'loading') {
+      badge.innerHTML = '🔄 최신 동기화 확인 중...';
+      badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-800 border border-blue-300';
+    } else if (katalkSyncStatus === 'error') {
+      badge.innerHTML = `❌ 동기화 실패: ${escapeHtml(katalkSyncError || '오류')} <button type="button" onclick="fetchKatalkServerState(false)" class="underline ml-1 font-black">재시도</button>`;
+      badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-800 border border-rose-300';
+    } else if (katalkSyncStatus === 'conflict') {
+      badge.innerHTML = `⚠️ 동시 수정 충돌 감지 <button type="button" onclick="fetchKatalkServerState(false)" class="underline ml-1 font-black">새로고침</button>`;
+      badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-900 border border-amber-400';
+    } else {
+      const v = katalkServerState ? katalkServerState.version : 1;
+      const by = (katalkServerState && katalkServerState.updatedBy) || '시스템';
+      const at = (katalkServerState && katalkServerState.updatedAt)
+        ? new Date(katalkServerState.updatedAt).toLocaleTimeString('ko-KR')
+        : '최신';
+      badge.innerHTML = `🟢 서버 저장 완료 (v${v} · ${at} · ${escapeHtml(by)})`;
+      badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-800 border border-emerald-300';
+    }
+  });
+}
+
+function renderKatalkSectionHtml(isModal = false) {
+  const suffix = isModal ? 'modal' : 'page';
+  const list = appState.katalkMessages || DEFAULT_KATALK_MESSAGES;
+  const manager = getKatalkAssignedManager();
+  const operator = getTfOperatorName();
+
+  const countDraft = list.filter(m => m.status === 'draft').length;
+  const countReserved = list.filter(m => m.status === 'reserved').length;
+  const countSent = list.filter(m => m.status === 'sent').length;
+  const countWarn = list.filter(m => Boolean(getKatalkReservationWarning(m))).length;
+
+  return `
+    <div class="space-y-4">
+      <!-- 1. Operational Guide Banner -->
+      <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/40 text-xs text-amber-950 space-y-2">
+        <div class="flex items-center justify-between flex-wrap gap-2 font-black text-amber-900">
+          <span class="flex items-center gap-1.5 text-xs sm:text-sm">
+            <span>⚠️</span>
+            <span>카톡 단톡방 예약 발송 운영 지침 (필독)</span>
+          </span>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="bg-amber-100 text-amber-950 px-2.5 py-1 rounded-xl border border-amber-300 font-extrabold flex items-center gap-1">
+              <span>📌 단톡방 예약 전담:</span>
+              <strong class="text-[#3C1E1E]">${escapeHtml(manager)}</strong>
+            </span>
+            <button type="button" onclick="changeKatalkManagerPrompt()" class="px-2 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 text-[11px] font-bold transition">
+              전담자 변경
+            </button>
+            <span class="text-slate-300">|</span>
+            <span class="text-slate-600 font-bold">내 성명: <strong>${escapeHtml(operator)}</strong></span>
+            <button type="button" onclick="changeMyTfNamePrompt()" class="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-[11px] font-bold transition">
+              변경
+            </button>
+          </div>
+        </div>
+        <div class="text-slate-700 leading-relaxed text-[11px] sm:text-xs space-y-1">
+          <p>• <strong>중복 예약 방지</strong>: 단톡방에 여러 TF가 중복으로 예약 메시지를 등록하면 안 됩니다. 반드시 지정된 <strong>공통 예약 담당자 1명만</strong> 카카오톡 모바일 앱의 자체 예약 기능을 통해 등록해 주세요.</p>
+          <p>• <strong>수동 상태 체크</strong>: 본 웹앱은 카카오톡과 자동 연동되지 않습니다. 아래 상태(문구 준비 / 예약 완료 / 발송 확인)는 TF 운영진이 직접 확인하고 체크하는 공동 관리 기록입니다.</p>
+          <p>• <strong>자동 완료 배제</strong>: 설정된 시간이 지나더라도 자동으로 '발송 완료'로 전환되지 않으며, 단톡방 발송을 직접 확인한 후 체크합니다.</p>
+        </div>
+      </div>
+
+      <!-- 2. Sync Status & Global Actions Bar -->
+      <div class="p-3 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2.5">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span data-katalk-sync-badge class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-800 border border-emerald-300">
+            🟢 서버 저장 완료
+          </span>
+          <button type="button" onclick="fetchKatalkServerState(false)" class="text-xs font-bold px-3 py-1 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-xs transition" title="서버 최신 내용 즉시 새로고침">
+            🔄 지금 서버 새로고침
+          </button>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="resetKatalkMessagesToDefault()" class="text-[11px] font-bold px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="엑셀 원본 문구로 전체 되돌리기">
+            🔄 엑셀 원본 전체 초기화
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Status Filters & Search Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-1 text-xs">
+          <button type="button" onclick="setKatalkFilter('all')" class="px-3 py-1.5 rounded-xl font-bold transition ${katalkCurrentFilter === 'all' ? 'bg-[#1D5266] text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            전체 (${list.length})
+          </button>
+          <button type="button" onclick="setKatalkFilter('draft')" class="px-3 py-1.5 rounded-xl font-bold transition ${katalkCurrentFilter === 'draft' ? 'bg-slate-700 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ⚪ 문구 준비 (${countDraft})
+          </button>
+          <button type="button" onclick="setKatalkFilter('reserved')" class="px-3 py-1.5 rounded-xl font-bold transition ${katalkCurrentFilter === 'reserved' ? 'bg-amber-500 text-[#3C1E1E] shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            🟡 카톡 예약 완료 (${countReserved})
+          </button>
+          <button type="button" onclick="setKatalkFilter('sent')" class="px-3 py-1.5 rounded-xl font-bold transition ${katalkCurrentFilter === 'sent' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            🟢 발송 확인 완료 (${countSent})
+          </button>
+          ${countWarn > 0 ? `
+            <button type="button" onclick="setKatalkFilter('warn')" class="px-3 py-1.5 rounded-xl font-black transition animate-pulse ${katalkCurrentFilter === 'warn' ? 'bg-rose-600 text-white shadow-xs' : 'bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300'}">
+              🚨 재확인 필요 (${countWarn})
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex items-center gap-1.5 flex-1 min-w-[200px] max-w-xs">
+          <span class="text-xs text-slate-400">🔍</span>
+          <input type="text" id="katalk-search-input-${suffix}" value="${escapeHtml(katalkSearchTerm)}" oninput="filterKatalkMessages(this.value)" placeholder="공지 검색 (12:30, 마감, 미션 1, 투표)..." class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:border-[#1D5266] focus:outline-none" />
+          ${katalkSearchTerm ? `<button type="button" onclick="clearKatalkSearch()" class="text-xs text-slate-400 hover:text-slate-600 font-bold px-1">✕</button>` : ''}
+        </div>
+      </div>
+
+      <!-- 4. Announcement Cards List -->
+      <div id="katalk-cards-container-${suffix}" class="space-y-4">
+        ${renderKatalkMessagesCards(katalkSearchTerm)}
+      </div>
+    </div>
+  `;
+}
+
 function renderKatalkMessagesCards(searchTerm = '') {
   const list = appState.katalkMessages || DEFAULT_KATALK_MESSAGES;
   const term = (searchTerm || '').trim().toLowerCase();
 
-  const filtered = term ? list.filter(m => {
-    return (m.title || '').toLowerCase().includes(term) ||
-           (m.content || '').toLowerCase().includes(term) ||
-           (m.time || '').toLowerCase().includes(term) ||
-           (m.notes || '').toLowerCase().includes(term);
-  }) : list;
+  let filtered = list;
+
+  // Filter by status tab
+  if (katalkCurrentFilter === 'draft') {
+    filtered = filtered.filter(m => m.status === 'draft');
+  } else if (katalkCurrentFilter === 'reserved') {
+    filtered = filtered.filter(m => m.status === 'reserved');
+  } else if (katalkCurrentFilter === 'sent') {
+    filtered = filtered.filter(m => m.status === 'sent');
+  } else if (katalkCurrentFilter === 'warn') {
+    filtered = filtered.filter(m => Boolean(getKatalkReservationWarning(m)));
+  }
+
+  // Filter by search keyword
+  if (term) {
+    filtered = filtered.filter(m => {
+      return (m.title || '').toLowerCase().includes(term) ||
+             (m.content || '').toLowerCase().includes(term) ||
+             (m.time || '').toLowerCase().includes(term) ||
+             (m.notes || '').toLowerCase().includes(term) ||
+             (m.scheduledDate || '').toLowerCase().includes(term) ||
+             (m.scheduledTime || '').toLowerCase().includes(term);
+    });
+  }
 
   if (filtered.length === 0) {
     return `
       <div class="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-        <p class="text-sm font-bold">검색어와 일치하는 공지 문구가 없습니다.</p>
-        <button onclick="clearKatalkSearch()" class="mt-2 text-xs text-[#0097A7] font-bold underline">검색 초기화</button>
+        <p class="text-sm font-bold">조건과 일치하는 공지 문구가 없습니다.</p>
+        <button onclick="clearKatalkSearch(); setKatalkFilter('all');" class="mt-2 text-xs text-[#0097A7] font-bold underline">전체 보기로 돌아가기</button>
       </div>
     `;
   }
 
-  return filtered.map(m => `
-    <div id="katalk-card-${m.id}" class="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3 transition hover:border-[#1D5266]/40">
-      <!-- Top Meta Row -->
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
-        <div class="flex items-center gap-2 flex-wrap min-w-0">
-          <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs tracking-tight shrink-0">
-            #${m.id} · ${m.badge || m.time}
-          </span>
-          <span class="text-xs sm:text-sm font-extrabold text-[#1D5266] truncate">${escapeHtml(m.title)}</span>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
-            ${escapeHtml(m.notes || '단톡방 발송')}
-          </span>
+  return filtered.map(m => {
+    const warningReason = getKatalkReservationWarning(m);
+    const hasWarning = Boolean(warningReason);
+
+    return `
+      <div id="katalk-card-${m.id}" class="p-4 sm:p-5 rounded-2xl bg-white border ${hasWarning ? 'border-amber-400 shadow-md ring-1 ring-amber-300' : 'border-slate-200/90 shadow-xs'} space-y-3.5 transition hover:border-[#1D5266]/40">
+        <!-- Top Meta Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+          <div class="flex items-center gap-2 flex-wrap min-w-0">
+            <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs tracking-tight shrink-0">
+              #${m.id} · ${m.badge || m.time}
+            </span>
+            <span class="text-xs sm:text-sm font-extrabold text-[#1D5266] truncate">${escapeHtml(m.title)}</span>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
+              ${escapeHtml(m.notes || '단톡방 발송')}
+            </span>
+            ${m.status === 'reserved' ? `
+              <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                🟡 예약완료 (${escapeHtml(m.reservedBy || 'TF')})
+              </span>
+            ` : m.status === 'sent' ? `
+              <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 shrink-0">
+                🟢 발송확인 (${escapeHtml(m.sentConfirmedBy || 'TF')})
+              </span>
+            ` : `
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
+                ⚪ 문구 준비
+              </span>
+            `}
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btn-copy-katalk-${m.id}" type="button" onclick="copyKatalkMessage(${m.id})" class="px-3.5 py-1.5 rounded-xl bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] text-xs font-black shadow-xs flex items-center gap-1.5 transition">
+              <span>📋</span><span>카톡 복사</span>
+            </button>
+            <button type="button" onclick="resetSingleKatalkMessage(${m.id})" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 text-[11px] font-bold transition" title="이 공지만 엑셀 원본 문구로 복구">
+              원본 복구
+            </button>
+          </div>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button id="btn-copy-katalk-${m.id}" type="button" onclick="copyKatalkMessage(${m.id})" class="px-3.5 py-1.5 rounded-xl bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] text-xs font-black shadow-xs flex items-center gap-1.5 transition">
-            <span>📋</span><span>카톡 복사</span>
-          </button>
-          <button type="button" onclick="resetSingleKatalkMessage(${m.id})" class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 text-[11px] font-bold transition" title="이 공지만 엑셀 원본 문구로 복구">
-            원본 복구
-          </button>
+
+        <!-- Schedule & Status Controls -->
+        <div class="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <!-- Schedule Inputs -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="font-extrabold text-[#1D5266] flex items-center gap-1">
+              <span>📅</span>
+              <span>한국 시간 발송 일정:</span>
+            </span>
+            <input type="date" value="${m.scheduledDate || '2026-09-22'}" onchange="handleKatalkScheduleChange(${m.id}, 'scheduledDate', this.value)" class="px-2 py-1 rounded-lg border border-slate-300 text-xs bg-white text-slate-700 font-mono focus:border-[#1D5266] focus:outline-none" />
+            <input type="time" value="${m.scheduledTime || '09:00'}" onchange="handleKatalkScheduleChange(${m.id}, 'scheduledTime', this.value)" class="px-2 py-1 rounded-lg border border-slate-300 text-xs bg-white text-slate-700 font-mono font-bold focus:border-[#1D5266] focus:outline-none" />
+            <span class="text-[11px] text-slate-500 font-medium">(${formatKstDateLabel(m.scheduledDate, m.scheduledTime)})</span>
+          </div>
+
+          <!-- Status Radio Buttons -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="font-bold text-slate-500 text-[11px]">관리 상태:</span>
+            <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl cursor-pointer text-xs font-bold transition ${m.status === 'draft' ? 'bg-slate-200 text-slate-900 ring-1 ring-slate-400' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}">
+              <input type="radio" name="katalk-status-${m.id}" value="draft" ${m.status === 'draft' ? 'checked' : ''} onchange="handleKatalkStatusChange(${m.id}, 'draft')" class="sr-only">
+              <span>⚪ 문구 준비</span>
+            </label>
+            <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl cursor-pointer text-xs font-bold transition ${m.status === 'reserved' ? 'bg-amber-100 text-amber-950 ring-2 ring-amber-400' : 'bg-white text-slate-600 hover:bg-amber-50 hover:text-amber-800 border border-slate-200'}">
+              <input type="radio" name="katalk-status-${m.id}" value="reserved" ${m.status === 'reserved' ? 'checked' : ''} onchange="handleKatalkStatusChange(${m.id}, 'reserved')" class="sr-only">
+              <span>🟡 카톡 예약 완료</span>
+            </label>
+            <label class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl cursor-pointer text-xs font-bold transition ${m.status === 'sent' ? 'bg-emerald-100 text-emerald-950 ring-2 ring-emerald-400' : 'bg-white text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200'}">
+              <input type="radio" name="katalk-status-${m.id}" value="sent" ${m.status === 'sent' ? 'checked' : ''} onchange="handleKatalkStatusChange(${m.id}, 'sent')" class="sr-only">
+              <span>🟢 발송 확인 완료</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Mismatch Warning Alert Box -->
+        <div id="katalk-warn-box-${m.id}" class="${hasWarning ? '' : 'hidden'} p-3.5 rounded-xl bg-amber-500/15 border-2 border-amber-500 text-amber-950 text-xs space-y-2">
+          <div class="flex items-center justify-between flex-wrap gap-1">
+            <span class="font-black flex items-center gap-1.5 text-amber-900">
+              <span>🚨</span>
+              <span>카카오톡 예약 내용 불일치 경고 <span id="katalk-warn-reason-${m.id}">(${escapeHtml(warningReason || '')} 변경됨)</span></span>
+            </span>
+            <span class="text-[10px] font-extrabold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-full border border-amber-400">
+              카카오톡 앱 수정 필수
+            </span>
+          </div>
+          <p class="leading-relaxed text-[11px] sm:text-xs">
+            카카오톡 모바일 앱에 예약 메시지를 등록한 이후 <strong>공지 본문 또는 발송 일정</strong>이 수정되었습니다!<br>
+            <strong>카카오톡 앱에 등록된 예약 메시지도 직접 수정해야 합니다.</strong>
+          </p>
+          <div class="pt-1 flex items-center justify-between flex-wrap gap-2 border-t border-amber-300">
+            <span class="text-[11px] text-amber-900 font-semibold">카톡 앱에서 수정을 완료하셨다면:</span>
+            <button type="button" onclick="reconfirmKatalkReservation(${m.id})" class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-xs transition">
+              🔄 카톡 예약 내용 재확인 완료
+            </button>
+          </div>
+          ${m.reconfirmedBy ? `<div class="text-[10px] text-amber-800 font-medium">최근 재확인: ${escapeHtml(m.reconfirmedBy)} (${m.reconfirmedAt})</div>` : ''}
+        </div>
+
+        <!-- Textarea for Direct Editing -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-[11px] text-slate-500 font-bold px-0.5">
+            <span>💬 공지 본문 내용 (직접 수정 시 서버에 자동 동기화):</span>
+            <span id="saved-indicator-${m.id}" class="text-[10px]"></span>
+          </div>
+          <textarea id="katalk-text-${m.id}" rows="6" oninput="handleKatalkContentInput(${m.id}, this.value)" class="w-full p-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans bg-slate-50/60 focus:bg-white focus:border-[#1D5266] focus:ring-1 focus:ring-[#1D5266] focus:outline-none transition resize-y">${escapeHtml(m.content)}</textarea>
+        </div>
+
+        <!-- Card Footer Audit Info -->
+        <div class="pt-1 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span>버전: <strong>v${m.version || 1}</strong></span>
+            <span>·</span>
+            <span>최근 수정: <strong>${escapeHtml(m.updatedBy || '시스템')}</strong> (${m.updatedAt ? new Date(m.updatedAt).toLocaleTimeString('ko-KR') : '-'})</span>
+          </div>
+          <div>
+            ${m.status === 'reserved' && m.reservedBy ? `<span class="text-amber-800 font-bold">예약 등록: ${escapeHtml(m.reservedBy)} (${m.reservedAt})</span>` : ''}
+            ${m.status === 'sent' && m.sentConfirmedBy ? `<span class="text-emerald-800 font-bold">발송 확인: ${escapeHtml(m.sentConfirmedBy)} (${m.sentConfirmedAt})</span>` : ''}
+          </div>
         </div>
       </div>
-
-      <!-- Textarea for Direct Editing -->
-      <div class="space-y-1">
-        <div class="flex items-center justify-between text-[11px] text-slate-500 font-bold px-0.5">
-          <span>💬 공지 본문 내용 (직접 수정 시 브라우저에 자동 저장):</span>
-          <span id="saved-indicator-${m.id}" class="text-[10px] text-emerald-600 font-bold"></span>
-        </div>
-        <textarea id="katalk-text-${m.id}" rows="6" oninput="handleKatalkContentChange(${m.id}, this.value)" class="w-full p-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-800 leading-relaxed font-sans bg-slate-50/60 focus:bg-white focus:border-[#1D5266] focus:ring-1 focus:ring-[#1D5266] focus:outline-none transition resize-y">${escapeHtml(m.content)}</textarea>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
-function filterKatalkMessages(term) {
-  renderAllKatalkViews(term);
-}
-
-function clearKatalkSearch() {
-  const input = document.getElementById('katalk-search-input');
-  if (input) input.value = '';
-  renderAllKatalkViews('');
-}
-
-function renderAllKatalkViews(term = null) {
-  if (term === null) {
-    const input = document.getElementById('katalk-search-input');
-    term = input ? input.value : '';
-  }
+function renderAllKatalkViews() {
   const modalList = document.getElementById('katalk-messages-list-modal');
   if (modalList) {
-    modalList.innerHTML = renderKatalkMessagesCards(term);
+    modalList.innerHTML = renderKatalkSectionHtml(true);
   }
   const pageContainer = document.getElementById('katalk-messages-page-list');
   if (pageContainer) {
-    pageContainer.innerHTML = renderKatalkMessagesCards(term);
+    pageContainer.innerHTML = renderKatalkSectionHtml(false);
   }
+  updateAllKatalkSyncBadges();
 }
 
 async function copyKatalkMessage(id) {
@@ -3470,59 +4316,33 @@ async function copyKatalkMessage(id) {
   }
 }
 
-function handleKatalkContentChange(id, newContent) {
-  if (!appState.katalkMessages) {
-    appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
-  }
-  const msg = appState.katalkMessages.find(m => m.id === id);
-  if (msg) {
-    msg.content = newContent;
-    saveState();
-
-    const ind = document.getElementById(`saved-indicator-${id}`);
-    if (ind) {
-      ind.textContent = '💾 실시간 저장됨';
-      setTimeout(() => { if (ind) ind.textContent = ''; }, 2000);
-    }
-  }
-}
-
-function resetSingleKatalkMessage(id) {
-  const orig = DEFAULT_KATALK_MESSAGES.find(m => m.id === id);
-  if (!orig) return;
-  if (!confirm(`[#${id} 공지] 문구를 엑셀 원본 내용으로 복구하시겠습니까?`)) return;
-
-  if (!appState.katalkMessages) {
-    appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
-  }
-  const msg = appState.katalkMessages.find(m => m.id === id);
-  if (msg) {
-    msg.content = orig.content;
-    msg.title = orig.title;
-    saveState();
-    renderAllKatalkViews();
-    showToast(`[#${id} 공지] 엑셀 원본 문구로 복구되었습니다.`, 'info');
-  }
-}
-
-function resetKatalkMessagesToDefault() {
-  if (!confirm('모든 카톡 공지 문구를 엑셀 원본 내용으로 초기화하시겠습니까?\n직접 수정한 내용은 원본으로 덮어씌워집니다.')) return;
-  appState.katalkMessages = JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES));
-  saveState();
-  renderAllKatalkViews();
-  showToast('전체 12건의 카톡 공지 문구가 엑셀 원본으로 초기화되었습니다.', 'success');
-}
-
 function openKatalkMessagesModal() {
   const modal = document.getElementById('modal-katalk-messages');
   if (!modal) return;
   modal.classList.remove('hidden');
   renderAllKatalkViews();
+  fetchKatalkServerState(false);
 }
 
 function closeKatalkMessagesModal() {
   const modal = document.getElementById('modal-katalk-messages');
   if (modal) modal.classList.add('hidden');
+}
+
+function startKatalkPolling() {
+  if (katalkPollingInterval) clearInterval(katalkPollingInterval);
+  katalkPollingInterval = setInterval(() => {
+    if (appState.mode === 'tf' && appState.tfUnlocked && !document.hidden) {
+      fetchKatalkServerState(true);
+    }
+  }, 15000);
+}
+
+function stopKatalkPolling() {
+  if (katalkPollingInterval) {
+    clearInterval(katalkPollingInterval);
+    katalkPollingInterval = null;
+  }
 }
 
 function renderTfDashboardView() {
@@ -3540,22 +4360,17 @@ function renderTfDashboardView() {
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <span class="px-2.5 py-1 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-black text-xs">💬 Katalk_Messages</span>
-              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">단톡방 카카오톡 공지 문구 관리 (총 12건)</h2>
-              <span class="text-xs font-extrabold text-[#0097A7] bg-[#E0F7FA] px-2.5 py-0.5 rounded-full">원클릭 복사 & 실시간 내용 수정</span>
+              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">단톡방 카카오톡 공지 공동 관리 (총 12건)</h2>
+              <span class="text-xs font-extrabold text-[#0097A7] bg-[#E0F7FA] px-2.5 py-0.5 rounded-full">여러 기기 서버 동기화 & 예약 체크</span>
             </div>
             <p class="text-xs text-slate-500 mt-1">
-              각 시간대별 공지 문구를 원클릭 <strong>[📋 카톡 복사]</strong>하여 단톡방에 바로 전송하세요. 수정하신 문구는 브라우저에 자동 저장됩니다.
+              각 시간대별 공지 문구를 원클릭 <strong>[📋 카톡 복사]</strong>하여 단톡방에 바로 전송하세요. 수정하신 문구와 예약 상태는 서버에 공동 저장됩니다.
             </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <button type="button" onclick="resetKatalkMessagesToDefault()" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
-              🔄 원본 문구 전체 초기화
-            </button>
           </div>
         </div>
 
-        <div id="katalk-messages-page-list" class="space-y-4 mt-4">
-          ${renderKatalkMessagesCards()}
+        <div id="katalk-messages-page-list" class="mt-4">
+          ${renderKatalkSectionHtml(false)}
         </div>
       </div>
     `);
@@ -4135,6 +4950,8 @@ async function handleTfAccess() {
         appState.mode = 'tf';
         saveState(true);
         renderAll();
+        fetchKatalkServerState(true);
+        startKatalkPolling();
         showToast('TF 운영진 대시보드로 진입했습니다.', 'success');
         return;
       }
@@ -4197,6 +5014,8 @@ async function submitPinLogin(e) {
     closePinModal();
     saveState(true);
     renderAll();
+    fetchKatalkServerState(true);
+    startKatalkPolling();
     showToast('TF 운영진 전용 대시보드가 열렸습니다 (서버 세션 활성화).', 'success');
   } catch (err) {
     if (errorEl) {
@@ -4212,6 +5031,7 @@ async function submitPinLogin(e) {
 }
 
 async function logoutTfSession() {
+  stopKatalkPolling();
   try {
     await fetch('/api/auth?action=logout', {
       method: 'POST',
@@ -4561,6 +5381,8 @@ document.addEventListener('DOMContentLoaded', () => {
           appState.mode = 'tf';
         }
         renderAll();
+        fetchKatalkServerState(true);
+        startKatalkPolling();
       } else {
         appState.tfUnlocked = false;
         appState.csrfToken = null;
