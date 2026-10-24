@@ -342,7 +342,7 @@ async function saveSharedKatalkState(data) {
     headers: {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`,
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       'Prefer': 'resolution=merge-duplicates'
     },
     body: JSON.stringify({
@@ -361,7 +361,8 @@ async function saveSharedKatalkState(data) {
 }
 
 module.exports = async function handler(req, res) {
-  // CORS & Security Headers
+  // CORS & Security Headers with explicit UTF-8 encoding
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 
   const serverAdminPin = (process.env.TF_ADMIN_PIN || '').trim();
