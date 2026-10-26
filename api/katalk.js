@@ -292,7 +292,7 @@ function createDefaultState() {
     version: 1,
     updatedAt: now,
     updatedBy: '시스템 초기화',
-    assignedManager: '송영채 TF',
+    assignedManager: '송예찬',
     messages: DEFAULT_KATALK_MESSAGES.map(m => ({
       ...m,
       version: 1,
@@ -313,7 +313,7 @@ function createDefaultState() {
 async function getSharedKatalkState() {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
+    const timeout = setTimeout(() => controller.abort(), 5000);
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${KATALK_ROW_ID}&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -325,18 +325,21 @@ async function getSharedKatalkState() {
     if (res.ok) {
       const rows = await res.json();
       if (rows?.[0]?.data && Array.isArray(rows[0].data.messages)) {
-        return rows[0].data;
+        return { status: 'OK', data: rows[0].data };
+      }
+      if (Array.isArray(rows) && rows.length === 0) {
+        return { status: 'NOT_FOUND', data: null };
       }
     }
+    return { status: 'ERROR', error: `HTTP ${res.status}` };
   } catch (e) {
-    // Supabase fetch failure fallback
+    return { status: 'ERROR', error: e.message };
   }
-  return null;
 }
 
 async function saveSharedKatalkState(data) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3500);
+  const timeout = setTimeout(() => controller.abort(), 5000);
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
     method: 'POST',
     headers: {
@@ -387,8 +390,14 @@ module.exports = async function handler(req, res) {
   // GET: 공지 목록 및 공동 관리 상태 조회
   if (req.method === 'GET') {
     try {
-      let state = await getSharedKatalkState();
-      if (!state) {
+      const resObj = await getSharedKatalkState();
+      if (resObj.status === 'ERROR') {
+        return res.status(503).json({
+          error: `공지 데이터를 일시적으로 불러올 수 없습니다 (${resObj.error}). 잠시 후 다시 시도해 주세요.`
+        });
+      }
+      let state = resObj.data;
+      if (resObj.status === 'NOT_FOUND' || !state) {
         state = createDefaultState();
         try {
           await saveSharedKatalkState(state);
@@ -431,8 +440,14 @@ module.exports = async function handler(req, res) {
     const cleanUpdater = String(updaterName || '').trim() || 'TF 운영진';
 
     try {
-      let current = await getSharedKatalkState();
-      if (!current) {
+      const currentRes = await getSharedKatalkState();
+      if (currentRes.status === 'ERROR') {
+        return res.status(503).json({
+          error: `서버 데이터베이스 통신에 실패했습니다 (${currentRes.error}). 잠시 후 다시 시도해 주세요.`
+        });
+      }
+      let current = currentRes.data;
+      if (currentRes.status === 'NOT_FOUND' || !current) {
         current = createDefaultState();
       }
 

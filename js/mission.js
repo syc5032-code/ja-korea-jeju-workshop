@@ -2,9 +2,10 @@
    2026 JA Korea One JA Retreat in Jeju - 6 Missions & AI Grading Engine
    ========================================================================== */
 
-const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V3';
-const MY_TEAM_AUTH_KEY = 'JA_JEJU_2026_MY_TEAM_AUTH';
-const MY_TEAM_ID_KEY = 'JA_JEJU_2026_MY_TEAM_ID';
+const CURRENT_RESET_ID = 'reset_20261026_tf_clean';
+const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V4';
+const MY_TEAM_AUTH_KEY = 'JA_JEJU_2026_MY_TEAM_AUTH_V4';
+const MY_TEAM_ID_KEY = 'JA_JEJU_2026_MY_TEAM_ID_V4';
 
 // 10/30(금) 미션별 자동 오픈 스케줄 (KST 기준)
 const MISSION_OPEN_SCHEDULE = {
@@ -663,6 +664,7 @@ function getTeam(teamId) {
 
 function getInitialState() {
   return {
+    resetId: CURRENT_RESET_ID,
     updatedAt: 0,
     mode: 'participant',
     selectedTeamId: 1,
@@ -672,8 +674,8 @@ function getInitialState() {
     tfGuideOpen: { 1: false, 2: false, 4: false, 5: false },
     katalkMessages: JSON.parse(JSON.stringify(DEFAULT_KATALK_MESSAGES)),
     scheduleConfig: {
-      forceOpenAll: true,
-      manualOpen: { 1: true, 2: true, 3: true, 4: true, 5: true, 6: true }
+      forceOpenAll: false,
+      manualOpen: { 1: false, 2: false, 3: false, 4: false, 5: false, 6: false }
     },
     settings: {
       aiModel: 'gpt-4o',
@@ -686,8 +688,8 @@ function getInitialState() {
       tfTieBreakerVoteTeamId: null
     },
     m6Config: {
-      answerKeyJisoo: '',
-      answerKeyYechan: '',
+      answerKeyJisoo: '1.검정 뿔테 안경 착용 2.노란 머리핀 3.흰색 운동화로 변경',
+      answerKeyYechan: '1.스마트워치 뺌 2.베이지 가디건 착용 3.명찰 오른쪽 이동',
       winnerId: null,
       submissions: []
     },
@@ -711,10 +713,26 @@ function toggleTfGuideOpen(mNum, isOpen) {
 
 function loadState() {
   try {
+    // 이전 버전(V3 등) 레거시 캐시 및 팀 인증 안전 삭제
+    try {
+      localStorage.removeItem('JA_JEJU_2026_MISSION_STATE_V3');
+      localStorage.removeItem('JA_JEJU_2026_MY_TEAM_AUTH');
+      localStorage.removeItem('JA_JEJU_2026_MY_TEAM_ID');
+    } catch (_) {}
+
     const base = getInitialState();
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return base;
     const parsed = JSON.parse(raw);
+
+    // 초기화 이전 구버전 데이터 캐시 방어
+    if (parsed.resetId && parsed.resetId !== CURRENT_RESET_ID) {
+      localStorage.removeItem(MY_TEAM_AUTH_KEY);
+      localStorage.removeItem(MY_TEAM_ID_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+      return base;
+    }
+
     const cleanSettings = {
       ...base.settings,
       ...(parsed.settings || {}),
@@ -732,6 +750,7 @@ function loadState() {
     return {
       ...base,
       ...parsed,
+      resetId: CURRENT_RESET_ID,
       mode: 'participant',
       tfUnlocked: false,
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
@@ -831,6 +850,11 @@ const SUPABASE_TABLE = 'jeju_mission_state';
 
 async function pushToCloudDb() {
   if (isSyncingCloud) return;
+  // 방어: 초기화 식별자가 일치하지 않는 구형 브라우저 캐시의 덮어쓰기 방지
+  if (appState.resetId && appState.resetId !== CURRENT_RESET_ID) {
+    console.warn('[Sync] 구형 캐시의 데이터 재유입 방지를 위해 클라우드 동기화를 중단합니다.');
+    return;
+  }
   try {
     isSyncingCloud = true;
     // OpenAI API 키는 절대로 공개 클라우드 DB에 전송하지 않음 (보안 보호)
@@ -841,6 +865,7 @@ async function pushToCloudDb() {
       id: 'main_board',
       updated_at: appState.updatedAt,
       data: {
+        resetId: CURRENT_RESET_ID,
         updatedAt: appState.updatedAt,
         settings: safeSettings,
         scheduleConfig: appState.scheduleConfig,
@@ -882,19 +907,33 @@ async function pullFromCloudDb() {
     }
     const rows = await res.json();
     const row = rows?.[0];
-    if (row && row.data && row.updated_at > (appState.updatedAt || 0)) {
+    if (row && row.data) {
       const remote = row.data;
-      appState.updatedAt = row.updated_at;
-      if (remote.settings) {
-        appState.settings = { ...appState.settings, ...remote.settings };
-        delete appState.settings.apiKey;
+      const remoteResetId = remote.resetId || '';
+      const localResetId = appState.resetId || '';
+
+      const isResetDetected = remoteResetId && (remoteResetId !== localResetId);
+      const isTimeNewer = row.updated_at > (appState.updatedAt || 0);
+
+      if (isResetDetected || isTimeNewer) {
+        if (isResetDetected) {
+          console.warn('[Sync] 서버 데이터 초기화가 감지되어 기기 인증 및 캐시를 초기화합니다.');
+          localStorage.removeItem(MY_TEAM_AUTH_KEY);
+          localStorage.removeItem(MY_TEAM_ID_KEY);
+        }
+        appState.resetId = remoteResetId || CURRENT_RESET_ID;
+        appState.updatedAt = row.updated_at;
+        if (remote.settings) {
+          appState.settings = { ...appState.settings, ...remote.settings };
+          delete appState.settings.apiKey;
+        }
+        if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
+        if (remote.m3Config) appState.m3Config = remote.m3Config;
+        if (remote.m6Config) appState.m6Config = remote.m6Config;
+        if (remote.teams) appState.teams = sanitizeTeams(remote.teams);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        renderAll();
       }
-      if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
-      if (remote.m3Config) appState.m3Config = remote.m3Config;
-      if (remote.m6Config) appState.m6Config = remote.m6Config;
-      if (remote.teams) appState.teams = sanitizeTeams(remote.teams);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-      renderAll();
     }
     updateCloudBadge(true);
   } catch (e) {
@@ -5378,11 +5417,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 저장된 캐시에서 내 팀 복원
+  // 저장된 캐시에서 내 팀 복원 (초기화 후 미등록된 팀 PIN 상태 방어)
   const isAuthed = localStorage.getItem(MY_TEAM_AUTH_KEY) === 'true';
   const savedTeam = Number(localStorage.getItem(MY_TEAM_ID_KEY));
-  if (isAuthed && [1, 2, 3].includes(savedTeam)) {
+  const validPin = (appState.settings.teamPins?.[savedTeam] || '').trim();
+  if (isAuthed && [1, 2, 3].includes(savedTeam) && validPin) {
     appState.selectedTeamId = savedTeam;
+  } else {
+    localStorage.removeItem(MY_TEAM_AUTH_KEY);
+    localStorage.removeItem(MY_TEAM_ID_KEY);
   }
 
   // 서버 TF 인증 세션 자동 확인 (/api/auth?action=me)
@@ -5416,7 +5459,8 @@ document.addEventListener('DOMContentLoaded', () => {
   pullFromCloudDb();
 
   // 아직 팀 인증이 안 되어 있고, TF 모드도 아니라면 팀 로그인 모달 오픈
-  if (!isAuthed && !appState.tfUnlocked && params.get('tf') !== '1') {
+  const hasValidAuth = localStorage.getItem(MY_TEAM_AUTH_KEY) === 'true';
+  if (!hasValidAuth && !appState.tfUnlocked && params.get('tf') !== '1') {
     setTimeout(() => openTeamLoginModal(), 250);
   }
 
