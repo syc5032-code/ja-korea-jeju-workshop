@@ -2488,7 +2488,7 @@ function renderLockedMissionCard(missionNum) {
       </div>
       <h2 class="text-base sm:text-lg font-extrabold text-[#1D3C34]">미션 ${missionNum} · 비공개 미션</h2>
       <p class="text-xs sm:text-sm text-[#4A5255] mt-1">
-        미션 주제와 상세 내용은 <strong class="text-[#F27A24]">${sched.timeLabel}</strong>에 정각 공개됩니다!
+        미션 주제와 상세 내용은 <strong class="text-[#F27A24]">${sched.shortTime}</strong>에 공개됩니다!
       </p>
       <div class="mt-3.5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E6E1D3] shadow-xs text-xs font-mono font-bold text-[#1D3C34]">
         <span>⏳</span>
