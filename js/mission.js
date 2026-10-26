@@ -769,14 +769,34 @@ function loadState() {
 }
 
 function saveState(skipCloudPush = false) {
+  appState.updatedAt = Date.now();
   try {
-    appState.updatedAt = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
-    if (!skipCloudPush) {
-      pushToCloudDb();
+  } catch (storageErr) {
+    console.warn('[Storage] 브라우저 localStorage 한도 도달. 로컬 캐시를 최적화하여 저장을 재시도합니다.', storageErr);
+    try {
+      // 로컬 기기 저장소 용량 초과 시: 내 팀 외 타 팀 사진을 로컬 캐시에서만 가볍게 정리하여 저장
+      const lightState = JSON.parse(JSON.stringify(appState));
+      const myTeamId = Number(appState.selectedTeamId || 1);
+      [1, 2, 3].forEach(tid => {
+        if (tid !== myTeamId && lightState.teams?.[tid]) {
+          const t = lightState.teams[tid];
+          if (t.m1) t.m1.photo = '';
+          if (t.m4) t.m4.photo = '';
+          if (t.m5) t.m5.photo = '';
+          if (t.m2?.itemPhotos) t.m2.itemPhotos = {};
+          if (t.m2?.photos) t.m2.photos = [];
+        }
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
+    } catch (_) {
+      console.warn('[Storage] 로컬 캐시 저장 생략, 클라우드 동기화로 직접 진행합니다.');
     }
-  } catch (e) {
-    showToast('브라우저 저장 용량이 가득 찼습니다. 백업을 진행해 주세요.', 'error');
+  }
+
+  // 로컬 기기 용량과 무관하게 서버 클라우드(Supabase) 저장은 무조건 정상 실행
+  if (!skipCloudPush) {
+    pushToCloudDb();
   }
 }
 
@@ -1115,7 +1135,7 @@ function getSortedM6Submissions() {
    IMAGE UPLOAD & RESIZE HELPER
    ========================================================================== */
 
-function compressImageFile(file, maxWidth = 1600, quality = 0.85) {
+function compressImageFile(file, maxDimension = 800, quality = 0.75) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
@@ -1124,9 +1144,16 @@ function compressImageFile(file, maxWidth = 1600, quality = 0.85) {
         const canvas = document.createElement('canvas');
         let w = img.width;
         let h = img.height;
-        if (w > maxWidth) {
-          h = Math.round((h * maxWidth) / w);
-          w = maxWidth;
+        if (w > h) {
+          if (w > maxDimension) {
+            h = Math.round((h * maxDimension) / w);
+            w = maxDimension;
+          }
+        } else {
+          if (h > maxDimension) {
+            w = Math.round((w * maxDimension) / h);
+            h = maxDimension;
+          }
         }
         canvas.width = w;
         canvas.height = h;
@@ -2197,7 +2224,7 @@ async function handlePhotoUpload(teamId, missionNum, inputEl) {
   const file = inputEl.files?.[0];
   if (!file) return;
   try {
-    const dataUrl = await compressImageFile(file, 1024, 0.8);
+    const dataUrl = await compressImageFile(file, 800, 0.75);
     const team = appState.teams[teamId];
     if (missionNum === 2) {
       showToast('2번 미션은 각 항목별 [사진 올리기] 버튼을 이용해 주세요.', 'info');
@@ -2265,7 +2292,7 @@ async function uploadM2ItemPhoto(teamId, itemId, inputEl, isHidden = false) {
   }
 
   try {
-    const dataUrl = await compressImageFile(file, 1024, 0.8);
+    const dataUrl = await compressImageFile(file, 800, 0.75);
     const newVersion = 'v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     team.m2.itemPhotos[itemId] = dataUrl;
     team.m2.itemPhotoVersions[itemId] = newVersion;
