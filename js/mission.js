@@ -717,6 +717,7 @@ let appState = loadState();
 let m6TimerInterval = null;
 let m6RemainingSeconds = 180;
 let isSyncingCloud = false;
+let pendingCloudPush = false;
 
 function toggleTfGuideOpen(mNum, isOpen) {
   if (!appState.tfGuideOpen) appState.tfGuideOpen = {};
@@ -881,7 +882,10 @@ const SUPABASE_KEY = 'sb_publishable_xkn_YhxEOR0kn7coRE9faA_0LH2lD56';
 const SUPABASE_TABLE = 'jeju_mission_state';
 
 async function pushToCloudDb() {
-  if (isSyncingCloud) return;
+  if (isSyncingCloud) {
+    pendingCloudPush = true;
+    return;
+  }
   // 방어: 초기화 식별자가 일치하지 않는 구형 브라우저 캐시의 덮어쓰기 방지
   if (appState.resetId && appState.resetId !== CURRENT_RESET_ID) {
     console.warn('[Sync] 구형 캐시의 데이터 재유입 방지를 위해 클라우드 동기화를 중단합니다.');
@@ -889,23 +893,138 @@ async function pushToCloudDb() {
   }
   try {
     isSyncingCloud = true;
+    pendingCloudPush = false;
+
+    // 1. 서버의 최신 데이터를 먼저 조회하여 스마트 동시성 병합(Merge) 수행
+    let remoteTeams = null;
+    let remoteM6Subs = [];
+    let remoteM3Config = null;
+    let remoteSchedule = null;
+    try {
+      const getRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=*`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      if (getRes.ok) {
+        const rows = await getRes.json();
+        const rData = rows?.[0]?.data;
+        if (rData?.teams) remoteTeams = rData.teams;
+        if (Array.isArray(rData?.m6Config?.submissions)) remoteM6Subs = rData.m6Config.submissions;
+        if (rData?.m3Config) remoteM3Config = rData.m3Config;
+        if (rData?.scheduleConfig) remoteSchedule = rData.scheduleConfig;
+      }
+    } catch (_) {}
+
+    // 2. 스마트 병합: 참가자 기기가 다른 팀의 채점 결과나 최신 데이터를 덮어쓰지 못하도록 방어
+    const mergedTeams = JSON.parse(JSON.stringify(remoteTeams || appState.teams));
+    const isTf = Boolean(appState.tfUnlocked);
+    const myTeamId = Number(appState.selectedTeamId || 1);
+
+    if (isTf) {
+      // TF 운영진은 전 팀 채점/점수/설정의 최신 권한을 가짐
+      [1, 2, 3].forEach(tid => {
+        const localT = appState.teams?.[tid];
+        if (!localT) return;
+        if (!mergedTeams[tid]) mergedTeams[tid] = localT;
+        else {
+          Object.assign(mergedTeams[tid], localT);
+        }
+      });
+    } else {
+      // 일반 참가자는 본인 팀(myTeamId)의 데이터만 서버에 업데이트
+      // 타 팀(1~3 중 내 팀 제외)은 서버 최신본(채점 결과 포함)을 100% 그대로 보존!
+      const myLocalTeam = appState.teams?.[myTeamId];
+      if (myLocalTeam && mergedTeams[myTeamId]) {
+        const serverMyTeam = mergedTeams[myTeamId];
+        serverMyTeam.name = myLocalTeam.name || serverMyTeam.name;
+        if (myLocalTeam.pin) serverMyTeam.pin = myLocalTeam.pin;
+
+        // 미션 1, 4, 5: 사진이 바뀌지 않았다면 서버의 심사 결과(점수, 심사평, status) 보존!
+        [1, 4, 5].forEach(mNum => {
+          const mKey = `m${mNum}`;
+          const localM = myLocalTeam[mKey];
+          const serverM = serverMyTeam[mKey];
+          if (!localM || !serverM) return;
+
+          // 사진이 동일하다면 서버의 채점 상태(점수, 평가)가 최우선
+          if (localM.photo === serverM.photo && localM.photoVersion === serverM.photoVersion) {
+            serverM.caption = localM.caption ?? serverM.caption;
+            serverM.heroName = localM.heroName ?? serverM.heroName;
+          } else {
+            // 참가자가 새 사진을 올린 경우에만 로컬 데이터로 갱신
+            serverMyTeam[mKey] = localM;
+          }
+        });
+
+        // 미션 2: 각 항목별 사진 버전 대조
+        if (myLocalTeam.m2 && serverMyTeam.m2) {
+          syncM2State(myLocalTeam);
+          syncM2State(serverMyTeam);
+          const sM2 = serverMyTeam.m2;
+          const lM2 = myLocalTeam.m2;
+          sM2.commonChecked = lM2.commonChecked || sM2.commonChecked;
+          sM2.hiddenChecked = lM2.hiddenChecked || sM2.hiddenChecked;
+          Object.keys(lM2.itemPhotos || {}).forEach(k => {
+            const lPhoto = lM2.itemPhotos[k];
+            const sPhoto = sM2.itemPhotos?.[k];
+            if (lPhoto !== sPhoto) {
+              sM2.itemPhotos[k] = lPhoto;
+              sM2.itemPhotoVersions[k] = lM2.itemPhotoVersions?.[k] || ('v_' + Date.now());
+              sM2.itemResults[k] = {
+                status: 'pending',
+                accepted: false,
+                reason: '사진이 등록/교체되어 AI 판독 대기 중입니다.',
+                review: '',
+                recognizedItem: '',
+                observations: '',
+                evaluatedVersion: '',
+                manualReview: null
+              };
+              sM2.graded = false;
+            }
+          });
+        }
+
+        // 미션 3: 영상 제출 체크 및 N행시 내용
+        if (myLocalTeam.m3 && serverMyTeam.m3) {
+          serverMyTeam.m3.kakaoSubmitted = myLocalTeam.m3.kakaoSubmitted ?? serverMyTeam.m3.kakaoSubmitted;
+          serverMyTeam.m3.poemText = myLocalTeam.m3.poemText ?? serverMyTeam.m3.poemText;
+          serverMyTeam.m3.submittedAt = myLocalTeam.m3.submittedAt ?? serverMyTeam.m3.submittedAt;
+          serverMyTeam.m3.votedForTeamId = myLocalTeam.m3.votedForTeamId ?? serverMyTeam.m3.votedForTeamId;
+        }
+      }
+    }
+
+    // 미션 6 개인 제출물 병합: ID 기반 합집합 (누락 방지)
+    const localM6Subs = appState.m6Config?.submissions || [];
+    const mergedM6Map = new Map();
+    remoteM6Subs.forEach(s => mergedM6Map.set(s.id, s));
+    localM6Subs.forEach(s => mergedM6Map.set(s.id, s));
+    const mergedM6Subs = Array.from(mergedM6Map.values());
+
     // OpenAI API 키는 절대로 공개 클라우드 DB에 전송하지 않음 (보안 보호)
     const safeSettings = { ...(appState.settings || {}) };
     delete safeSettings.apiKey;
 
     const payload = {
       id: 'main_board',
-      updated_at: appState.updatedAt,
+      updated_at: Date.now(),
       data: {
         resetId: CURRENT_RESET_ID,
-        updatedAt: appState.updatedAt,
+        updatedAt: Date.now(),
         settings: safeSettings,
-        scheduleConfig: appState.scheduleConfig,
-        m3Config: appState.m3Config,
-        m6Config: appState.m6Config,
-        teams: appState.teams
+        scheduleConfig: isTf ? appState.scheduleConfig : (remoteSchedule || appState.scheduleConfig),
+        m3Config: isTf ? appState.m3Config : (remoteM3Config || appState.m3Config),
+        m6Config: {
+          ...appState.m6Config,
+          submissions: mergedM6Subs
+        },
+        teams: mergedTeams
       }
     };
+
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
       method: 'POST',
       headers: {
@@ -916,11 +1035,23 @@ async function pushToCloudDb() {
       },
       body: JSON.stringify(payload)
     });
+
+    if (res.ok) {
+      appState.updatedAt = payload.updated_at;
+      appState.teams = mergedTeams;
+      appState.m6Config.submissions = mergedM6Subs;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (_) {}
+    }
     updateCloudBadge(res.ok);
   } catch (e) {
     updateCloudBadge(false);
   } finally {
     isSyncingCloud = false;
+    if (pendingCloudPush) {
+      setTimeout(pushToCloudDb, 150);
+    }
   }
 }
 
