@@ -88,12 +88,37 @@
       background: #D5CEBC;
       border-radius: 9999px;
     }
+
+    /* Shared retreat guide navigation: visual parity with the guide website. */
+    .retreat-site-navigation { display: flex; justify-content: center; padding: 12px 20px; }
+    .retreat-site-navigation-tabs { display: flex; align-items: center; gap: 4px; max-width: 100%; padding: 5px; background: #edf1eb; border-radius: 16px; }
+    .retreat-site-navigation-link { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; padding: 10px 24px; border-radius: 11px; color: #53665d; font-size: 14px; font-weight: 500; line-height: 1.5; white-space: nowrap; text-decoration: none; transition: background-color .15s, color .15s; }
+    .retreat-site-navigation-link:hover { background: rgba(255, 254, 251, .65); color: #183f3a; }
+    .retreat-site-navigation-link[aria-current="page"] { background: #fffefb; color: #183f3a; font-weight: 700; box-shadow: 0 2px 6px rgba(24, 63, 58, .045), 0 0 0 1px rgba(24, 63, 58, .02); }
+    .retreat-site-navigation-link:focus-visible { outline: 3px solid #789d4a; outline-offset: 2px; }
+    #mission-content { scroll-margin-top: 150px; }
+    @media (max-width: 640px) {
+      .retreat-site-navigation { padding: 8px 12px; }
+      .retreat-site-navigation-tabs { width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+      .retreat-site-navigation-link { padding: 9px 12px; font-size: 12px; }
+      #mission-content { scroll-margin-top: 140px; }
+    }
   </style>
 </head>
 <body class="relative bg-[#FCFBF7] min-h-screen text-[#1D3C34] antialiased selection:bg-[#F27A24] selection:text-white w-full overflow-x-hidden pb-24">
 
   <!-- Top Sticky Header -->
   <header class="sticky top-0 z-40 bg-[#FCFBF7]/95 backdrop-blur-md border-b border-[#E6E1D3] w-full">
+    <nav class="retreat-site-navigation" aria-label="리트릿 페이지 이동">
+      <div class="retreat-site-navigation-tabs">
+        <a class="retreat-site-navigation-link" href="https://jeju-retreat-guide-2026.ja-korea-5421.chatgpt.site/board.html?view=departure" target="_blank" rel="noopener noreferrer" aria-label="출발 전 안내 (새 탭)">출발 전 안내</a>
+        <a class="retreat-site-navigation-link" href="https://jeju-retreat-guide-2026.ja-korea-5421.chatgpt.site/schedule.html?audience=board" target="_blank" rel="noopener noreferrer" aria-label="일정 보기 (새 탭)">일정 보기</a>
+        <a class="retreat-site-navigation-link" href="https://jeju-retreat-guide-2026.ja-korea-5421.chatgpt.site/rooms.html?audience=board" target="_blank" rel="noopener noreferrer" aria-label="숙소 · 방 배정 (새 탭)">숙소 · 방 배정</a>
+        <a class="retreat-site-navigation-link" href="https://jeju-retreat-guide-2026.ja-korea-5421.chatgpt.site/places.html?audience=board" target="_blank" rel="noopener noreferrer" aria-label="팀별 여행지 둘러보기 (새 탭)">팀별 여행지 둘러보기</a>
+        <a class="retreat-site-navigation-link" href="#mission-content" aria-current="page">미션 안내</a>
+      </div>
+    </nav>
+
     <div class="max-w-5xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between gap-2">
       <!-- Logo & Title -->
       <div class="flex items-center space-x-2.5 shrink-0">
@@ -129,7 +154,7 @@
   </header>
 
   <!-- Main Container -->
-  <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
+  <main id="mission-content" class="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6">
 
     <!-- ===================================================================
          1. PARTICIPANT VIEW (참가자 미션 제출 화면 - 미션 내용/점수/순위 비공개)
