@@ -2669,8 +2669,8 @@ function renderParticipantView() {
           </label>
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">포스터 한 줄 제목 / 컨셉 메모 (선택)</label>
-              <input type="text" value="${team.m1.caption || ''}" onchange="appState.teams[${tid}].m1.caption=this.value;saveState();" placeholder="예: 바람도 쉬어가는 우리 팀의 제주" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white" />
+              <label class="block text-xs font-bold text-slate-700 mb-1">포스터 한 줄 제목 / 컨셉 메모 (선택) <span class="text-[11px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
+              <input type="text" value="${team.m1.caption || ''}" onchange="appState.teams[${tid}].m1.caption=this.value;saveState();" oninput="if(appState.teams[${tid}]?.m1) appState.teams[${tid}].m1.caption=this.value;" placeholder="예: 바람도 쉬어가는 우리 팀의 제주" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white" />
             </div>
             ${renderParticipantPhotoStatusBox(team.m1, '포스터 사진')}
           </div>
@@ -2881,8 +2881,8 @@ function renderParticipantView() {
               <span>${team.m3.kakaoSubmitted ? '✅ 카톡방에 영상 제출 완료함 (취소는 클릭)' : '🎬 카톡방에 영상 올렸어요! 제출 완료 체크'}</span>
             </button>
             <div>
-              <label class="block text-[11px] font-bold text-[#4A5255] mb-1">우리 팀 N행시 내용 (선택 메모)</label>
-              <textarea rows="2" onchange="appState.teams[${tid}].m3.poemText=this.value;saveState();" placeholder="단톡방에 올린 N행시 대사나 문구를 적어두셔도 좋습니다." class="w-full p-2.5 rounded-xl border border-[#E6E1D3] text-xs bg-white text-[#1D3C34]">${team.m3.poemText || ''}</textarea>
+              <label class="block text-[11px] font-bold text-[#4A5255] mb-1">우리 팀 N행시 내용 (선택 메모) <span class="text-[10px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
+              <textarea rows="2" onchange="appState.teams[${tid}].m3.poemText=this.value;saveState();" oninput="if(appState.teams[${tid}]?.m3) appState.teams[${tid}].m3.poemText=this.value;" placeholder="단톡방에 올린 N행시 대사나 문구를 적어두셔도 좋습니다." class="w-full p-2.5 rounded-xl border border-[#E6E1D3] text-xs bg-white text-[#1D3C34]">${team.m3.poemText || ''}</textarea>
             </div>
           </div>
 
@@ -2955,8 +2955,8 @@ function renderParticipantView() {
           </label>
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">오늘의 주인공 성함 / 컨셉 메모 (선택)</label>
-              <input type="text" value="${team.m4.heroName || ''}" onchange="appState.teams[${tid}].m4.heroName=this.value;saveState();" placeholder="예: 오늘의 센터 주인공 OO님!" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white" />
+              <label class="block text-xs font-bold text-slate-700 mb-1">오늘의 주인공 성함 / 컨셉 메모 (선택) <span class="text-[11px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
+              <input type="text" value="${team.m4.heroName || ''}" onchange="appState.teams[${tid}].m4.heroName=this.value;saveState();" oninput="if(appState.teams[${tid}]?.m4) appState.teams[${tid}].m4.heroName=this.value;" placeholder="예: 오늘의 센터 주인공 OO님!" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm bg-white" />
             </div>
             ${renderParticipantPhotoStatusBox(team.m4, '주인공 사진')}
           </div>
@@ -4852,12 +4852,12 @@ function renderTfDashboardView() {
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <label class="block text-xs font-extrabold text-slate-700 mb-1">📌 [TF 참고용] 지수님 실제 달라진 아이템 메모</label>
-            <input type="text" value="${appState.m6Config.answerKeyJisoo || ''}" onchange="appState.m6Config.answerKeyJisoo=this.value;saveState();" placeholder="예: 1.안경 2.머리핀 3.운동화" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white" />
+            <label class="block text-xs font-extrabold text-slate-700 mb-1">📌 [TF 참고용] 지수님 실제 달라진 아이템 메모 <span class="text-[10px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
+            <input type="text" value="${appState.m6Config.answerKeyJisoo || ''}" onchange="appState.m6Config.answerKeyJisoo=this.value;saveState();" oninput="if(appState.m6Config) appState.m6Config.answerKeyJisoo=this.value;" placeholder="예: 1.안경 2.머리핀 3.운동화" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white" />
           </div>
           <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <label class="block text-xs font-extrabold text-slate-700 mb-1">📌 [TF 참고용] 예찬님 실제 달라진 아이템 메모</label>
-            <input type="text" value="${appState.m6Config.answerKeyYechan || ''}" onchange="appState.m6Config.answerKeyYechan=this.value;saveState();" placeholder="예: 1.시계 뺌 2.가디건 3.명찰" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white" />
+            <label class="block text-xs font-extrabold text-slate-700 mb-1">📌 [TF 참고용] 예찬님 실제 달라진 아이템 메모 <span class="text-[10px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
+            <input type="text" value="${appState.m6Config.answerKeyYechan || ''}" onchange="appState.m6Config.answerKeyYechan=this.value;saveState();" oninput="if(appState.m6Config) appState.m6Config.answerKeyYechan=this.value;" placeholder="예: 1.시계 뺌 2.가디건 3.명찰" class="w-full px-3 py-1.5 rounded-xl border border-slate-300 text-xs bg-white" />
           </div>
           <div class="p-3.5 rounded-2xl ${currentWinner ? 'bg-amber-100 border-2 border-amber-500' : 'bg-slate-50 border border-slate-200'} flex items-center justify-between">
             <div>
