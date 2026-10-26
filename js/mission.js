@@ -34,6 +34,18 @@ const JEJU_HIDDEN_ITEMS = [
 
 const N_POEM_WORDS = ['제이에이', '귤하르방', '돌하르방', '제주바람', '오메기떡'];
 
+// 팀별 고유 상징 아이콘 (1팀: 🍊 감귤, 2팀: 🌊 파도, 3팀: 🌴 야자수)
+const TEAM_ICONS = {
+  1: '🍊',
+  2: '🌊',
+  3: '🌴'
+};
+
+function getTeamIcon(teamId) {
+  const tid = Number(teamId) || 1;
+  return TEAM_ICONS[tid] || '🍊';
+}
+
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -1981,6 +1993,12 @@ function selectLoginTeam(teamId) {
   });
 
   const curTeam = getTeam(loginSelectedTeamId);
+  const curTeamIcon = getTeamIcon(loginSelectedTeamId);
+  const badgeIconEl = document.getElementById('login-badge-icon');
+  if (badgeIconEl) {
+    badgeIconEl.textContent = curTeamIcon;
+  }
+
   const titleEl = document.getElementById('login-modal-title');
   const subTitleEl = document.getElementById('login-modal-subtitle');
   const pinLabelEl = document.getElementById('label-team-login-pin');
@@ -2007,7 +2025,7 @@ function selectLoginTeam(teamId) {
       nameInput.value = curTeam.name || `${loginSelectedTeamId}팀`;
     }
 
-    if (titleEl) titleEl.textContent = `${curTeam.name} 최초 등록 & 비밀번호 설정`;
+    if (titleEl) titleEl.textContent = `${curTeamIcon} ${curTeam.name} 최초 등록 & 비밀번호 설정`;
     if (subTitleEl) subTitleEl.innerHTML = `우리 팀 첫 입장! <strong>숫자 4자리 비밀번호</strong>와 <strong>팀명</strong>을 정해주세요.`;
     if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 사용할 팀 비밀번호 (숫자 4자리)';
     if (pinHintEl) pinHintEl.textContent = '숫자 4자리 필수';
@@ -2016,7 +2034,7 @@ function selectLoginTeam(teamId) {
       pinSubhintEl.classList.remove('hidden');
     }
     if (pinInput) pinInput.placeholder = '숫자 4자리 (예: 1234)';
-    if (submitTextEl) submitTextEl.textContent = '우리 팀 비밀번호 & 팀명 등록하고 입장하기';
+    if (submitTextEl) submitTextEl.textContent = `${curTeamIcon} 우리 팀 비밀번호 & 팀명 등록하고 입장하기`;
     if (submitIconEl) submitIconEl.textContent = '✨';
   } else {
     // 기존 설정된 비번으로 팀원 입장 모드 (팀명 입력칸 숨기고 비번 4자리만 입력)
@@ -2026,7 +2044,7 @@ function selectLoginTeam(teamId) {
       if (nameDisplayEl) nameDisplayEl.textContent = curTeam.name;
     }
 
-    if (titleEl) titleEl.textContent = `${curTeam.name} 입장하기`;
+    if (titleEl) titleEl.textContent = `${curTeamIcon} ${curTeam.name} 입장하기`;
     if (subTitleEl) subTitleEl.innerHTML = `팀원이 이미 등록을 완료했습니다!<br>공유받은 <strong>팀 비밀번호 4자리</strong>를 입력해주세요.`;
     if (pinLabelEl) pinLabelEl.textContent = '2️⃣ 팀 비밀번호 입력 (숫자 4자리)';
     if (pinHintEl) pinHintEl.textContent = '숫자 4자리';
@@ -2035,7 +2053,7 @@ function selectLoginTeam(teamId) {
       pinSubhintEl.classList.remove('hidden');
     }
     if (pinInput) pinInput.placeholder = '비밀번호 4자리 입력';
-    if (submitTextEl) submitTextEl.textContent = `${curTeam.name} 입장하기`;
+    if (submitTextEl) submitTextEl.textContent = `${curTeamIcon} ${curTeam.name} 입장하기`;
     if (submitIconEl) submitIconEl.textContent = '🚀';
   }
 
@@ -2124,7 +2142,7 @@ function submitTeamLogin() {
 
     closeTeamLoginModal();
     renderAll();
-    showToast(`🎉 '${customName}' 팀 등록 완료! 팀원들에게 비밀번호(${enteredPin})를 알려주세요.`, 'success');
+    showToast(`🎉 ${getTeamIcon(tid)} '${customName}' 팀 등록 완료! 팀원들에게 비밀번호(${enteredPin})를 알려주세요.`, 'success');
     return;
   }
 
@@ -2145,7 +2163,7 @@ function submitTeamLogin() {
 
   closeTeamLoginModal();
   renderAll();
-  showToast(`🎉 ${appState.teams[tid].name} 입장 완료!`, 'success');
+  showToast(`🎉 ${getTeamIcon(tid)} ${appState.teams[tid].name} 입장 완료!`, 'success');
 }
 
 function promptSwitchTeam() {
@@ -2158,7 +2176,13 @@ function promptSwitchTeam() {
 function openChangeTeamNameModal() {
   const modal = document.getElementById('modal-change-team-name');
   if (!modal) return;
-  const team = getTeam(appState.selectedTeamId);
+  const tid = Number(appState.selectedTeamId || 1);
+  const team = getTeam(tid);
+  const teamIcon = getTeamIcon(tid);
+  const labelEl = document.getElementById('label-change-team-name');
+  if (labelEl) {
+    labelEl.textContent = `${teamIcon} 우리 팀명`;
+  }
   const nameInput = document.getElementById('input-change-team-name');
   if (nameInput) {
     nameInput.value = team.name;
@@ -2188,7 +2212,8 @@ function saveNewTeamName() {
     return;
   }
 
-  const tid = appState.selectedTeamId;
+  const tid = Number(appState.selectedTeamId || 1);
+  const teamIcon = getTeamIcon(tid);
   appState.teams[tid].name = newName;
 
   if (newPin) {
@@ -2199,9 +2224,9 @@ function saveNewTeamName() {
     }
     if (!appState.settings.teamPins) appState.settings.teamPins = {};
     appState.settings.teamPins[tid] = newPin;
-    showToast(`팀명과 새 비밀번호(${newPin})가 저장되었습니다!`, 'success');
+    showToast(`${teamIcon} 팀명과 새 비밀번호(${newPin})가 저장되었습니다!`, 'success');
   } else {
-    showToast(`팀명이 '${newName}'(으)로 변경되었습니다!`, 'success');
+    showToast(`${teamIcon} 팀명이 '${newName}'(으)로 변경되었습니다!`, 'success');
   }
 
   saveState();
@@ -2519,12 +2544,13 @@ function renderParticipantView() {
   try {
     const tid = Number(appState.selectedTeamId || 1);
     const team = getTeam(tid);
+    const teamIcon = getTeamIcon(tid);
 
     const tabsEl = document.getElementById('participant-team-tabs');
     if (tabsEl) {
       tabsEl.innerHTML = `
         <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#1D3C34] text-white font-extrabold text-xs shadow-xs">
-          <span>🍊 우리 팀:</span>
+          <span>${teamIcon} 우리 팀:</span>
           <span class="font-black text-[#FFD2B0]">${team.name}</span>
         </div>
         <button type="button" onclick="openChangeTeamNameModal()" class="px-2.5 py-1.5 rounded-xl bg-[#FFF3E8] hover:bg-[#FFE6D0] border border-[#F27A24]/30 text-[#F27A24] text-[11px] font-extrabold transition">
@@ -2536,8 +2562,13 @@ function renderParticipantView() {
       `;
     }
 
+  const selectorLabelEl = document.getElementById('participant-team-selector-label');
+  if (selectorLabelEl) {
+    selectorLabelEl.textContent = `${teamIcon} 우리 팀 정보`;
+  }
+
   const nameSpan = document.getElementById('participant-current-team-name');
-  if (nameSpan) nameSpan.textContent = team.name;
+  if (nameSpan) nameSpan.textContent = `${teamIcon} ${team.name}`;
 
   const statuses = [
     { num: 1, openLabel: '1.여행포스터', secretLabel: '미션 1 (09:20)', done: Boolean(team.m1.photo) },
@@ -2840,7 +2871,7 @@ function renderParticipantView() {
           <!-- 1. 본인 팀 카톡 제출 체크 박스 -->
           <div class="p-4 rounded-2xl ${team.m3.kakaoSubmitted ? 'bg-[#E9F0EC] border-2 border-[#1D3C34]' : 'bg-[#FCFBF7] border border-[#E6E1D3]'} space-y-3 transition">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-extrabold text-[#1D3C34]">① ${team.name} 카톡 동영상 제출 체크</span>
+              <span class="text-xs font-extrabold text-[#1D3C34]">① ${teamIcon} ${team.name} 카톡 동영상 제출 체크</span>
               ${team.m3.kakaoSubmitted ? `<span class="text-[11px] font-bold text-[#1D3C34] bg-white px-2 py-0.5 rounded-full border border-[#1D3C34]/30">제출완료: ${team.m3.submittedAt || '확인됨'}</span>` : ''}
             </div>
             <p class="text-[11px] text-[#4A5255]">
@@ -2862,9 +2893,10 @@ function renderParticipantView() {
             <div class="grid grid-cols-2 gap-2.5 pt-1">
               ${otherTeams.map(otherId => {
                 const otherTeam = appState.teams[otherId];
+                const otherIcon = getTeamIcon(otherId);
                 const isVoted = team.m3.votedForTeamId === otherId;
                 return `<button type="button" onclick="castM3TeamVote(${tid}, ${otherId})" class="py-3 px-3 rounded-xl border font-extrabold text-xs transition ${isVoted ? 'bg-[#1D3C34] text-white border-[#1D3C34] shadow-md' : 'bg-white text-[#1D3C34] border-[#E6E1D3] hover:border-[#1D3C34]'}">
-                  ${isVoted ? '💘 투표 완료: ' : '👍 투표: '}${otherTeam.name}
+                  ${isVoted ? '💘 투표 완료: ' : '👍 투표: '}${otherIcon} ${otherTeam.name}
                 </button>`;
               }).join('')}
             </div>
@@ -3304,7 +3336,7 @@ function renderTfLeaderboard() {
           <span class="text-xs text-slate-300">정규 ${s.regularTotal} + 보너스 ${s.bonusTotal}</span>
         </div>
         <div class="flex items-baseline justify-between">
-          <h3 class="text-lg font-extrabold text-white">${item.name}</h3>
+          <h3 class="text-lg font-extrabold text-white">${getTeamIcon(item.id)} ${item.name}</h3>
           <div class="text-2xl font-black text-amber-300">${s.grandTotal}<span class="text-xs font-normal text-slate-300 ml-0.5">/ 115점</span></div>
         </div>
 
@@ -3485,7 +3517,7 @@ function renderAiMissionPanel(missionNum, title, maxScore, criteriaDesc) {
             <div class="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-3">
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
+                  <span class="text-sm font-extrabold text-[#1D5266]">${getTeamIcon(tid)} ${team.name}</span>
                   <div class="flex items-center gap-1.5">
                     ${statusBadge}
                   </div>
@@ -4535,7 +4567,7 @@ function renderTfDashboardView() {
               <div class="p-4 rounded-2xl bg-white border border-slate-200/90 space-y-3">
                 <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                   <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
+                    <span class="text-sm font-extrabold text-[#1D5266]">${getTeamIcon(tid)} ${team.name}</span>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${m2BadgeClass}">
                       ${m2BadgeText}
                     </span>
@@ -4736,7 +4768,7 @@ function renderTfDashboardView() {
             <div class="flex items-center gap-2 shrink-0">
               ${[1, 2, 3].map(tid => `
                 <button onclick="setTfTieBreakerVote(${tid})" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${vInfo.tfPick === tid ? 'bg-amber-500 text-slate-950 border-amber-600 shadow' : 'bg-white text-slate-700 border-amber-300 hover:bg-amber-100'}">
-                  ${vInfo.tfPick === tid ? '👑 TF 선택: ' : 'TF 투표: '}${appState.teams[tid].name}
+                  ${vInfo.tfPick === tid ? '👑 TF 선택: ' : 'TF 투표: '}${getTeamIcon(tid)} ${appState.teams[tid].name}
                 </button>
               `).join('')}
             </div>
@@ -4750,7 +4782,7 @@ function renderTfDashboardView() {
             return `
               <div class="p-4 rounded-2xl bg-white border border-slate-200/90 space-y-3">
                 <div class="flex items-center justify-between">
-                  <span class="text-sm font-extrabold text-[#1D5266]">${team.name}</span>
+                  <span class="text-sm font-extrabold text-[#1D5266]">${getTeamIcon(tid)} ${team.name}</span>
                   <span class="text-sm font-black text-[#0097A7]">${vInfo.scores[tid]}점 <span class="text-xs font-bold text-amber-600">(총 ${vInfo.finalVotes[tid]}표)</span></span>
                 </div>
                 <button onclick="toggleM3KakaoSubmitted(${tid})" class="w-full py-2 rounded-xl text-xs font-bold border ${team.m3.kakaoSubmitted ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'}">
@@ -4761,7 +4793,7 @@ function renderTfDashboardView() {
                   <div class="grid grid-cols-2 gap-1.5">
                     ${otherTeams.map(oid => `
                       <button onclick="castM3TeamVote(${tid}, ${oid})" class="py-1.5 rounded-lg text-xs font-bold border ${team.m3.votedForTeamId === oid ? 'bg-[#1D5266] text-white border-[#1D5266]' : 'bg-slate-50 text-slate-600 border-slate-200'}">
-                        → ${appState.teams[oid].name} 투표
+                        → ${getTeamIcon(oid)} ${appState.teams[oid].name} 투표
                       </button>
                     `).join('')}
                   </div>
@@ -4932,7 +4964,7 @@ function renderCeremonyView() {
                     </div>
                     <div class="p-4 flex-1 flex flex-col justify-between space-y-2">
                       <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-base text-[#1D5266]">${t.name}</span>
+                        <span class="font-extrabold text-base text-[#1D5266]">${getTeamIcon(tid)} ${t.name}</span>
                         <span class="font-black text-lg text-[#0097A7]">${m.score || 0}점</span>
                       </div>
                       <p class="text-xs sm:text-sm text-slate-700 bg-[#F0F9FA] p-3 rounded-xl border border-[#0097A7]/20">
