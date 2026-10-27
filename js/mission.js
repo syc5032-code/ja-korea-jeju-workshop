@@ -620,17 +620,11 @@ function sanitizeTeams(teamsObj) {
             verifiedHidden: m2Raw.verifiedHidden || null,
             photos: Array.isArray(m2Raw.photos) ? [...m2Raw.photos] : []
           };
-          // 기존 데이터(사진 배열만 있고 itemPhotos가 비어있는 경우) 안전 마이그레이션
-          if (Object.keys(m2Obj.itemPhotos).length === 0 && m2Obj.photos.length > 0) {
-            const claimed = [...m2Obj.commonChecked];
-            if (m2Obj.hiddenChecked) claimed.push(m2Obj.hiddenChecked);
-            m2Obj.photos.forEach((src, idx) => {
-              const targetId = claimed[idx] || (idx < JEJU_COMMON_ITEMS.length ? JEJU_COMMON_ITEMS[idx].id : null);
-              if (targetId) {
-                m2Obj.itemPhotos[targetId] = src;
-              }
-            });
-          }
+          // photos 배열 최신화 (삭제된 사진이 photos에 남아 부활하지 않도록 동기화)
+          m2Obj.photos = [
+            ...m2Obj.commonChecked.map(id => m2Obj.itemPhotos[id]),
+            ...(m2Obj.hiddenChecked ? [m2Obj.itemPhotos[m2Obj.hiddenChecked]] : [])
+          ].filter(Boolean);
           // 버전 및 결과 객체 보완
           Object.keys(m2Obj.itemPhotos).forEach(itemId => {
             if (!m2Obj.itemPhotoVersions[itemId]) {
@@ -927,10 +921,7 @@ async function pushToCloudDb() {
       [1, 2, 3].forEach(tid => {
         const localT = appState.teams?.[tid];
         if (!localT) return;
-        if (!mergedTeams[tid]) mergedTeams[tid] = localT;
-        else {
-          Object.assign(mergedTeams[tid], localT);
-        }
+        mergedTeams[tid] = JSON.parse(JSON.stringify(localT));
       });
     } else {
       // 일반 참가자는 본인 팀(myTeamId)의 데이터만 서버에 업데이트
@@ -949,7 +940,7 @@ async function pushToCloudDb() {
           if (!localM || !serverM) return;
 
           // 사진이 동일하다면 서버의 채점 상태(점수, 평가)가 최우선
-          if (localM.photo === serverM.photo && localM.photoVersion === serverM.photoVersion) {
+          if (localM.photo && serverM.photo && localM.photo === serverM.photo && localM.photoVersion === serverM.photoVersion) {
             serverM.caption = localM.caption ?? serverM.caption;
             serverM.heroName = localM.heroName ?? serverM.heroName;
           } else {
@@ -958,14 +949,28 @@ async function pushToCloudDb() {
           }
         });
 
-        // 미션 2: 각 항목별 사진 버전 대조
+        // 미션 2: 각 항목별 사진 버전 대조 및 삭제 동기화
         if (myLocalTeam.m2 && serverMyTeam.m2) {
           syncM2State(myLocalTeam);
           syncM2State(serverMyTeam);
           const sM2 = serverMyTeam.m2;
           const lM2 = myLocalTeam.m2;
-          sM2.commonChecked = lM2.commonChecked || sM2.commonChecked;
-          sM2.hiddenChecked = lM2.hiddenChecked || sM2.hiddenChecked;
+
+          // 1) 로컬(참가자 본인 팀)에서 삭제된 항목은 서버에서도 확실하게 삭제!
+          Object.keys(sM2.itemPhotos || {}).forEach(k => {
+            if (!lM2.itemPhotos?.[k]) {
+              delete sM2.itemPhotos[k];
+              if (sM2.itemPhotoVersions) delete sM2.itemPhotoVersions[k];
+              if (sM2.itemResults) delete sM2.itemResults[k];
+              if (Array.isArray(sM2.verifiedCommon)) {
+                const idx = sM2.verifiedCommon.indexOf(k);
+                if (idx >= 0) sM2.verifiedCommon.splice(idx, 1);
+              }
+              if (sM2.verifiedHidden === k) sM2.verifiedHidden = null;
+            }
+          });
+
+          // 2) 로컬에서 새로 등록하거나 교체된 사진 반영
           Object.keys(lM2.itemPhotos || {}).forEach(k => {
             const lPhoto = lM2.itemPhotos[k];
             const sPhoto = sM2.itemPhotos?.[k];
@@ -985,6 +990,8 @@ async function pushToCloudDb() {
               sM2.graded = false;
             }
           });
+
+          syncM2State(serverMyTeam);
         }
 
         // 미션 3: 영상 제출 체크 및 N행시 내용
