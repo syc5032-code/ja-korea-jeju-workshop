@@ -2,10 +2,10 @@
    2026 JA Korea One JA Retreat in Jeju - 6 Missions & AI Grading Engine
    ========================================================================== */
 
-const CURRENT_RESET_ID = 'reset_20261026_tf_clean';
-const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V4';
-const MY_TEAM_AUTH_KEY = 'JA_JEJU_2026_MY_TEAM_AUTH_V4';
-const MY_TEAM_ID_KEY = 'JA_JEJU_2026_MY_TEAM_ID_V4';
+const CURRENT_RESET_ID = 'reset_20261027_official_ready';
+const STORAGE_KEY = 'JA_JEJU_2026_MISSION_STATE_V5';
+const MY_TEAM_AUTH_KEY = 'JA_JEJU_2026_MY_TEAM_AUTH_V5';
+const MY_TEAM_ID_KEY = 'JA_JEJU_2026_MY_TEAM_ID_V5';
 
 // 10/30(금) 미션별 자동 오픈 스케줄 (KST 기준)
 const MISSION_OPEN_SCHEDULE = {
@@ -740,6 +740,9 @@ function loadState() {
       localStorage.removeItem('JA_JEJU_2026_MISSION_STATE_V3');
       localStorage.removeItem('JA_JEJU_2026_MY_TEAM_AUTH');
       localStorage.removeItem('JA_JEJU_2026_MY_TEAM_ID');
+      localStorage.removeItem('JA_JEJU_2026_MISSION_STATE_V4');
+      localStorage.removeItem('JA_JEJU_2026_MY_TEAM_AUTH_V4');
+      localStorage.removeItem('JA_JEJU_2026_MY_TEAM_ID_V4');
     } catch (_) {}
 
     const base = getInitialState();
