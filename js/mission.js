@@ -713,6 +713,20 @@ let m6TimerInterval = null;
 let m6RemainingSeconds = 180;
 let isSyncingCloud = false;
 let pendingCloudPush = false;
+let isBatchGrading = false;
+let batchGradingStatus = '';
+
+function updateBatchGradingButtonUi() {
+  const btn = document.getElementById('btn-batch-ai-grade');
+  if (!btn) return;
+  if (isBatchGrading) {
+    btn.disabled = true;
+    btn.innerHTML = `<span>⏳</span><span>${escapeHtml(batchGradingStatus || '일괄 채점 중...')}</span>`;
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = `<span>🤖</span><span>제출 사진 일괄 AI 채점</span>`;
+  }
+}
 
 function toggleTfGuideOpen(mNum, isOpen) {
   if (!appState.tfGuideOpen) appState.tfGuideOpen = {};
@@ -1700,8 +1714,12 @@ async function runAiGradeMission(teamId, missionNum) {
     return;
   }
 
-  // 심사위원이 수동으로 확정한 점수가 있을 경우 덮어쓰기 전 확인
+  // 심사위원이 수동으로 확정한 점수가 있을 경우 덮어쓰기 전 확인 (일괄 채점 시에는 무인 자동화로 스킵)
   if (mData.manualReview) {
+    if (isBatchGrading) {
+      console.log(`[일괄 채점 건너뜀] ${team.name} 미션 ${missionNum}은 이미 수동 확정 점수가 있어 건너뜁니다.`);
+      return;
+    }
     const rev = mData.manualReview.reviewer || 'TF 심사위원';
     const time = mData.manualReview.reviewedAt || '';
     const reason = mData.manualReview.reason || '수동 점수 확정';
@@ -1783,9 +1801,13 @@ async function runAiGradeMission2(teamId) {
     return;
   }
 
-  // 심사위원이 수동으로 확정한 항목이 있을 경우 덮어쓰기 전 확인
+  // 심사위원이 수동으로 확정한 항목이 있을 경우 덮어쓰기 전 확인 (일괄 채점 시에는 무인 자동화로 스킵)
   const hasManualM2 = Object.values(team.m2?.itemResults || {}).some(r => Boolean(r?.manualReview)) || Boolean(team.m2?.manualReview);
   if (hasManualM2) {
+    if (isBatchGrading) {
+      console.log(`[일괄 채점 건너뜀] ${team.name} 미션 2는 이미 수동 확정 내역이 있어 건너뜁니다.`);
+      return;
+    }
     const rev = team.m2?.manualReview?.reviewer || 'TF 심사위원';
     const time = team.m2?.manualReview?.reviewedAt || '';
     const reason = team.m2?.manualReview?.reason || '항목 수동 조정';
@@ -1873,50 +1895,88 @@ async function runAiGradeMission2(teamId) {
 }
 
 async function gradeAllPendingPhotos() {
-  await pullFromCloudDb();
-  const targets = [];
-  [1, 2, 3].forEach(tid => {
-    const team = appState.teams[tid];
-    if (!team) return;
-    syncM2State(team);
-
-    // 2번 미션: 실제 사진이 등록되어 있고, pending 또는 needs_review인 사진이 하나라도 있거나 아직 채점되지 않은 경우
-    const m2 = team.m2;
-    const photoItemIds = Object.keys(m2?.itemPhotos || {}).filter(k => Boolean(m2.itemPhotos[k]));
-    const hasPendingOrReview = photoItemIds.some(itemId => {
-      const it = m2.itemResults?.[itemId];
-      return !it || it.status === 'pending' || it.status === 'needs_review';
-    });
-    if (photoItemIds.length > 0 && (!m2.graded || hasPendingOrReview)) {
-      targets.push({ tid, mNum: 2 });
-    }
-
-    // 1, 4, 5번 미션
-    [1, 4, 5].forEach(mNum => {
-      const m = team[`m${mNum}`];
-      if (m.photo && !m.passed && (!m.graded || m.status === 'pending' || m.status === 'needs_review')) {
-        targets.push({ tid, mNum });
-      }
-    });
-  });
-  if (targets.length === 0) {
-    showToast('채점할 대기 사진이 없습니다.', 'info');
+  if (isBatchGrading) {
+    showToast('이미 일괄 AI 채점이 진행 중입니다. 잠시만 기다려 주세요.', 'info');
     return;
   }
-  showToast(`총 ${targets.length}건의 사진 채점을 순차적으로 시작합니다...`, 'info');
-  for (let i = 0; i < targets.length; i++) {
-    const t = targets[i];
-    if (i > 0) {
-      // 일괄 채점 속도 조절(Pacing): 서버리스 인스턴스 과부하 방지 및 Rate Limit 여유 확보 (1.5초 간격)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+  isBatchGrading = true;
+  batchGradingStatus = '클라우드 최신 사진 동기화 중...';
+  updateBatchGradingButtonUi();
+
+  try {
+    await pullFromCloudDb();
+    const targets = [];
+    [1, 2, 3].forEach(tid => {
+      const team = appState.teams[tid];
+      if (!team) return;
+      syncM2State(team);
+
+      // 2번 미션: 실제 사진이 등록되어 있고, pending 또는 needs_review인 사진이 하나라도 있거나 아직 채점되지 않은 경우
+      const m2 = team.m2;
+      const photoItemIds = Object.keys(m2?.itemPhotos || {}).filter(k => Boolean(m2.itemPhotos[k]));
+      const hasPendingOrReview = photoItemIds.some(itemId => {
+        const it = m2.itemResults?.[itemId];
+        return !it || it.status === 'pending' || it.status === 'needs_review';
+      });
+      if (photoItemIds.length > 0 && (!m2.graded || hasPendingOrReview)) {
+        targets.push({ tid, mNum: 2 });
+      }
+
+      // 1, 4, 5번 미션
+      [1, 4, 5].forEach(mNum => {
+        const m = team[`m${mNum}`];
+        if (m.photo && !m.passed && (!m.graded || m.status === 'pending' || m.status === 'needs_review')) {
+          targets.push({ tid, mNum });
+        }
+      });
+    });
+
+    if (targets.length === 0) {
+      showToast('현재 채점할 대기 사진이 없습니다 (모두 채점 완료됨).', 'info');
+      return;
     }
-    if (t.mNum === 2) {
-      await runAiGradeMission2(t.tid);
+
+    showToast(`총 ${targets.length}건의 대기 사진 채점을 순차적으로 시작합니다.`, 'info');
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < targets.length; i++) {
+      const t = targets[i];
+      const team = appState.teams[t.tid];
+      const teamName = team?.name || `${t.tid}팀`;
+      const label = t.mNum === 2 ? '2번 미션(1:1 사진)' : `${t.mNum}번 미션`;
+      batchGradingStatus = `[${i + 1}/${targets.length}] ${teamName} ${label} 채점 중...`;
+      updateBatchGradingButtonUi();
+
+      if (i > 0) {
+        // 일괄 채점 속도 조절(Pacing): 서버리스 인스턴스 과부하 방지 및 Rate Limit 여유 확보 (1.5초 간격)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+
+      try {
+        if (t.mNum === 2) {
+          await runAiGradeMission2(t.tid);
+        } else {
+          await runAiGradeMission(t.tid, t.mNum);
+        }
+        successCount++;
+      } catch (itemErr) {
+        console.error(`[일괄 채점 예외] ${teamName} ${label}:`, itemErr);
+        failCount++;
+      }
+    }
+
+    if (failCount === 0) {
+      showToast(`총 ${targets.length}건의 모든 대기 사진 AI 채점이 완료되었습니다! 🎉`, 'success');
     } else {
-      await runAiGradeMission(t.tid, t.mNum);
+      showToast(`AI 일괄 채점 완료: ${successCount}건 완료 / ${failCount}건 오류`, 'warning');
     }
+  } finally {
+    isBatchGrading = false;
+    batchGradingStatus = '';
+    updateBatchGradingButtonUi();
   }
-  showToast('모든 대기 사진의 AI 채점이 완료되었습니다!', 'success');
 }
 
 function resolveNeedsReview(teamId, missionNum, newStatus) {
@@ -5562,6 +5622,7 @@ function renderAll() {
     badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF3E8] text-[#F27A24] border border-[#F27A24]/30';
     tfLabel.textContent = '🔒 잠그고 나가기';
     renderTfDashboardView();
+    updateBatchGradingButtonUi();
   } else if (appState.mode === 'ceremony' && appState.tfUnlocked) {
     btnP.classList.remove('hidden');
     btnS.classList.remove('hidden');

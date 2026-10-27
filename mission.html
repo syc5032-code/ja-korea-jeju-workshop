@@ -237,7 +237,7 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <button onclick="gradeAllPendingPhotos()" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#F27A24] hover:bg-[#d96514] text-white shadow-md transition">
+            <button onclick="gradeAllPendingPhotos()" id="btn-batch-ai-grade" class="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-[#F27A24] hover:bg-[#d96514] text-white shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed">
               <span>🤖</span>
               <span>제출 사진 일괄 AI 채점</span>
             </button>
@@ -659,6 +659,6 @@
   <!-- Toast Notification -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <script src="js/mission.js?v=20261027_03"></script>
+  <script src="js/mission.js?v=20261027_04"></script>
 </body>
 </html>
