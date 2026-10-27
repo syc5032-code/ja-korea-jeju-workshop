@@ -1062,7 +1062,14 @@ async function pushToCloudDb() {
     if (res.ok) {
       appState.lastServerSyncTime = payload.updated_at;
       appState.updatedAt = payload.updated_at;
-      appState.teams = mergedTeams;
+      if (isTf) {
+        // TF 관리자 화면에서는 비동기 통신 도중 채점된 로컬 최신 메모리 결과를 안전하게 유지
+        [1, 2, 3].forEach(tid => {
+          if (!appState.teams[tid]) appState.teams[tid] = mergedTeams[tid];
+        });
+      } else {
+        appState.teams = mergedTeams;
+      }
       appState.m6Config.submissions = mergedM6Subs;
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -1080,7 +1087,7 @@ async function pushToCloudDb() {
 }
 
 async function pullFromCloudDb() {
-  if (isSyncingCloud) return;
+  if (isSyncingCloud || isBatchGrading) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=*`, {
       headers: {
@@ -1704,7 +1711,7 @@ async function callAiGradingApi(payload) {
   throw new Error(errJson?.error || `서버 AI 채점 오류 (${res.status})`);
 }
 
-async function runAiGradeMission(teamId, missionNum) {
+async function runAiGradeMission(teamId, missionNum, skipCloudPush = false) {
   const team = appState.teams[teamId];
   const mKey = `m${missionNum}`;
   const mData = team[mKey];
@@ -1771,7 +1778,7 @@ async function runAiGradeMission(teamId, missionNum) {
       mData.cooperationEvidence = result.cooperationEvidence || '';
     }
 
-    saveState();
+    saveState(skipCloudPush);
     renderAll();
 
     if (result.status === 'valid') {
@@ -1781,16 +1788,18 @@ async function runAiGradeMission(teamId, missionNum) {
     } else {
       showToast(`${team.name} 미션 ${missionNum}: 판독 보류 (TF 운영진 검토 필요)`, 'info');
     }
+    return { success: true, status: result.status, score: mData.score };
   } catch (err) {
     showToast(`AI 채점 실패: ${err.message}`, 'error');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<span>🤖</span><span>GPT AI 채점 재시도</span>';
     }
+    return { success: false, error: err.message };
   }
 }
 
-async function runAiGradeMission2(teamId) {
+async function runAiGradeMission2(teamId, skipCloudPush = false) {
   const team = appState.teams[teamId];
   syncM2State(team);
   const itemPhotos = team.m2?.itemPhotos || {};
@@ -1882,15 +1891,17 @@ async function runAiGradeMission2(teamId) {
     team.m2.graded = true;
     team.m2.oneLineReview = result.summaryReview || '판독 완료';
 
-    saveState();
+    saveState(skipCloudPush);
     renderAll();
     showToast(`${team.name} 2번 미션 1:1 사진 판독 완료! (${team.m2.score}점 인정)`, 'success');
+    return { success: true, score: team.m2.score };
   } catch (err) {
     showToast(`2번 미션 AI 판독 실패: ${err.message}`, 'error');
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<span>🤖</span><span>사진 재판독 & 채점</span>';
     }
+    return { success: false, error: err.message };
   }
 }
 
@@ -1954,18 +1965,23 @@ async function gradeAllPendingPhotos() {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
-      try {
-        if (t.mNum === 2) {
-          await runAiGradeMission2(t.tid);
-        } else {
-          await runAiGradeMission(t.tid, t.mNum);
-        }
+      const res = (t.mNum === 2)
+        ? await runAiGradeMission2(t.tid, true)
+        : await runAiGradeMission(t.tid, t.mNum, true);
+
+      if (res && res.success) {
         successCount++;
-      } catch (itemErr) {
-        console.error(`[일괄 채점 예외] ${teamName} ${label}:`, itemErr);
+      } else {
+        console.error(`[일괄 채점 실패] ${teamName} ${label}:`, res?.error);
         failCount++;
       }
     }
+
+    // 채점 완료 후 최종 결과를 클라우드 DB에 단 한 번 확실하게 일괄 푸시
+    batchGradingStatus = '채점 결과 클라우드 동기화 중...';
+    updateBatchGradingButtonUi();
+    await pushToCloudDb();
+    renderAll();
 
     if (failCount === 0) {
       showToast(`총 ${targets.length}건의 모든 대기 사진 AI 채점이 완료되었습니다! 🎉`, 'success');

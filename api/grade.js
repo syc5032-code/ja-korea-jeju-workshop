@@ -613,7 +613,7 @@ module.exports = async function handler(req, res) {
         });
         userContent.push({
           type: 'image_url',
-          image_url: { url: src, detail: 'high' }
+          image_url: { url: src, detail: 'auto' }
         });
       });
     } else {
@@ -631,7 +631,7 @@ module.exports = async function handler(req, res) {
       });
       userContent.push({
         type: 'image_url',
-        image_url: { url: photo, detail: 'high' }
+        image_url: { url: photo, detail: 'auto' }
       });
     }
 
