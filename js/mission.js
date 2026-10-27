@@ -672,6 +672,7 @@ function getInitialState() {
   return {
     resetId: CURRENT_RESET_ID,
     updatedAt: 0,
+    lastServerSyncTime: 0,
     mode: 'participant',
     selectedTeamId: 1,
     tfUnlocked: false,
@@ -758,6 +759,7 @@ function loadState() {
       ...base,
       ...parsed,
       resetId: CURRENT_RESET_ID,
+      lastServerSyncTime: parsed.lastServerSyncTime || 0,
       mode: 'participant',
       tfUnlocked: false,
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
@@ -1044,6 +1046,7 @@ async function pushToCloudDb() {
     });
 
     if (res.ok) {
+      appState.lastServerSyncTime = payload.updated_at;
       appState.updatedAt = payload.updated_at;
       appState.teams = mergedTeams;
       appState.m6Config.submissions = mergedM6Subs;
@@ -1083,15 +1086,17 @@ async function pullFromCloudDb() {
       const localResetId = appState.resetId || '';
 
       const isResetDetected = remoteResetId && (remoteResetId !== localResetId);
-      const isTimeNewer = row.updated_at > (appState.updatedAt || 0);
+      const isServerChanged = row.updated_at && (row.updated_at !== appState.lastServerSyncTime);
+      const isInitialSync = !appState.lastServerSyncTime;
 
-      if (isResetDetected || isTimeNewer) {
+      if (isResetDetected || isServerChanged || isInitialSync) {
         if (isResetDetected) {
           console.warn('[Sync] 서버 데이터 초기화가 감지되어 기기 인증 및 캐시를 초기화합니다.');
           localStorage.removeItem(MY_TEAM_AUTH_KEY);
           localStorage.removeItem(MY_TEAM_ID_KEY);
         }
         appState.resetId = remoteResetId || CURRENT_RESET_ID;
+        appState.lastServerSyncTime = row.updated_at;
         appState.updatedAt = row.updated_at;
         if (remote.settings) {
           appState.settings = { ...appState.settings, ...remote.settings };
@@ -1868,6 +1873,7 @@ async function runAiGradeMission2(teamId) {
 }
 
 async function gradeAllPendingPhotos() {
+  await pullFromCloudDb();
   const targets = [];
   [1, 2, 3].forEach(tid => {
     const team = appState.teams[tid];
