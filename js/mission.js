@@ -14,7 +14,7 @@ const MISSION_OPEN_SCHEDULE = {
   3: { iso: '2026-10-30T14:30:00+09:00', timeLabel: '10/30(금) 14:30 오픈', shortTime: '14:30', title: '미션 3 · 깜짝 N행시 동영상' },
   4: { iso: '2026-10-30T15:30:00+09:00', timeLabel: '10/30(금) 15:30 오픈', shortTime: '15:30', title: '미션 4 · 팀별 주인공 사진' },
   5: { iso: '2026-10-30T16:00:00+09:00', timeLabel: '10/30(금) 16:00 오픈', shortTime: '16:00', title: "미션 5 · 보너스 그림자 'JA'" },
-  6: { iso: '2026-10-30T18:30:00+09:00', timeLabel: '10/30(금) 18:30 오픈', shortTime: '18:30', title: '미션 6 · 저녁 개인미션' }
+  6: { iso: '2026-10-30T18:30:00+09:00', timeLabel: 'TF 현장 진행 시 오픈', shortTime: '현장 오픈', title: '미션 6 · 저녁 현장 개인미션' }
 };
 
 const JEJU_COMMON_ITEMS = [
@@ -832,6 +832,12 @@ function saveState(skipCloudPush = false) {
 function isMissionOpen(missionNum) {
   if (appState.scheduleConfig?.forceOpenAll) return true;
   if (appState.scheduleConfig?.manualOpen?.[missionNum]) return true;
+
+  // ⚠️ 미션 6는 시간(18:30) 자동 오픈 제외: 대시보드에서 관리자가 [지금 오픈하기]를 누를 때만 열림!
+  if (Number(missionNum) === 6) {
+    return false;
+  }
+
   const sched = MISSION_OPEN_SCHEDULE[missionNum];
   if (!sched) return true;
   const targetMs = new Date(sched.iso).getTime();
@@ -839,6 +845,12 @@ function isMissionOpen(missionNum) {
 }
 
 function getMissionCountdownInfo(missionNum) {
+  if (Number(missionNum) === 6) {
+    const isManualOpen = Boolean(appState.scheduleConfig?.manualOpen?.[6] || appState.scheduleConfig?.forceOpenAll);
+    if (isManualOpen) return { open: true, text: '오픈 완료' };
+    return { open: false, text: 'TF 현장 진행 시 오픈' };
+  }
+
   const sched = MISSION_OPEN_SCHEDULE[missionNum];
   const targetMs = new Date(sched.iso).getTime();
   const diff = targetMs - Date.now();
@@ -877,12 +889,21 @@ function toggleMissionManualOpen(missionNum) {
   saveState();
   renderAll();
   const isNowManual = appState.scheduleConfig.manualOpen[missionNum];
-  showToast(
-    isNowManual
-      ? `🔓 미션 ${missionNum}번을 참가자 화면에 즉시 오픈했습니다!`
-      : `⏰ 미션 ${missionNum}번을 10/30(금) ${MISSION_OPEN_SCHEDULE[missionNum].shortTime} 자동 오픈으로 되돌렸습니다.`,
-    'info'
-  );
+  if (Number(missionNum) === 6) {
+    showToast(
+      isNowManual
+        ? '🔓 [미션 6 오픈 완료] 참가자 화면에 구글 폼 및 QR코드가 즉시 공개되었습니다!'
+        : '🔒 [미션 6 잠금] 참가자 화면에서 미션 6이 비공개(잠금) 상태로 전환되었습니다.',
+      isNowManual ? 'success' : 'info'
+    );
+  } else {
+    showToast(
+      isNowManual
+        ? `🔓 미션 ${missionNum}번을 참가자 화면에 즉시 오픈했습니다!`
+        : `⏰ 미션 ${missionNum}번을 ${MISSION_OPEN_SCHEDULE[missionNum].shortTime} 자동 오픈으로 되돌렸습니다.`,
+      'info'
+    );
+  }
 }
 
 /* ==========================================================================
@@ -2907,14 +2928,15 @@ function submitM6IndividualForm(e) {
 function renderLockedMissionCard(missionNum) {
   const sched = MISSION_OPEN_SCHEDULE[missionNum];
   const cd = getMissionCountdownInfo(missionNum);
+  const isM6 = Number(missionNum) === 6;
   return `
     <div id="p-mission-${missionNum}" class="retreat-card-locked rounded-3xl p-6 sm:p-7 text-center relative overflow-hidden">
       <div class="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-3 py-1 rounded-full bg-[#1D3C34] text-white mb-2.5 tracking-wider">
         <span>🔒 SECRET MISSION 0${missionNum}</span>
       </div>
-      <h2 class="text-base sm:text-lg font-extrabold text-[#1D3C34]">미션 ${missionNum} · 비공개 미션</h2>
+      <h2 class="text-base sm:text-lg font-extrabold text-[#1D3C34]">${isM6 ? '미션 6 · 저녁 현장 개인미션' : `미션 ${missionNum} · 비공개 미션`}</h2>
       <p class="text-xs sm:text-sm text-[#4A5255] mt-1">
-        미션 주제와 상세 내용은 <strong class="text-[#F27A24]">${sched.shortTime}</strong>에 공개됩니다!
+        ${isM6 ? '만찬장 현장에서 TF 진행자의 시작 신호와 함께 오픈됩니다!' : `미션 주제와 상세 내용은 <strong class="text-[#F27A24]">${sched?.shortTime || ''}</strong>에 공개됩니다!`}
       </p>
       <div class="mt-3.5 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E6E1D3] shadow-xs text-xs font-mono font-bold text-[#1D3C34]">
         <span>⏳</span>
@@ -3962,6 +3984,16 @@ function renderMissionScheduleToggleBadge(missionNum) {
   const sched = MISSION_OPEN_SCHEDULE[missionNum];
   const open = isMissionOpen(missionNum);
   const manual = appState.scheduleConfig?.manualOpen?.[missionNum];
+  const isM6 = Number(missionNum) === 6;
+
+  if (isM6) {
+    return `
+      <button onclick="toggleMissionManualOpen(6)" class="text-xs font-black px-3.5 py-1.5 rounded-full border shadow-sm transition flex items-center gap-1.5 ${open ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700' : 'bg-amber-400 hover:bg-amber-500 text-slate-950 border-amber-500 animate-pulse'}" title="클릭하여 참가자 화면에 미션 6을 즉시 오픈하거나 잠급니다.">
+        ${open ? '🔓 [오픈됨] 참가자 화면 공개 중 (클릭 시 다시 잠금)' : '🔒 [지금 오픈하기] 클릭 시 참가자 화면 즉시 열림'}
+      </button>
+    `;
+  }
+
   return `
     <button onclick="toggleMissionManualOpen(${missionNum})" class="text-xs font-extrabold px-3 py-1 rounded-full border transition ${open ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200'}" title="클릭하여 참가자 화면 즉시 오픈/스케줄 모드 전환">
       ${open ? `🔓 참가자 오픈됨 (${manual ? '수동오픈' : sched.shortTime})` : `🔒 ${sched.timeLabel} 대기중 (클릭 시 즉시 오픈)`}
