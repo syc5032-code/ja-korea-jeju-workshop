@@ -1030,11 +1030,25 @@ async function pushToCloudDb() {
           syncM2State(localT);
         }
 
-        // 4) 미션 3: N행시, 카톡 영상 제출, 투표 보존
+        // 4) 미션 3: N행시, 카톡 영상 제출, 투표 양방향 완벽 동기화
         if (serverT.m3 && localT.m3) {
-          if (serverT.m3.kakaoSubmitted) localT.m3.kakaoSubmitted = true;
-          if (serverT.m3.poemText && !localT.m3.poemText) localT.m3.poemText = serverT.m3.poemText;
-          if (serverT.m3.votedForTeamId && !localT.m3.votedForTeamId) localT.m3.votedForTeamId = serverT.m3.votedForTeamId;
+          if (localT.m3.votedForTeamId) {
+            serverT.m3.votedForTeamId = localT.m3.votedForTeamId;
+          } else if (serverT.m3.votedForTeamId) {
+            localT.m3.votedForTeamId = serverT.m3.votedForTeamId;
+          }
+
+          if (typeof localT.m3.kakaoSubmitted === 'boolean') {
+            serverT.m3.kakaoSubmitted = localT.m3.kakaoSubmitted;
+          } else if (serverT.m3.kakaoSubmitted) {
+            localT.m3.kakaoSubmitted = true;
+          }
+
+          if (localT.m3.poemText) {
+            serverT.m3.poemText = localT.m3.poemText;
+          } else if (serverT.m3.poemText) {
+            localT.m3.poemText = serverT.m3.poemText;
+          }
         }
 
         serverT.totalScore = localT.totalScore ?? serverT.totalScore;
@@ -1414,6 +1428,9 @@ async function pullFromCloudDb() {
               netT.m2.verifiedCommon = localT.m2.verifiedCommon;
               netT.m2.verifiedHidden = localT.m2.verifiedHidden;
               netT.m2.oneLineReview = localT.m2.oneLineReview;
+            }
+            if (isTf && localT.m3?.votedForTeamId) {
+              netT.m3.votedForTeamId = localT.m3.votedForTeamId;
             }
           }
         });
@@ -2981,10 +2998,15 @@ function castM3TeamVote(voterTeamId, targetTeamId) {
     showToast('본인 팀에는 투표할 수 없습니다!', 'error');
     return;
   }
+  const targetTeam = appState.teams[targetTeamId];
+  if (!targetTeam?.m3?.kakaoSubmitted) {
+    showToast(`${targetTeam.name}은(는) 카톡 영상을 제출하지 않아 투표 대상이 아닙니다!`, 'error');
+    return;
+  }
   appState.teams[voterTeamId].m3.votedForTeamId = targetTeamId;
   saveState();
   renderAll();
-  showToast(`${appState.teams[voterTeamId].name}의 익명 투표가 완료되었습니다!`, 'success');
+  showToast(`${appState.teams[voterTeamId].name}의 투표가 반영되었습니다!`, 'success');
 }
 
 function toggleM5Pass(teamId) {
@@ -3628,8 +3650,15 @@ function renderParticipantView() {
                 const otherTeam = appState.teams[otherId];
                 const otherIcon = getTeamIcon(otherId);
                 const isVoted = team.m3.votedForTeamId === otherId;
-                return `<button type="button" onclick="castM3TeamVote(${tid}, ${otherId})" class="py-3 px-3 rounded-xl border font-extrabold text-xs transition ${isVoted ? 'bg-[#1D3C34] text-white border-[#1D3C34] shadow-md' : 'bg-white text-[#1D3C34] border-[#E6E1D3] hover:border-[#1D3C34]'}">
-                  ${isVoted ? '💘 투표 완료: ' : '👍 투표: '}${otherIcon} ${otherTeam.name}
+                const canVote = Boolean(otherTeam?.m3?.kakaoSubmitted);
+                return `<button type="button" onclick="castM3TeamVote(${tid}, ${otherId})" ${canVote ? '' : 'disabled title="카톡 영상 미제출 팀으로 투표 불가"'} class="py-3 px-3 rounded-xl border font-extrabold text-xs transition ${
+                  isVoted
+                    ? 'bg-[#1D3C34] text-white border-[#1D3C34] shadow-md'
+                    : canVote
+                      ? 'bg-white text-[#1D3C34] border-[#E6E1D3] hover:border-[#1D3C34]'
+                      : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
+                }">
+                  ${isVoted ? '💘 투표 완료: ' : canVote ? '👍 투표: ' : '🚫 투표불가: '}${otherIcon} ${otherTeam.name}${canVote ? '' : ' (미제출)'}
                 </button>`;
               }).join('')}
             </div>
@@ -5633,11 +5662,22 @@ function renderTfDashboardView() {
                 <div class="text-xs space-y-1.5">
                   <div class="font-bold text-slate-600">${team.name}이 투표한 팀 (본인 팀 제외):</div>
                   <div class="grid grid-cols-2 gap-1.5">
-                    ${otherTeams.map(oid => `
-                      <button onclick="castM3TeamVote(${tid}, ${oid})" class="py-1.5 rounded-lg text-xs font-bold border ${team.m3.votedForTeamId === oid ? 'bg-[#1D5266] text-white border-[#1D5266]' : 'bg-slate-50 text-slate-600 border-slate-200'}">
-                        → ${getTeamIcon(oid)} ${appState.teams[oid].name} 투표
-                      </button>
-                    `).join('')}
+                    ${otherTeams.map(oid => {
+                      const otherT = appState.teams[oid];
+                      const canVote = Boolean(otherT?.m3?.kakaoSubmitted);
+                      const isVoted = team.m3.votedForTeamId === oid;
+                      return `
+                        <button onclick="castM3TeamVote(${tid}, ${oid})" ${canVote ? '' : 'disabled title="카톡 영상 미제출 팀으로 투표 불가"'} class="py-1.5 rounded-lg text-xs font-bold border transition ${
+                          isVoted
+                            ? 'bg-[#1D5266] text-white border-[#1D5266] shadow-xs'
+                            : canVote
+                              ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                              : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed opacity-50'
+                        }">
+                          → ${getTeamIcon(oid)} ${otherT.name} ${isVoted ? '투표(선택됨)' : canVote ? '투표' : '(미제출)'}
+                        </button>
+                      `;
+                    }).join('')}
                   </div>
                 </div>
               </div>
