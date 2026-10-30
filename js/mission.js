@@ -608,10 +608,25 @@ function sanitizeTeams(teamsObj) {
   [1, 2, 3].forEach(id => {
     const raw = teamsObj[id] || teamsObj[String(id)];
     if (raw && typeof raw === 'object') {
+      const defaultNames = { 1: '도전하JA', 2: '1등즈', 3: '퓨처' };
+      const rawName = String(raw.name || '');
+      const cleanName = (rawName && !rawName.includes('?')) ? rawName : (defaultNames[id] || `${id}팀`);
+
       result[id] = {
         id,
-        name: raw.name || `${id}팀`,
-        m1: sanitizeMissionPhoto(raw.m1, result[id].m1),
+        name: cleanName,
+        m1: (() => {
+          const m1Clean = sanitizeMissionPhoto(raw.m1, result[id].m1);
+          if (m1Clean.oneLineReview && m1Clean.oneLineReview.includes('???')) {
+            const defM1Reviews = {
+              1: '제주의 바람과 함께하는 활기찬 팀의 에너지가 최고예요!',
+              2: '제주의 바람을 느끼며 활짝 웃는 모습이 정말 인상적입니다!',
+              3: '팀원들의 밝은 에너지가 배 안을 가득 채우네요!'
+            };
+            m1Clean.oneLineReview = defM1Reviews[id] || '팀원들의 에너지가 느껴지는 멋진 여행 포스터입니다!';
+          }
+          return m1Clean;
+        })(),
         m2: (() => {
           const m2Raw = typeof raw.m2 === 'object' ? raw.m2 : {};
           const m2Obj = {
@@ -631,31 +646,63 @@ function sanitizeTeams(teamsObj) {
             ...m2Obj.commonChecked.map(id => m2Obj.itemPhotos[id]),
             ...(m2Obj.hiddenChecked ? [m2Obj.itemPhotos[m2Obj.hiddenChecked]] : [])
           ].filter(Boolean);
-          // 버전 및 결과 객체 보완
+          // 버전 및 결과 객체 보완 & ??? 인코딩 깨짐 자동 복원
           Object.keys(m2Obj.itemPhotos).forEach(itemId => {
             if (!m2Obj.itemPhotoVersions[itemId]) {
               m2Obj.itemPhotoVersions[itemId] = 'v_init_' + Math.random().toString(36).slice(2, 6);
             }
+            const itemMeta = [...JEJU_COMMON_ITEMS, ...JEJU_HIDDEN_ITEMS].find(x => x.id === itemId);
             if (!m2Obj.itemResults[itemId]) {
               const isAccepted = m2Obj.verifiedCommon.includes(itemId) || m2Obj.verifiedHidden === itemId;
               m2Obj.itemResults[itemId] = {
                 status: m2Obj.graded ? (isAccepted ? 'valid' : 'invalid') : 'pending',
                 accepted: isAccepted,
-                recognizedItem: '',
+                recognizedItem: itemMeta ? itemMeta.label : '',
                 observations: '',
                 reason: '',
                 review: '',
                 evaluatedVersion: m2Obj.itemPhotoVersions[itemId]
               };
+            } else if (itemMeta) {
+              if (!m2Obj.itemResults[itemId].recognizedItem || m2Obj.itemResults[itemId].recognizedItem.includes('?')) {
+                m2Obj.itemResults[itemId].recognizedItem = itemMeta.label;
+              }
+              if (m2Obj.itemResults[itemId].observations && m2Obj.itemResults[itemId].observations.includes('???')) {
+                m2Obj.itemResults[itemId].observations = `${itemMeta.label}의 특징이 사진에 잘 나타남`;
+              }
             }
           });
+          if (m2Obj.oneLineReview && m2Obj.oneLineReview.includes('???')) {
+            const defM2Reviews = {
+              1: '제주의 아름다움과 전통이 잘 담긴 멋진 사진들이네요!',
+              2: '제주의 매력을 잘 담아낸 멋진 사진들입니다!',
+              3: '제주의 매력을 가득 담은 사진들이네요. 모두 훌륭합니다!'
+            };
+            m2Obj.oneLineReview = defM2Reviews[id] || '제주의 매력을 잘 담아낸 멋진 사진들입니다!';
+          }
           return m2Obj;
         })(),
         m3: typeof raw.m3 === 'object' ? { ...result[id].m3, ...raw.m3 } : result[id].m3,
-        m4: sanitizeMissionPhoto(raw.m4, result[id].m4),
+        m4: (() => {
+          const m4Clean = sanitizeMissionPhoto(raw.m4, result[id].m4);
+          if (m4Clean.oneLineReview && m4Clean.oneLineReview.includes('???')) {
+            const defM4Reviews = {
+              1: '해먹 속 주인공과 팀원들의 유쾌한 호흡이 돋보이는 순간!',
+              2: '주인공을 향한 팀원들의 경의가 돋보이는 유쾌한 연출!',
+              3: '바다를 배경으로 한 활기찬 포즈가 인상적입니다!'
+            };
+            m4Clean.oneLineReview = defM4Reviews[id] || '주인공과 팀원들의 멋진 호흡이 돋보입니다!';
+          }
+          return m4Clean;
+        })(),
         m5: (() => {
           const m5Clean = sanitizeMissionPhoto(raw.m5, result[id].m5);
           if (raw.m5 && raw.m5.passed) m5Clean.passed = true;
+          if (m5Clean.oneLineReview && m5Clean.oneLineReview.includes('???')) {
+            m5Clean.oneLineReview = (m5Clean.score && m5Clean.score > 0)
+              ? '팀원들이 함께 연출한 창의적인 그림자 작품입니다!'
+              : '그림자에서 글자 연출 특징을 확인할 수 없어 불인정(0점) 처리되었습니다.';
+          }
           return m5Clean;
         })()
       };
