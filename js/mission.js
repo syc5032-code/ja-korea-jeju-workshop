@@ -6520,6 +6520,12 @@ function renderCeremonyView() {
         </div>
 
         <!-- Before & After 정답 공개 섹션 -->
+        <div class="mb-2 text-center">
+          <button type="button" onclick="openLightbox('assets/images/m6_before_full.jpg')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow transition">
+            <span>🔍</span><span>사전(Before) 두 분 전신 모습 크게 보기</span>
+          </button>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
           <!-- 지수님 카드 -->
           <div class="glass-card rounded-3xl p-5 border-2 border-rose-200 bg-white shadow-lg space-y-3">
@@ -6531,14 +6537,14 @@ function renderCeremonyView() {
             <div class="grid grid-cols-2 gap-2 text-center text-xs">
               <div class="p-2 rounded-2xl bg-slate-50 border border-slate-200">
                 <span class="text-[10px] font-black text-slate-500 uppercase block mb-1">Before (사전)</span>
-                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
-                  ${m6.jisooBeforePhoto ? `<img src="${m6.jisooBeforePhoto}" class="w-full h-full object-cover" />` : `<span class="text-slate-400 text-xs">📷 사전 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 cursor-pointer" onclick="openLightbox('${m6.jisooBeforePhoto || 'assets/images/m6_jisoo_before.jpg'}')">
+                  <img src="${m6.jisooBeforePhoto || 'assets/images/m6_jisoo_before.jpg'}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="지수님 Before" />
                 </div>
               </div>
               <div class="p-2 rounded-2xl bg-rose-50/60 border border-rose-200">
                 <span class="text-[10px] font-black text-rose-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200">
-                  ${m6.jisooAfterPhoto ? `<img src="${m6.jisooAfterPhoto}" class="w-full h-full object-cover" />` : `<span class="text-rose-400 text-xs">✨ 사후 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200 ${m6.jisooAfterPhoto ? 'cursor-pointer' : ''}" ${m6.jisooAfterPhoto ? `onclick="openLightbox('${m6.jisooAfterPhoto}')"` : ''}>
+                  ${m6.jisooAfterPhoto ? `<img src="${m6.jisooAfterPhoto}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="지수님 After" />` : `<span class="text-rose-400 text-xs font-bold">✨ 사후 사진 대기</span>`}
                 </div>
               </div>
             </div>
@@ -6561,14 +6567,14 @@ function renderCeremonyView() {
             <div class="grid grid-cols-2 gap-2 text-center text-xs">
               <div class="p-2 rounded-2xl bg-slate-50 border border-slate-200">
                 <span class="text-[10px] font-black text-slate-500 uppercase block mb-1">Before (사전)</span>
-                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
-                  ${m6.yechanBeforePhoto ? `<img src="${m6.yechanBeforePhoto}" class="w-full h-full object-cover" />` : `<span class="text-slate-400 text-xs">📷 사전 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 cursor-pointer" onclick="openLightbox('${m6.yechanBeforePhoto || 'assets/images/m6_yechan_before.jpg'}')">
+                  <img src="${m6.yechanBeforePhoto || 'assets/images/m6_yechan_before.jpg'}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="예찬님 Before" />
                 </div>
               </div>
               <div class="p-2 rounded-2xl bg-teal-50/60 border border-teal-200">
                 <span class="text-[10px] font-black text-teal-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200">
-                  ${m6.yechanAfterPhoto ? `<img src="${m6.yechanAfterPhoto}" class="w-full h-full object-cover" />` : `<span class="text-teal-400 text-xs">✨ 사후 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200 ${m6.yechanAfterPhoto ? 'cursor-pointer' : ''}" ${m6.yechanAfterPhoto ? `onclick="openLightbox('${m6.yechanAfterPhoto}')"` : ''}>
+                  ${m6.yechanAfterPhoto ? `<img src="${m6.yechanAfterPhoto}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="예찬님 After" />` : `<span class="text-teal-400 text-xs font-bold">✨ 사후 사진 대기</span>`}
                 </div>
               </div>
             </div>
