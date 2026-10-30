@@ -698,6 +698,9 @@ function sanitizeTeams(teamsObj) {
         m5: (() => {
           const m5Clean = sanitizeMissionPhoto(raw.m5, result[id].m5);
           if (raw.m5 && raw.m5.passed) m5Clean.passed = true;
+          if (m5Clean.manualReview && m5Clean.manualReview.reviewer && m5Clean.manualReview.reviewer.includes('?')) {
+            m5Clean.manualReview.reviewer = 'TF 심사위원';
+          }
           if (m5Clean.oneLineReview && m5Clean.oneLineReview.includes('???')) {
             m5Clean.oneLineReview = (m5Clean.score && m5Clean.score > 0)
               ? '팀원들이 함께 연출한 창의적인 그림자 작품입니다!'
