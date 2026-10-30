@@ -1,3 +1,10 @@
+
+function checkIsTfUser() {
+  return Boolean(
+    (typeof appState !== 'undefined' && (appState.tfUnlocked || appState.mode === 'tf' || appState.mode === 'ceremony')) ||
+    (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('JA_JEJU_TF_UNLOCKED') === 'true')
+  );
+}
 /* ==========================================================================
    2026 JA Korea One JA Retreat in Jeju - 6 Missions & AI Grading Engine
    ========================================================================== */
@@ -776,8 +783,8 @@ function loadState() {
       ...parsed,
       resetId: CURRENT_RESET_ID,
       lastServerSyncTime: 0, // 페이지 새로고침 시 1회 완전 동기화 보장
-      mode: 'participant',
-      tfUnlocked: false,
+      mode: (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('JA_JEJU_TF_UNLOCKED') === 'true') ? 'tf' : 'participant',
+      tfUnlocked: (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('JA_JEJU_TF_UNLOCKED') === 'true'),
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
       katalkMessages: (Array.isArray(parsed.katalkMessages) && parsed.katalkMessages.length > 0)
         ? sanitizeKatalkMessages(parsed.katalkMessages)
@@ -934,7 +941,8 @@ async function pushToCloudDb() {
 
     // 2. 스마트 병합: 참가자 기기가 다른 팀의 채점 결과나 최신 데이터를 덮어쓰지 못하도록 방어
     const mergedTeams = JSON.parse(JSON.stringify(remoteTeams || appState.teams));
-    const isTf = Boolean(appState.tfUnlocked);
+    const isTf = checkIsTfUser();
+    if (isTf) { appState.tfUnlocked = true; sessionStorage.setItem('JA_JEJU_TF_UNLOCKED', 'true'); }
     const myTeamId = Number(appState.selectedTeamId || 1);
 
     if (isTf) {
@@ -1037,6 +1045,22 @@ async function pushToCloudDb() {
         console.warn('[CloudSync] 서버 최신 데이터를 가져오지 못해 병합을 보류하고 재시도합니다.');
         return;
       }
+      // [안전망]: 참가자 모드라도 로컬 기기에서 새로 등록된 사진은 서버가 비어있을 때 절대 유실되지 않고 100% 서버로 전송
+      [1, 2, 3].forEach(tid => {
+        const lT = appState.teams?.[tid];
+        const sT = mergedTeams[tid];
+        if (!lT || !sT) return;
+        [1, 4, 5].forEach(mNum => {
+          const mKey = 'm' + mNum;
+          if (lT[mKey]?.photo && (!sT[mKey]?.photo || lT[mKey]?.photo !== sT[mKey]?.photo)) {
+            sT[mKey].photo = lT[mKey].photo;
+            sT[mKey].photoVersion = lT[mKey].photoVersion || ('v_' + Date.now());
+            sT[mKey].submittedAt = lT[mKey].submittedAt || formatNowTime(false);
+            sT[mKey].status = lT[mKey].status || 'pending';
+          }
+        });
+      });
+
       // 인증된 내 팀 식별자 복원
       const authedTeamId = Number(localStorage.getItem(MY_TEAM_ID_KEY) || appState.selectedTeamId || 1);
       const myLocalTeam = appState.teams?.[authedTeamId] || appState.teams?.[myTeamId];
@@ -1235,14 +1259,22 @@ async function pushToCloudDb() {
     if (res.ok) {
       appState.lastServerSyncTime = payload.updated_at;
       appState.updatedAt = payload.updated_at;
-      if (isTf) {
-        // TF 관리자 화면에서는 비동기 통신 도중 채점된 로컬 최신 메모리 결과를 안전하게 유지
-        [1, 2, 3].forEach(tid => {
-          if (!appState.teams[tid]) appState.teams[tid] = mergedTeams[tid];
+      // [핵심]: 통신 완료 후 로컬에 방금 새로 올린 사진이나 심사 결과가 날아가지 않도록 안전하게 동기화
+      [1, 2, 3].forEach(tid => {
+        const lT = appState.teams?.[tid];
+        const sT = mergedTeams[tid];
+        if (!lT || !sT) return;
+        [1, 4, 5].forEach(mNum => {
+          const mKey = 'm' + mNum;
+          if (lT[mKey]?.photo && !sT[mKey]?.photo) {
+            sT[mKey].photo = lT[mKey].photo;
+            sT[mKey].photoVersion = lT[mKey].photoVersion;
+            sT[mKey].submittedAt = lT[mKey].submittedAt;
+            sT[mKey].status = lT[mKey].status || 'pending';
+          }
         });
-      } else {
-        appState.teams = mergedTeams;
-      }
+      });
+      appState.teams = mergedTeams;
       appState.m6Config.submissions = mergedM6Subs;
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
@@ -1327,7 +1359,8 @@ async function pullFromCloudDb() {
       if (remote.m6Config) appState.m6Config = remote.m6Config;
       if (remote.teams) {
         const freshRemoteTeams = sanitizeTeams(remote.teams);
-        const isTf = Boolean(appState.tfUnlocked);
+        const isTf = checkIsTfUser();
+        if (isTf) { appState.tfUnlocked = true; sessionStorage.setItem('JA_JEJU_TF_UNLOCKED', 'true'); }
 
         // [핵심 심사 및 사진 보호 로직]
         [1, 2, 3].forEach(tid => {
@@ -1355,12 +1388,15 @@ async function pullFromCloudDb() {
               }
             }
 
-            // B) 로컬 신규 사진 보호: 로컬 기기에서 등록/교체한 사진이 서버 통신 지연 시 빈 데이터로 덮어써지지 않도록 보존
-            if (localT[mKey]?.photo && !netT[mKey]?.photo) {
+            // B) 로컬 신규/교체 사진 완전 보호: 로컬에서 새로 등록하거나 교체한 사진은 서버가 아직 동기화 전이라도 절대 빈 값으로 덮어쓰지 않고 보존!
+            if (localT[mKey]?.photo && (
+              !netT[mKey]?.photo ||
+              (localT[mKey]?.photo !== netT[mKey]?.photo && String(localT[mKey]?.photoVersion).startsWith('v_'))
+            )) {
               netT[mKey].photo = localT[mKey].photo;
               netT[mKey].photoVersion = localT[mKey].photoVersion;
               netT[mKey].submittedAt = localT[mKey].submittedAt;
-              netT[mKey].status = localT[mKey].status;
+              netT[mKey].status = localT[mKey].status || 'pending';
             }
           });
 
@@ -6634,6 +6670,7 @@ async function submitPinLogin(e) {
     }
 
     appState.tfUnlocked = true;
+    sessionStorage.setItem('JA_JEJU_TF_UNLOCKED', 'true');
     appState.csrfToken = data.csrfToken || '';
     appState.mode = 'tf';
     closePinModal();
