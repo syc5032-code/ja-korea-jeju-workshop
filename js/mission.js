@@ -5451,6 +5451,27 @@ function renderTfDashboardView() {
                 <button onclick="toggleM3KakaoSubmitted(${tid})" class="w-full py-2 rounded-xl text-xs font-bold border ${team.m3.kakaoSubmitted ? 'bg-emerald-50 border-emerald-300 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'}">
                   ${team.m3.kakaoSubmitted ? `✅ 카톡 영상 제출 완료 (${team.m3.submittedAt || '확인됨'})` : '⏳ 카톡 영상 미제출 (클릭 시 제출 체크)'}
                 </button>
+                <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2 text-xs">
+                  <span class="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                    <span>🎬</span><span>시상식 상영:</span>
+                  </span>
+                  ${window._m3VideoUrls?.[tid] ? `
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" onclick="openCeremonyVideoModal(${tid})" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-[11px] flex items-center gap-1 shadow-xs">
+                        <span>▶</span><span>영상 상영</span>
+                      </button>
+                      <label class="cursor-pointer px-2 py-1 rounded-lg bg-white border border-slate-300 text-slate-600 text-[11px] hover:bg-slate-50">
+                        <span>교체</span>
+                        <input type="file" accept="video/*" class="hidden" onchange="handleM3VideoFileSelected(${tid}, this)" />
+                      </label>
+                    </div>
+                  ` : `
+                    <label class="cursor-pointer px-2.5 py-1 rounded-lg bg-[#1D3C34] hover:bg-[#142B25] text-white text-[11px] font-bold flex items-center gap-1 shadow-xs transition">
+                      <span>📂</span><span>카톡 영상(MP4) 선택</span>
+                      <input type="file" accept="video/*" class="hidden" onchange="handleM3VideoFileSelected(${tid}, this)" />
+                    </label>
+                  `}
+                </div>
                 <div class="text-xs space-y-1.5">
                   <div class="font-bold text-slate-600">${team.name}이 투표한 팀 (본인 팀 제외):</div>
                   <div class="grid grid-cols-2 gap-1.5">
@@ -5591,6 +5612,139 @@ function renderTfDashboardView() {
 
   container.innerHTML = blocks.join('');
 }
+
+/* ==========================================================================
+   MISSION 3 CEREMONY & TF VIDEO STORAGE (INDEXEDDB & OBJECTURL)
+   ========================================================================== */
+
+window._m3VideoUrls = { 1: null, 2: null, 3: null };
+window._m3VideoNames = { 1: '', 2: '', 3: '' };
+
+const M3_VIDEO_DB_NAME = 'jeju_m3_videos_db';
+const M3_VIDEO_STORE = 'videos';
+
+function openM3VideoDb() {
+  return new Promise((resolve) => {
+    if (!window.indexedDB) return resolve(null);
+    try {
+      const req = indexedDB.open(M3_VIDEO_DB_NAME, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(M3_VIDEO_STORE)) {
+          db.createObjectStore(M3_VIDEO_STORE);
+        }
+      };
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror = () => resolve(null);
+    } catch (_) {
+      resolve(null);
+    }
+  });
+}
+
+async function saveM3VideoFile(teamId, file) {
+  if (!file) return;
+  try {
+    if (window._m3VideoUrls[teamId]) {
+      try { URL.revokeObjectURL(window._m3VideoUrls[teamId]); } catch (_) {}
+    }
+    const blobUrl = URL.createObjectURL(file);
+    window._m3VideoUrls[teamId] = blobUrl;
+    window._m3VideoNames[teamId] = file.name || '동영상';
+
+    const db = await openM3VideoDb();
+    if (db) {
+      const tx = db.transaction(M3_VIDEO_STORE, 'readwrite');
+      tx.objectStore(M3_VIDEO_STORE).put({ blob: file, name: file.name }, 'team_' + teamId);
+    }
+    showToast((appState.teams[teamId]?.name || teamId + '팀') + ' 영상이 등록되었습니다!', 'success');
+    if (appState.mode === 'ceremony') renderCeremonyView();
+    if (appState.mode === 'tf') renderTfDashboardView();
+  } catch (err) {
+    console.error('Error saving video:', err);
+    showToast('동영상 처리 중 오류가 발생했습니다.', 'error');
+  }
+}
+
+async function loadM3VideosFromDb() {
+  try {
+    const db = await openM3VideoDb();
+    if (!db) return;
+    const tx = db.transaction(M3_VIDEO_STORE, 'readonly');
+    const store = tx.objectStore(M3_VIDEO_STORE);
+    [1, 2, 3].forEach(tid => {
+      const req = store.get('team_' + tid);
+      req.onsuccess = () => {
+        const item = req.result;
+        if (item?.blob) {
+          if (window._m3VideoUrls[tid]) {
+            try { URL.revokeObjectURL(window._m3VideoUrls[tid]); } catch (_) {}
+          }
+          window._m3VideoUrls[tid] = URL.createObjectURL(item.blob);
+          window._m3VideoNames[tid] = item.name || '동영상';
+          if (appState.mode === 'ceremony') renderCeremonyView();
+          if (appState.mode === 'tf') renderTfDashboardView();
+        }
+      };
+    });
+  } catch (_) {}
+}
+
+async function removeM3Video(teamId) {
+  if (window._m3VideoUrls[teamId]) {
+    try { URL.revokeObjectURL(window._m3VideoUrls[teamId]); } catch (_) {}
+    window._m3VideoUrls[teamId] = null;
+    window._m3VideoNames[teamId] = '';
+  }
+  try {
+    const db = await openM3VideoDb();
+    if (db) {
+      const tx = db.transaction(M3_VIDEO_STORE, 'readwrite');
+      tx.objectStore(M3_VIDEO_STORE).delete('team_' + teamId);
+    }
+  } catch (_) {}
+  showToast((appState.teams[teamId]?.name || teamId + '팀') + ' 영상이 해제되었습니다.', 'info');
+  if (appState.mode === 'ceremony') renderCeremonyView();
+  if (appState.mode === 'tf') renderTfDashboardView();
+}
+
+function handleM3VideoFileSelected(teamId, inputEl) {
+  const file = inputEl.files?.[0];
+  if (!file) return;
+  saveM3VideoFile(teamId, file);
+  inputEl.value = '';
+}
+
+function openCeremonyVideoModal(teamId) {
+  const url = window._m3VideoUrls[teamId];
+  if (!url) {
+    showToast('등록된 동영상이 없습니다. 영상 파일을 먼저 선택해 주세요.', 'info');
+    return;
+  }
+  const modal = document.getElementById('modal-video-player');
+  const vEl = document.getElementById('modal-video-element');
+  const tEl = document.getElementById('video-modal-title');
+  const teamName = appState.teams[teamId]?.name || teamId + '팀';
+  const teamIcon = getTeamIcon(teamId);
+
+  if (tEl) tEl.innerHTML = teamIcon + ' <span class="text-amber-400 font-black">' + teamName + '</span> N행시 릴레이 영상 상영';
+  if (vEl) {
+    vEl.src = url;
+    vEl.play().catch(() => {});
+  }
+  if (modal) modal.classList.remove('hidden');
+}
+
+function closeCeremonyVideoModal() {
+  const modal = document.getElementById('modal-video-player');
+  const vEl = document.getElementById('modal-video-element');
+  if (vEl) {
+    vEl.pause();
+    vEl.src = '';
+  }
+  if (modal) modal.classList.add('hidden');
+}
+
 
 /* ==========================================================================
    CEREMONY VIEW, PRESENTATION SLIDESHOW & INITIALIZATION
@@ -5874,22 +6028,57 @@ function renderCeremonyView() {
                     </span>
                   </div>
 
-                  <!-- N행시 Poem Presentation -->
-                  <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-[#FFF9EE] to-orange-50/60 border border-amber-200/80 shadow-xs min-h-[180px] flex flex-col justify-center">
-                    <div class="text-xs font-extrabold text-amber-900 mb-2 flex items-center gap-1.5">
-                      <span>📜</span><span>우리 팀 릴레이 N행시</span>
+                  <!-- N행시 Poem & Video Presentation Player -->
+                  ${window._m3VideoUrls?.[tid] ? `
+                    <div class="space-y-2">
+                      <div class="relative rounded-2xl overflow-hidden bg-black shadow-lg border-2 border-amber-400/80">
+                        <video id="ceremony-inline-video-${tid}" src="${window._m3VideoUrls[tid]}" controls playsinline class="w-full max-h-[220px] object-contain bg-black"></video>
+                        <div class="p-2.5 bg-slate-950/95 flex items-center justify-between text-xs text-white">
+                          <span class="truncate max-w-[130px] font-bold text-amber-300 text-[11px]" title="${escapeHtml(window._m3VideoNames?.[tid] || '릴레이 영상')}">🎬 ${escapeHtml(window._m3VideoNames?.[tid] || '릴레이 영상')}</span>
+                          <div class="flex items-center gap-1.5 shrink-0">
+                            <button type="button" onclick="openCeremonyVideoModal(${tid})" class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-slate-950 font-black text-xs flex items-center gap-1 shadow transition">
+                              <span>⛶</span><span>대화면 상영</span>
+                            </button>
+                            <label class="cursor-pointer px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] transition">
+                              <span>교체</span>
+                              <input type="file" accept="video/*" class="hidden" onchange="handleM3VideoFileSelected(${tid}, this)" />
+                            </label>
+                            <button type="button" onclick="removeM3Video(${tid})" class="px-2 py-1 rounded-lg bg-rose-900/60 hover:bg-rose-800 text-rose-300 text-[11px] transition" title="영상 삭제">
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      ${m.poemText ? `
+                        <div class="font-serif text-xs leading-relaxed text-amber-950 whitespace-pre-line pl-2.5 border-l-2 border-amber-400 bg-amber-50/60 p-2 rounded-r-xl">
+                          ${escapeHtml(m.poemText)}
+                        </div>
+                      ` : ''}
                     </div>
-                    ${m.poemText ? `
-                      <div class="font-serif text-sm sm:text-base leading-relaxed text-amber-950 whitespace-pre-line font-medium pl-3 border-l-2 border-amber-400">
-                        ${escapeHtml(m.poemText)}
+                  ` : `
+                    <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-[#FFF9EE] to-orange-50/60 border border-amber-200/80 shadow-xs min-h-[190px] flex flex-col justify-between">
+                      <div class="text-xs font-extrabold text-amber-900 mb-2 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5"><span>🎬</span><span>우리 팀 릴레이 N행시 영상</span></span>
+                        <span class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">시상식 상영 지원</span>
                       </div>
-                    ` : `
-                      <div class="text-center py-6 text-slate-400 text-xs">
-                        <span class="text-3xl block mb-1">🎥</span>
-                        <span>단톡방에 공유된 현장 릴레이 영상 감상!</span>
+                      <div class="text-center py-3 space-y-2.5">
+                        <div class="text-3xl">🎥</div>
+                        <div>
+                          <div class="text-xs font-extrabold text-[#1D3C34]">${t.name} 카톡 제출 영상 재생 준비</div>
+                          <p class="text-[11px] text-slate-500 mt-0.5">카톡에서 다운받은 동영상(MP4/MOV)을 선택하면 바로 상영됩니다</p>
+                        </div>
+                        <label class="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1D3C34] hover:bg-[#142B25] text-white text-xs font-extrabold shadow-sm transition hover:scale-105">
+                          <span>📂</span><span>동영상 파일 불러오기 (MP4/MOV)</span>
+                          <input type="file" accept="video/*" class="hidden" onchange="handleM3VideoFileSelected(${tid}, this)" />
+                        </label>
                       </div>
-                    `}
-                  </div>
+                      ${m.poemText ? `
+                        <div class="font-serif text-xs leading-relaxed text-amber-950 whitespace-pre-line pl-2.5 border-l-2 border-amber-400 mt-2 bg-amber-50/40 p-1.5 rounded-r-xl">
+                          ${escapeHtml(m.poemText)}
+                        </div>
+                      ` : ''}
+                    </div>
+                  `}
 
                   <div class="text-[11px] text-slate-500 text-right">
                     ${votedFor ? `투표 선택: <span class="font-bold text-slate-700">${votedFor}</span>에 투표` : '투표 내역 없음'}
@@ -6198,6 +6387,9 @@ function renderCeremonyView() {
 
 // 키보드 좌우 화살표 및 스페이스바로 시상식 슬라이드 넘기기
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeCeremonyVideoModal();
+  }
   if (appState.mode !== 'ceremony') return;
   if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
   if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -6633,6 +6825,7 @@ function tickMissionScheduleCountdowns() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  loadM3VideosFromDb();
   // URL 파라미터(?db=..., ?tf=1, ?team=..., ?pin=...) 자동 인식
   const params = new URLSearchParams(window.location.search);
   const dbParam = params.get('db');

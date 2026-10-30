@@ -657,9 +657,25 @@
     <img id="lightbox-img" src="" alt="미션 사진 확대" class="max-h-[90vh] max-w-[95vw] rounded-2xl shadow-2xl object-contain" />
   </div>
 
+  <!-- Video Theater Modal (Mission 3 Ceremony & TF) -->
+  <div id="modal-video-player" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6" onclick="if(event.target===this)closeCeremonyVideoModal()">
+    <div class="w-full max-w-4xl flex items-center justify-between text-white pb-3 px-1">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🎬</span>
+        <span id="video-modal-title" class="text-base sm:text-lg font-black tracking-tight text-white">동영상 대화면 상영</span>
+      </div>
+      <button type="button" onclick="closeCeremonyVideoModal()" class="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1">
+        <span>✕</span><span>닫기 (ESC)</span>
+      </button>
+    </div>
+    <div class="relative w-full max-w-4xl bg-black rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center border border-white/10" style="max-height: 80vh;">
+      <video id="modal-video-element" controls playsinline class="w-full max-h-[75vh] object-contain bg-black"></video>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <script src="js/mission.js?v=20261030_06"></script>
+  <script src="js/mission.js?v=20261030_07"></script>
 </body>
 </html>
