@@ -416,8 +416,9 @@ const DEFAULT_KATALK_MESSAGES = [
 지금 바로 웹앱에 접속해 미션을 확인하고 정답을 제출해 주세요!
 
 ⏰ 제한 시간: 단 3분! (타이머 카운트다운 시작)
-📍 참여 방법: 미션 웹앱 ➡️ [미션 6] 카드 ➡️ 본인 이름과 정답 입력 후 [제출] 클릭!
-🔗 미션 참여하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
+📍 참여 방법: 아래 구글 설문 폼 링크 접속 또는 웹앱 QR코드 스캔!
+📝 구글 설문 폼: https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform
+🔗 미션 웹앱: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
 
 가장 많이 맞추고 가장 빨리 제출한 1등에게는 스페셜 개인 선물이 주어집니다! 지금 관찰하세요! 👀⚡`
   }
@@ -3676,42 +3677,56 @@ function renderParticipantView() {
     cards.push(renderLockedMissionCard(6));
   } else {
     cards.push(`
-      <div id="p-mission-6" class="retreat-card rounded-3xl p-5 sm:p-6 border-2 border-[#F27A24]/40 bg-gradient-to-br from-white to-[#FFF3E8]">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+      <div id="p-mission-6" class="retreat-card rounded-3xl p-5 sm:p-7 border-2 border-[#F27A24]/40 bg-gradient-to-br from-white via-[#FFF9F3] to-[#FFF3E8] shadow-md space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#F27A24]/20">
           <div class="flex items-center gap-2">
             <span class="bg-[#1D5266] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 6 · 18:30 오픈 (저녁 개인미션)</span>
-            <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">지수님·예찬님의 달라진 아이템을 찾아보세요!</h2>
+            <h2 class="text-base sm:text-lg font-black text-[#1D5266]">지수님·예찬님의 달라진 아이템을 찾아보세요!</h2>
           </div>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">🎁 최다 정답자 1명 단독 시상</span>
+          <span class="text-xs font-extrabold px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">🎁 최다 정답자 1명 단독 시상</span>
         </div>
-        <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
-          아침에 본 <strong>지수님·예찬님</strong>의 모습과 지금을 비교해 달라진 아이템을 찾아보세요! <strong>3분 안에</strong> 정답을 제출해 주세요. 서로 상의하지 않고 개인별로 참여해 주세요.
+
+        <p class="text-xs sm:text-sm text-[#4A5255] leading-relaxed">
+          아침에 본 <strong>지수님·예찬님</strong>의 모습과 지금을 비교해 달라진 아이템을 찾아보세요!<br class="hidden sm:inline">
+          팀원과 상의하지 않고 개인별로 참여하며, <strong>[구글 설문 폼 버튼]</strong>을 터치하거나 <strong>[QR 코드]</strong>를 스캔해 제출해 주세요!
         </p>
-        <form onsubmit="submitM6IndividualForm(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white p-4 rounded-2xl border border-slate-200/80">
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">참가자 성함 (필수)</label>
-            <input id="m6-p-name" type="text" placeholder="홍길동" required class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
+
+        <!-- Google Form Link & QR Box -->
+        <div class="p-5 sm:p-6 rounded-2xl bg-white border border-[#E6E1D3] shadow-xs flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="space-y-3.5 flex-1 text-center md:text-left">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-extrabold border border-emerald-200">
+              <span>📝</span><span>구글 설문지(Google Form) 제출 방식</span>
+            </div>
+            <h3 class="text-base sm:text-xl font-black text-[#1D3C34] tracking-tight">
+              모바일에서는 아래 버튼을 눌러 바로 작성하세요!
+            </h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              • 본인 성함과 소속 팀을 선택한 후, 관찰한 달라진 아이템을 적어주세요.<br>
+              • <strong>제출 마감 시간: 단 3분 타임어택!</strong> (최다 정답자 & 선착순 단독 우승)
+            </p>
+            <div class="pt-1 flex flex-col sm:flex-row items-center gap-2.5">
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-[#F27A24] hover:bg-[#d96514] text-white font-black text-xs sm:text-sm shadow-md hover:shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0">
+                <span>📝</span><span>구글 설문지 폼 열고 답안 제출하기</span><span>↗</span>
+              </a>
+              <button type="button" onclick="openLightbox('assets/images/m6_form_qr.png')" class="inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                <span>🔍</span><span>QR코드 크게보기</span>
+              </button>
+            </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">소속 팀</label>
-            <select id="m6-p-team" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm bg-white">
-              ${[1, 2, 3].map(id => `<option value="${id}" ${id === tid ? 'selected' : ''}>${appState.teams[id].name}</option>`).join('')}
-            </select>
+
+          <!-- QR Code Frame -->
+          <div class="shrink-0 flex flex-col items-center gap-2 p-4 rounded-2xl bg-[#FCFBF7] border border-[#E6E1D3] shadow-xs text-center">
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform" target="_blank" rel="noopener noreferrer" class="group block" title="클릭 시 설문지 바로 열기">
+              <div class="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-200 group-hover:border-[#F27A24] group-hover:shadow-md transition">
+                <img src="assets/images/m6_form_qr.png" alt="미션 6 설문 제출 QR 코드" class="w-36 h-36 sm:w-44 sm:h-44 object-contain rounded-xl" />
+              </div>
+            </a>
+            <span class="text-[11px] font-extrabold text-[#1D3C34] flex items-center gap-1">
+              <span>📷</span><span>카메라로 QR코드 스캔</span>
+            </span>
+            <span class="text-[10px] text-slate-400">이미지 터치 시에도 폼이 열립니다</span>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">🔍 지수님 달라진 아이템 (주관식)</label>
-            <input id="m6-p-jisoo" type="text" placeholder="예: 안경 착용, 머리핀, 운동화 등" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">🔍 예찬님 달라진 아이템 (주관식)</label>
-            <input id="m6-p-yechan" type="text" placeholder="예: 시계 뺌, 가디건 색상, 명찰 위치 등" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs sm:text-sm" />
-          </div>
-          <div class="sm:col-span-2 pt-1">
-            <button type="submit" class="w-full py-3 rounded-xl bg-[#1D5266] hover:bg-[#123746] text-white font-extrabold text-xs sm:text-sm shadow transition">
-              🚀 개인미션 정답 제출하기 (제출 시각 자동 기록)
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     `);
   }
@@ -5518,12 +5533,20 @@ function renderTfDashboardView() {
           <div>
             <div class="flex items-center gap-2 flex-wrap">
               <span class="bg-[#1D5266] text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 6 · 18:30 오픈</span>
-              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">지수님·예찬님 달라진 아이템 찾기 (맞춘 개수 순 자동 정렬 & 1등 선정)</h2>
+              <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">지수님·예찬님 달라진 아이템 찾기 (구글 폼 설문 제출 & 1등 선정)</h2>
               ${renderMissionScheduleToggleBadge(6)}
             </div>
             <p class="text-xs text-slate-500 mt-1">
-              TF에서 각 참가자의 <strong>[맞춘 개수 (+ / -)]</strong>를 체크하면 즉시 <strong>① 맞춘 개수 많은 순 → ② 제출 시각 빠른 순</strong>으로 자동 정렬되며, <strong>[👑 1등 선택]</strong>으로 우승자를 확정합니다!
+              참가자들은 <strong>구글 폼(설문지)</strong>으로 답안을 제출합니다. TF에서는 <strong>[📷 빔프로젝터 QR코드 대화면 띄우기]</strong>로 현장에 QR을 안내하고, 구글 시트 응답 확인 후 <strong>[+ 수동 추가]</strong>로 등록하거나 <strong>[👑 1등 선택]</strong>으로 최종 우승자를 확정할 수 있습니다!
             </p>
+            <div class="flex items-center gap-2 pt-2 flex-wrap">
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-[#F27A24] hover:bg-[#d96514] text-white text-xs font-extrabold shadow-xs transition flex items-center gap-1.5">
+                <span>📝</span><span>구글 폼 설문지 열기 (새창)</span><span>↗</span>
+              </a>
+              <button type="button" onclick="openLightbox('assets/images/m6_form_qr.png')" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold shadow-xs transition flex items-center gap-1.5">
+                <span>📷</span><span>빔프로젝터용 QR코드 대화면 띄우기</span>
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-2xl">
@@ -6250,7 +6273,16 @@ function renderCeremonyView() {
         <div class="glass-card rounded-3xl p-8 sm:p-10 text-center max-w-3xl mx-auto border-2 border-amber-400 bg-white shadow-xl">
           <div class="text-5xl mb-3 animate-bounce">🎁</div>
           <div class="text-xs font-extrabold uppercase tracking-widest text-amber-700 mb-1">Mission 6 · 현장 스피드 퀴즈 단독 우승자</div>
-          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mb-6">스페셜 개인 선물 수상자</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mb-4">스페셜 개인 선물 수상자</h2>
+          <!-- Banquet QR Code Display Bar -->
+          <div class="mb-6 flex flex-wrap justify-center items-center gap-2">
+            <button type="button" onclick="openLightbox('assets/images/m6_form_qr.png')" class="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition flex items-center gap-1.5">
+              <span>📷</span><span>현장 참가용 구글 폼 QR코드 대화면 띄우기</span>
+            </button>
+            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition flex items-center gap-1.5">
+              <span>📝</span><span>구글 폼 바로가기</span><span>↗</span>
+            </a>
+          </div>
 
           ${winner ? `
             <div class="p-8 rounded-3xl winner-glow my-4 bg-gradient-to-br from-amber-50 via-white to-orange-50 border border-amber-300">
