@@ -951,36 +951,77 @@ async function pushToCloudDb() {
         serverMyTeam.name = myLocalTeam.name || serverMyTeam.name;
         if (myLocalTeam.pin) serverMyTeam.pin = myLocalTeam.pin;
 
-        // 미션 1, 4, 5: 사진이 바뀌지 않았다면 서버의 심사 결과(점수, 심사평, status) 보존!
+        // 미션 1, 4, 5: 팀원 간 동시 업로드 보호 및 다중 기기 스마트 병합
         [1, 4, 5].forEach(mNum => {
           const mKey = `m${mNum}`;
           const localM = myLocalTeam[mKey];
           const serverM = serverMyTeam[mKey];
           if (!localM || !serverM) return;
 
-          // 사진이 동일하다면 서버의 채점 상태(점수, 평가)가 최우선
-          if (localM.photo && serverM.photo && localM.photo === serverM.photo && localM.photoVersion === serverM.photoVersion) {
+          // 1) 로컬에서 명시적으로 삭제한 경우 (deleted_ 접두사) -> 서버도 삭제 반영
+          if (localM.photoVersion && String(localM.photoVersion).startsWith('deleted_')) {
+            serverM.photo = '';
+            serverM.photoVersion = localM.photoVersion;
+            serverM.status = 'none';
+            serverM.graded = false;
+            serverM.score = null;
+            serverM.caption = '';
+            serverM.heroName = '';
+            serverM.observations = '';
+            serverM.reason = '';
+            serverM.submittedAt = '';
+          }
+          // 2) 로컬 기기에서 새 사진을 등록/교체한 경우 -> 서버 업데이트
+          else if (localM.photo && localM.photo !== serverM.photo) {
+            serverMyTeam[mKey] = {
+              ...serverM,
+              ...localM,
+              photo: localM.photo,
+              photoVersion: localM.photoVersion || ('v_' + Date.now()),
+              submittedAt: localM.submittedAt || formatNowTime(false),
+              status: 'pending',
+              graded: false,
+              score: null,
+              reason: '사진이 등록/교체되어 AI 판독 대기 중입니다.',
+              caption: localM.caption ?? serverM.caption ?? '',
+              heroName: localM.heroName ?? serverM.heroName ?? ''
+            };
+            myLocalTeam[mKey] = { ...serverMyTeam[mKey] };
+          }
+          // 3) 서버와 로컬의 사진이 동일한 경우 -> 서버의 채점 상태(점수/평가) 보존 & 텍스트 메모만 갱신
+          else if (localM.photo && serverM.photo && localM.photo === serverM.photo) {
             serverM.caption = localM.caption ?? serverM.caption;
             serverM.heroName = localM.heroName ?? serverM.heroName;
-          } else {
-            // 참가자가 새 사진을 올린 경우에만 로컬 데이터로 갱신
-            serverMyTeam[mKey] = localM;
+            localM.status = serverM.status;
+            localM.score = serverM.score;
+            localM.graded = serverM.graded;
+            localM.reason = serverM.reason;
+          }
+          // 4) 로컬에는 사진이 없으나 서버에 다른 팀원이 올린 사진이 있는 경우 -> 서버 사진 보존 및 로컬로 가져옴!
+          else if (!localM.photo && serverM.photo) {
+            myLocalTeam[mKey] = JSON.parse(JSON.stringify(serverM));
           }
         });
 
-        // 미션 2: 각 항목별 사진 버전 대조 및 삭제 동기화
+        // 미션 2: 팀원 간 다중 항목 사진 보존 및 합집합(Union) 스마트 병합
         if (myLocalTeam.m2 && serverMyTeam.m2) {
           syncM2State(myLocalTeam);
           syncM2State(serverMyTeam);
           const sM2 = serverMyTeam.m2;
           const lM2 = myLocalTeam.m2;
 
-          // 1) 로컬(참가자 본인 팀)에서 삭제된 항목은 서버에서도 확실하게 삭제!
-          Object.keys(sM2.itemPhotos || {}).forEach(k => {
-            if (!lM2.itemPhotos?.[k]) {
+          if (!sM2.itemPhotos) sM2.itemPhotos = {};
+          if (!sM2.itemPhotoVersions) sM2.itemPhotoVersions = {};
+          if (!sM2.itemResults) sM2.itemResults = {};
+          if (!lM2.itemPhotos) lM2.itemPhotos = {};
+          if (!lM2.itemPhotoVersions) lM2.itemPhotoVersions = {};
+
+          // 1) 로컬에서 명시적으로 삭제(deleted_ 접두사)한 항목만 서버에서 안전하게 삭제
+          Object.keys(lM2.itemPhotoVersions || {}).forEach(k => {
+            if (String(lM2.itemPhotoVersions[k]).startsWith('deleted_')) {
               delete sM2.itemPhotos[k];
-              if (sM2.itemPhotoVersions) delete sM2.itemPhotoVersions[k];
-              if (sM2.itemResults) delete sM2.itemResults[k];
+              sM2.itemPhotoVersions[k] = lM2.itemPhotoVersions[k];
+              delete sM2.itemResults[k];
               if (Array.isArray(sM2.verifiedCommon)) {
                 const idx = sM2.verifiedCommon.indexOf(k);
                 if (idx >= 0) sM2.verifiedCommon.splice(idx, 1);
@@ -989,13 +1030,20 @@ async function pushToCloudDb() {
             }
           });
 
-          // 2) 로컬에서 새로 등록하거나 교체된 사진 반영
+          // 2) 로컬에서 새로 등록하거나 교체한 사진을 서버에 반영
           Object.keys(lM2.itemPhotos || {}).forEach(k => {
             const lPhoto = lM2.itemPhotos[k];
-            const sPhoto = sM2.itemPhotos?.[k];
+            const sPhoto = sM2.itemPhotos[k];
+            if (!lPhoto) return;
+
+            // 서버에서 더 최근에 삭제된 항목이면 부활시키지 않음
+            if (String(sM2.itemPhotoVersions?.[k]).startsWith('deleted_') && !String(lM2.itemPhotoVersions?.[k]).startsWith('v_')) {
+              return;
+            }
+
             if (lPhoto !== sPhoto) {
               sM2.itemPhotos[k] = lPhoto;
-              sM2.itemPhotoVersions[k] = lM2.itemPhotoVersions?.[k] || ('v_' + Date.now());
+              sM2.itemPhotoVersions[k] = lM2.itemPhotoVersions[k] || ('v_' + Date.now());
               sM2.itemResults[k] = {
                 status: 'pending',
                 accepted: false,
@@ -1010,15 +1058,34 @@ async function pushToCloudDb() {
             }
           });
 
+          // 3) 다른 팀원이 올린 사진(서버에는 있고 로컬에는 없는 항목)을 로컬로 가져와 동기화
+          Object.keys(sM2.itemPhotos || {}).forEach(k => {
+            if (sM2.itemPhotos[k] && !lM2.itemPhotos[k]) {
+              lM2.itemPhotos[k] = sM2.itemPhotos[k];
+              lM2.itemPhotoVersions[k] = sM2.itemPhotoVersions[k];
+              lM2.itemResults[k] = sM2.itemResults[k] || { status: 'pending', accepted: false };
+            }
+          });
+
           syncM2State(serverMyTeam);
+          syncM2State(myLocalTeam);
         }
 
         // 미션 3: 영상 제출 체크 및 N행시 내용
         if (myLocalTeam.m3 && serverMyTeam.m3) {
-          serverMyTeam.m3.kakaoSubmitted = myLocalTeam.m3.kakaoSubmitted ?? serverMyTeam.m3.kakaoSubmitted;
-          serverMyTeam.m3.poemText = myLocalTeam.m3.poemText ?? serverMyTeam.m3.poemText;
-          serverMyTeam.m3.submittedAt = myLocalTeam.m3.submittedAt ?? serverMyTeam.m3.submittedAt;
-          serverMyTeam.m3.votedForTeamId = myLocalTeam.m3.votedForTeamId ?? serverMyTeam.m3.votedForTeamId;
+          if (myLocalTeam.m3.kakaoSubmitted) serverMyTeam.m3.kakaoSubmitted = true;
+          else if (serverMyTeam.m3.kakaoSubmitted) myLocalTeam.m3.kakaoSubmitted = true;
+
+          if (myLocalTeam.m3.poemText && myLocalTeam.m3.poemText !== serverMyTeam.m3.poemText) {
+            serverMyTeam.m3.poemText = myLocalTeam.m3.poemText;
+            serverMyTeam.m3.submittedAt = myLocalTeam.m3.submittedAt || formatNowTime(false);
+          } else if (!myLocalTeam.m3.poemText && serverMyTeam.m3.poemText) {
+            myLocalTeam.m3.poemText = serverMyTeam.m3.poemText;
+            myLocalTeam.m3.submittedAt = serverMyTeam.m3.submittedAt;
+          }
+
+          if (myLocalTeam.m3.votedForTeamId) serverMyTeam.m3.votedForTeamId = myLocalTeam.m3.votedForTeamId;
+          else if (serverMyTeam.m3.votedForTeamId) myLocalTeam.m3.votedForTeamId = serverMyTeam.m3.votedForTeamId;
         }
       }
     }
@@ -1130,7 +1197,24 @@ async function pullFromCloudDb() {
         if (remote.m3Config) appState.m3Config = remote.m3Config;
         if (remote.m6Config) appState.m6Config = remote.m6Config;
         if (remote.teams) appState.teams = sanitizeTeams(remote.teams);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        } catch (storageErr) {
+          console.warn('[Storage] pullFromCloudDb localStorage 한도 초과, 경량 캐시로 저장합니다.');
+          try {
+            const lightState = JSON.parse(JSON.stringify(appState));
+            const myTid = Number(appState.selectedTeamId || 1);
+            [1, 2, 3].forEach(t => {
+              if (t !== myTid && lightState.teams?.[t]) {
+                if (lightState.teams[t].m1) lightState.teams[t].m1.photo = '';
+                if (lightState.teams[t].m4) lightState.teams[t].m4.photo = '';
+                if (lightState.teams[t].m5) lightState.teams[t].m5.photo = '';
+                if (lightState.teams[t].m2) { lightState.teams[t].m2.itemPhotos = {}; lightState.teams[t].m2.photos = []; }
+              }
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
+          } catch (_) {}
+        }
         renderAll();
       }
     }
@@ -2382,9 +2466,9 @@ function submitTeamLogin() {
   appState.selectedTeamId = tid;
   localStorage.setItem(MY_TEAM_AUTH_KEY, 'true');
   localStorage.setItem(MY_TEAM_ID_KEY, String(tid));
-  saveState();
 
   closeTeamLoginModal();
+  pullFromCloudDb().then(() => renderAll());
   renderAll();
   showToast(`🎉 ${getTeamIcon(tid)} ${appState.teams[tid].name} 입장 완료!`, 'success');
 }
@@ -2592,9 +2676,11 @@ async function uploadM2ItemPhoto(teamId, itemId, inputEl, isHidden = false) {
 function removeM2ItemPhoto(teamId, itemId) {
   const team = appState.teams[teamId];
   if (!team || !team.m2?.itemPhotos) return;
+  if (!confirm('이 사진을 정말 삭제하시겠습니까?')) return;
   if (team.m2.itemPhotos[itemId]) {
     delete team.m2.itemPhotos[itemId];
-    if (team.m2.itemPhotoVersions) delete team.m2.itemPhotoVersions[itemId];
+    if (!team.m2.itemPhotoVersions) team.m2.itemPhotoVersions = {};
+    team.m2.itemPhotoVersions[itemId] = 'deleted_' + Date.now();
     if (team.m2.itemResults) delete team.m2.itemResults[itemId];
 
     if (Array.isArray(team.m2.verifiedCommon)) {
@@ -2615,6 +2701,30 @@ function removeM2ItemPhoto(teamId, itemId) {
     const itemName = itemMeta ? `${itemMeta.icon} ${itemMeta.label}` : itemId;
     showToast(`${itemName} 사진이 삭제되었습니다.`, 'info');
   }
+}
+
+function removeMissionPhoto(teamId, missionNum) {
+  const team = appState.teams[teamId];
+  if (!team) return;
+  const mKey = `m${missionNum}`;
+  if (!team[mKey]) return;
+  if (!confirm(`미션 ${missionNum} 등록 사진을 정말 삭제하시겠습니까?`)) return;
+
+  team[mKey].photo = '';
+  team[mKey].photoVersion = 'deleted_' + Date.now();
+  team[mKey].status = 'none';
+  team[mKey].graded = false;
+  team[mKey].score = null;
+  team[mKey].observations = '';
+  team[mKey].reason = '';
+  team[mKey].caption = '';
+  team[mKey].heroName = '';
+  team[mKey].submittedAt = '';
+  if (missionNum === 5) team.m5.passed = false;
+
+  saveState();
+  renderAll();
+  showToast(`미션 ${missionNum} 사진이 삭제되었습니다.`, 'info');
 }
 
 function removeM2Photo(teamId, idx) {
@@ -2763,6 +2873,132 @@ function renderParticipantPhotoStatusBox(m, missionName = '사진') {
   `;
 }
 
+function renderTeamSharedPhotoGallery(team, tid) {
+  const m1Photo = team.m1?.photo;
+  const m2Photos = Object.entries(team.m2?.itemPhotos || {}).filter(([k, v]) => Boolean(v));
+  const m4Photo = team.m4?.photo;
+  const m5Photo = team.m5?.photo;
+  const m3Done = Boolean(team.m3?.kakaoSubmitted);
+
+  const totalCount = (m1Photo ? 1 : 0) + m2Photos.length + (m3Done ? 1 : 0) + (m4Photo ? 1 : 0) + (m5Photo ? 1 : 0);
+
+  return `
+    <div class="mb-5 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#1D3C34] via-[#244A41] to-[#142B25] text-white shadow-md border border-[#1D3C34]/40">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">📸</span>
+          <div>
+            <div class="text-sm sm:text-base font-black flex items-center gap-2">
+              <span>${getTeamIcon(tid)} ${team.name} 실시간 제출 사진</span>
+              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${totalCount > 0 ? 'bg-emerald-400/25 text-emerald-300 border border-emerald-400/40' : 'bg-white/10 text-white/70'}">
+                ${totalCount > 0 ? `현재 ${totalCount}건 등록됨` : '등록 대기'}
+              </span>
+            </div>
+            <p class="text-[11px] text-emerald-100/75 mt-0.5">
+              팀원 중 누군가 사진을 올리면 <b>모든 팀원 화면에 실시간 자동 공유</b>됩니다. (클릭 시 크게보기)
+            </p>
+          </div>
+        </div>
+        <button type="button" onclick="pullFromCloudDb().then(()=>{ showToast('최신 사진을 동기화했습니다!', 'success'); renderAll(); })" class="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 text-xs font-black transition flex items-center gap-1.5 shadow-xs shrink-0 cursor-pointer text-white">
+          <span>🔄</span><span>지금 새로고침</span>
+        </button>
+      </div>
+
+      <!-- Quick Preview Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-white/10">
+        <!-- M1 Poster -->
+        <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-[11px] font-bold text-emerald-200 mb-1.5">
+            <span>미션 1 · 포스터</span>
+            ${m1Photo ? '<span class="text-emerald-300 text-[10px] font-extrabold">🟢 등록됨</span>' : '<span class="text-white/40 text-[10px]">미등록</span>'}
+          </div>
+          ${m1Photo ? `
+            <div class="relative h-24 rounded-xl overflow-hidden cursor-zoom-in group shadow-xs" onclick="openLightbox('${m1Photo}')">
+              <img src="${m1Photo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+              <div class="absolute inset-0 bg-black/25 hover:bg-black/0 transition flex items-center justify-center">
+                <span class="text-[10px] font-extrabold bg-black/60 px-2 py-0.5 rounded-md text-white backdrop-blur-xs">🔍 크게보기</span>
+              </div>
+            </div>
+          ` : `
+            <a href="#p-mission-1" class="h-24 rounded-xl border border-dashed border-white/25 flex flex-col items-center justify-center text-[11px] text-white/50 hover:text-white/80 hover:border-white/50 transition">
+              <span class="text-xl mb-0.5">📷</span>
+              <span>사진 등록</span>
+            </a>
+          `}
+        </div>
+
+        <!-- M2 Jeju Items -->
+        <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-[11px] font-bold text-sky-200 mb-1.5">
+            <span>미션 2 · 제주발견</span>
+            <span class="text-[10px] ${m2Photos.length > 0 ? 'text-sky-300 font-extrabold' : 'text-white/40'}">${m2Photos.length}/4종 등록</span>
+          </div>
+          ${m2Photos.length > 0 ? `
+            <div class="flex gap-1.5 overflow-x-auto pb-0.5 h-24" style="scrollbar-width: thin;">
+              ${m2Photos.map(([k, photo]) => {
+                const item = [...JEJU_COMMON_ITEMS, ...JEJU_HIDDEN_ITEMS].find(x => x.id === k);
+                return `
+                  <div class="relative w-16 h-full rounded-xl overflow-hidden shrink-0 cursor-zoom-in group shadow-xs" onclick="openLightbox('${photo}')" title="${item?.label || k}">
+                    <img src="${photo}" class="w-full h-full object-cover group-hover:scale-105 transition" />
+                    <span class="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] text-center truncate py-0.5 text-white font-extrabold">${item?.icon || ''}</span>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <a href="#p-mission-2" class="h-24 rounded-xl border border-dashed border-white/25 flex flex-col items-center justify-center text-[11px] text-white/50 hover:text-white/80 hover:border-white/50 transition">
+              <span class="text-xl mb-0.5">🔍</span>
+              <span>항목 발견</span>
+            </a>
+          `}
+        </div>
+
+        <!-- M4 Hero -->
+        <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-[11px] font-bold text-amber-200 mb-1.5">
+            <span>미션 4 · 주인공</span>
+            ${m4Photo ? '<span class="text-amber-300 text-[10px] font-extrabold">🟢 등록됨</span>' : '<span class="text-white/40 text-[10px]">미등록</span>'}
+          </div>
+          ${m4Photo ? `
+            <div class="relative h-24 rounded-xl overflow-hidden cursor-zoom-in group shadow-xs" onclick="openLightbox('${m4Photo}')">
+              <img src="${m4Photo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+              <div class="absolute inset-0 bg-black/25 hover:bg-black/0 transition flex items-center justify-center">
+                <span class="text-[10px] font-extrabold bg-black/60 px-2 py-0.5 rounded-md text-white backdrop-blur-xs">🔍 크게보기</span>
+              </div>
+            </div>
+          ` : `
+            <a href="#p-mission-4" class="h-24 rounded-xl border border-dashed border-white/25 flex flex-col items-center justify-center text-[11px] text-white/50 hover:text-white/80 hover:border-white/50 transition">
+              <span class="text-xl mb-0.5">👑</span>
+              <span>주인공 등록</span>
+            </a>
+          `}
+        </div>
+
+        <!-- M5 Shadow JA -->
+        <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
+          <div class="flex items-center justify-between text-[11px] font-bold text-orange-200 mb-1.5">
+            <span>미션 5 · 그림자JA</span>
+            ${m5Photo ? '<span class="text-orange-300 text-[10px] font-extrabold">🟢 등록됨</span>' : team.m5?.passed ? '<span class="text-amber-200 text-[10px] font-bold">🌥️ 패스</span>' : '<span class="text-white/40 text-[10px]">미등록</span>'}
+          </div>
+          ${m5Photo ? `
+            <div class="relative h-24 rounded-xl overflow-hidden cursor-zoom-in group shadow-xs" onclick="openLightbox('${m5Photo}')">
+              <img src="${m5Photo}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+              <div class="absolute inset-0 bg-black/25 hover:bg-black/0 transition flex items-center justify-center">
+                <span class="text-[10px] font-extrabold bg-black/60 px-2 py-0.5 rounded-md text-white backdrop-blur-xs">🔍 크게보기</span>
+              </div>
+            </div>
+          ` : `
+            <a href="#p-mission-5" class="h-24 rounded-xl border border-dashed border-white/25 flex flex-col items-center justify-center text-[11px] text-white/50 hover:text-white/80 hover:border-white/50 transition">
+              <span class="text-xl mb-0.5">👥</span>
+              <span>그림자 등록</span>
+            </a>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderParticipantView() {
   try {
     const tid = Number(appState.selectedTeamId || 1);
@@ -2843,6 +3079,9 @@ function renderParticipantView() {
 
   const cards = [];
 
+  // 우리 팀 실시간 제출 현황 (팀원 전체 공유 보관함)
+  cards.push(renderTeamSharedPhotoGallery(team, tid));
+
   // Mission 1 (10/30 09:20 오픈)
   if (!isMissionOpen(1)) {
     cards.push(renderLockedMissionCard(1));
@@ -2884,12 +3123,37 @@ function renderParticipantView() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-          <label class="flex flex-col items-center justify-center h-44 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden relative">
-            ${team.m1.photo
-              ? `<img src="${team.m1.photo}" class="w-full h-full object-cover" /><span class="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">📸 사진 변경하기</span>`
-              : `<span class="text-2xl mb-1">📷</span><span class="text-xs font-bold text-[#1D5266]">포스터 사진 1장 첨부하기</span><span class="text-[11px] text-slate-400 mt-0.5">터치하여 앨범/카메라에서 선택</span>`}
-            <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 1, this)" />
-          </label>
+          ${team.m1.photo ? `
+            <div class="flex flex-col gap-2">
+              <div class="relative h-48 rounded-2xl overflow-hidden border-2 border-[#0097A7] bg-slate-900 group shadow-sm">
+                <img src="${team.m1.photo}" onclick="openLightbox('${team.m1.photo}')" class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" title="클릭하여 전체화면 확대" />
+                <div class="absolute top-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span>🟢 팀원 등록 완료</span>
+                  ${team.m1.submittedAt ? `<span>· ${team.m1.submittedAt}</span>` : ''}
+                </div>
+                <button type="button" onclick="openLightbox('${team.m1.photo}')" class="absolute bottom-2 left-2 bg-white/90 hover:bg-white text-[#1D3C34] text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md transition flex items-center gap-1">
+                  🔍 크게보기
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="py-2 px-3 rounded-xl bg-white border border-[#0097A7]/40 hover:bg-[#E0F7FA] text-[#1D5266] text-xs font-extrabold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>📸</span><span>사진 변경</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 1, this)" />
+                </label>
+                <button type="button" onclick="removeMissionPhoto(${tid}, 1)" class="py-2 px-3 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-extrabold transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>🗑️</span><span>사진 삭제</span>
+                </button>
+              </div>
+            </div>
+          ` : `
+            <label class="flex flex-col items-center justify-center h-48 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden p-4 text-center">
+              <span class="text-3xl mb-1.5">📷</span>
+              <span class="text-xs font-bold text-[#1D5266]">포스터 사진 1장 첨부하기</span>
+              <span class="text-[11px] text-slate-400 mt-1">터치하여 앨범/카메라에서 선택</span>
+              <span class="text-[10px] text-[#0097A7] mt-1 font-semibold">팀원 중 1명이 올리면 모든 팀원에게 자동 공유됩니다!</span>
+              <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 1, this)" />
+            </label>
+          `}
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">포스터 한 줄 제목 / 컨셉 메모 (선택) <span class="text-[11px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
@@ -3170,12 +3434,37 @@ function renderParticipantView() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-          <label class="flex flex-col items-center justify-center h-44 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden relative">
-            ${team.m4.photo
-              ? `<img src="${team.m4.photo}" class="w-full h-full object-cover" /><span class="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">📸 사진 변경하기</span>`
-              : `<span class="text-2xl mb-1">🌟</span><span class="text-xs font-bold text-[#1D5266]">팀별 주인공 사진 1장 첨부하기</span>`}
-            <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 4, this)" />
-          </label>
+          ${team.m4.photo ? `
+            <div class="flex flex-col gap-2">
+              <div class="relative h-48 rounded-2xl overflow-hidden border-2 border-[#0097A7] bg-slate-900 group shadow-sm">
+                <img src="${team.m4.photo}" onclick="openLightbox('${team.m4.photo}')" class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" title="클릭하여 전체화면 확대" />
+                <div class="absolute top-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span>🟢 팀원 등록 완료</span>
+                  ${team.m4.submittedAt ? `<span>· ${team.m4.submittedAt}</span>` : ''}
+                </div>
+                <button type="button" onclick="openLightbox('${team.m4.photo}')" class="absolute bottom-2 left-2 bg-white/90 hover:bg-white text-[#1D3C34] text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md transition flex items-center gap-1">
+                  🔍 크게보기
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="py-2 px-3 rounded-xl bg-white border border-[#0097A7]/40 hover:bg-[#E0F7FA] text-[#1D5266] text-xs font-extrabold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>📸</span><span>사진 변경</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 4, this)" />
+                </label>
+                <button type="button" onclick="removeMissionPhoto(${tid}, 4)" class="py-2 px-3 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-extrabold transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>🗑️</span><span>사진 삭제</span>
+                </button>
+              </div>
+            </div>
+          ` : `
+            <label class="flex flex-col items-center justify-center h-48 rounded-2xl border-2 border-dashed border-[#0097A7]/40 bg-[#F0F9FA]/60 hover:bg-[#E0F7FA]/50 cursor-pointer transition overflow-hidden p-4 text-center">
+              <span class="text-3xl mb-1.5">🌟</span>
+              <span class="text-xs font-bold text-[#1D5266]">팀별 주인공 사진 1장 첨부하기</span>
+              <span class="text-[11px] text-slate-400 mt-1">터치하여 앨범/카메라에서 선택</span>
+              <span class="text-[10px] text-[#0097A7] mt-1 font-semibold">팀원 중 1명이 올리면 모든 팀원에게 자동 공유됩니다!</span>
+              <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 4, this)" />
+            </label>
+          `}
           <div class="space-y-3">
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">오늘의 주인공 성함 / 컨셉 메모 (선택) <span class="text-[11px] text-[#0097A7] font-semibold">(입력 시 자동 저장)</span></label>
@@ -3228,12 +3517,37 @@ function renderParticipantView() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-          <label class="flex flex-col items-center justify-center h-40 rounded-2xl border-2 border-dashed border-amber-400/60 bg-amber-50/40 hover:bg-amber-50 cursor-pointer transition overflow-hidden relative">
-            ${team.m5.photo
-              ? `<img src="${team.m5.photo}" class="w-full h-full object-cover" /><span class="absolute bottom-2 right-2 bg-black/70 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">📸 사진 변경하기</span>`
-              : `<span class="text-2xl mb-1">👥</span><span class="text-xs font-bold text-amber-900">그림자 ‘JA’ 사진 1장 첨부하기</span>`}
-            <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 5, this)" />
-          </label>
+          ${team.m5.photo ? `
+            <div class="flex flex-col gap-2">
+              <div class="relative h-48 rounded-2xl overflow-hidden border-2 border-amber-400 bg-slate-900 group shadow-sm">
+                <img src="${team.m5.photo}" onclick="openLightbox('${team.m5.photo}')" class="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" title="클릭하여 전체화면 확대" />
+                <div class="absolute top-2 left-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span>🟢 팀원 등록 완료</span>
+                  ${team.m5.submittedAt ? `<span>· ${team.m5.submittedAt}</span>` : ''}
+                </div>
+                <button type="button" onclick="openLightbox('${team.m5.photo}')" class="absolute bottom-2 left-2 bg-white/90 hover:bg-white text-amber-950 text-[11px] font-black px-2.5 py-1 rounded-xl shadow-md transition flex items-center gap-1">
+                  🔍 크게보기
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="py-2 px-3 rounded-xl bg-white border border-amber-300 hover:bg-amber-50 text-amber-950 text-xs font-extrabold text-center cursor-pointer transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>📸</span><span>사진 변경</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 5, this)" />
+                </label>
+                <button type="button" onclick="removeMissionPhoto(${tid}, 5)" class="py-2 px-3 rounded-xl bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 text-xs font-extrabold transition flex items-center justify-center gap-1 shadow-2xs">
+                  <span>🗑️</span><span>사진 삭제</span>
+                </button>
+              </div>
+            </div>
+          ` : `
+            <label class="flex flex-col items-center justify-center h-48 rounded-2xl border-2 border-dashed border-amber-400/60 bg-amber-50/40 hover:bg-amber-50 cursor-pointer transition overflow-hidden p-4 text-center">
+              <span class="text-3xl mb-1.5">👥</span>
+              <span class="text-xs font-bold text-amber-900">그림자 ‘JA’ 사진 1장 첨부하기</span>
+              <span class="text-[11px] text-slate-500 mt-1">터치하여 앨범/카메라에서 선택</span>
+              <span class="text-[10px] text-amber-800 mt-1 font-semibold">팀원 중 1명이 올리면 모든 팀원에게 자동 공유됩니다!</span>
+              <input type="file" accept="image/*" class="hidden" onchange="handlePhotoUpload(${tid}, 5, this)" />
+            </label>
+          `}
           <div class="space-y-3">
             <button type="button" onclick="toggleM5Pass(${tid})" class="w-full py-2.5 px-4 rounded-xl border text-xs font-bold transition ${team.m5.passed ? 'bg-slate-700 text-white border-slate-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-100'}">
               ${team.m5.passed ? '🌥️ 현재 [미션 패스(감점 없음)] 상태입니다 (클릭 시 해제)' : '🌥️ 흐리거나 장소가 마땅치 않아 패스하기 (감점 없음)'}
@@ -5700,16 +6014,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 저장된 캐시에서 내 팀 복원 (초기화 후 미등록된 팀 PIN 상태 방어)
+  // 저장된 로컬 캐시에서 내 팀 복원
   const isAuthed = localStorage.getItem(MY_TEAM_AUTH_KEY) === 'true';
   const savedTeam = Number(localStorage.getItem(MY_TEAM_ID_KEY));
-  const validPin = (appState.settings.teamPins?.[savedTeam] || '').trim();
-  if (isAuthed && [1, 2, 3].includes(savedTeam) && validPin) {
+  if (isAuthed && [1, 2, 3].includes(savedTeam)) {
     appState.selectedTeamId = savedTeam;
-  } else {
-    localStorage.removeItem(MY_TEAM_AUTH_KEY);
-    localStorage.removeItem(MY_TEAM_ID_KEY);
   }
+
+  // 화면 복귀(카메라 촬영 후 브라우저 복귀 / 탭 활성화) 시 즉시 클라우드 최신 동기화
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') pullFromCloudDb();
+  });
+  window.addEventListener('focus', () => {
+    pullFromCloudDb();
+  });
 
   // 서버 TF 인증 세션 자동 확인 (/api/auth?action=me)
   fetch('/api/auth?action=me', { credentials: 'same-origin' })
