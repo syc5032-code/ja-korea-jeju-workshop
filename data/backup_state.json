@@ -1,0 +1,351 @@
+{
+  "resetId": "reset_20261027_official_ready",
+  "updatedAt": 1793375663832,
+  "settings": {
+    "aiModel": "gpt-4o",
+    "aiPersona": "warm"
+  },
+  "scheduleConfig": {
+    "manualOpen": {
+      "1": true,
+      "2": true,
+      "3": true,
+      "4": true,
+      "5": true,
+      "6": true
+    },
+    "forceOpenAll": true
+  },
+  "m3Config": {
+    "selectedWord": "제이에이",
+    "tfTieBreakerVoteTeamId": null
+  },
+  "m6Config": {
+    "answerKeyJisoo": "1.검정 뿔테 안경 착용 2.노란 머리핀 3.흰색 운동화로 변경",
+    "answerKeyYechan": "1.스마트워치 뺌 2.베이지 가디건 착용 3.명찰 오른쪽 이동",
+    "winnerId": "m6_sub_7",
+    "jisooBeforePhoto": "assets/images/m6_jisoo_before.jpg",
+    "jisooAfterPhoto": "assets/images/m6_jisoo_after.jpg?v=20261031_02",
+    "yechanBeforePhoto": "assets/images/m6_yechan_before.jpg",
+    "yechanAfterPhoto": "assets/images/m6_yechan_after.jpg?v=20261031_02",
+    "submissions": [
+      {
+        "id": "m6_sub_7",
+        "name": "마진아",
+        "teamName": "JA Korea",
+        "teamId": 1,
+        "jisooAns": "귀걸이가 사라졌어요..? 목걸이도 ..? ㅠㅠ",
+        "yechanAns": "예찬님 .. 아침과 똑같이 멋쟁이 😎",
+        "submittedTime": "18:12:12",
+        "correctCount": 2,
+        "timestampMs": 1793341932000
+      },
+      {
+        "id": "m6_sub_1",
+        "name": "강신애",
+        "teamName": "JA Korea",
+        "teamId": 1,
+        "jisooAns": "귀걸이",
+        "yechanAns": "잠바",
+        "submittedTime": "18:11:04",
+        "correctCount": 1,
+        "timestampMs": 1793341864000
+      },
+      {
+        "id": "m6_sub_2",
+        "name": "곽예원",
+        "teamName": "JA Korea",
+        "teamId": 2,
+        "jisooAns": "귀걸이 머리",
+        "yechanAns": "신발 이너",
+        "submittedTime": "18:11:21",
+        "correctCount": 1,
+        "timestampMs": 1793341881000
+      },
+      {
+        "id": "m6_sub_3",
+        "name": "이해령",
+        "teamName": "JA Korea",
+        "teamId": 3,
+        "jisooAns": "이름표 있어. 포즈",
+        "yechanAns": "시계없음, 포즈",
+        "submittedTime": "18:11:32",
+        "correctCount": 1,
+        "timestampMs": 1793341892000
+      },
+      {
+        "id": "m6_sub_4",
+        "name": "김소윤",
+        "teamName": "JA Korea",
+        "teamId": 1,
+        "jisooAns": "옷, 신발",
+        "yechanAns": "신발, 가르마 위치",
+        "submittedTime": "18:11:32",
+        "correctCount": 0,
+        "timestampMs": 1793341892000
+      },
+      {
+        "id": "m6_sub_5",
+        "name": "정민서",
+        "teamName": "JA Korea",
+        "teamId": 2,
+        "jisooAns": "옷, 미모(더 예뻐지심)",
+        "yechanAns": "옷, 인상(더 즐거워보이심)",
+        "submittedTime": "18:11:34",
+        "correctCount": 0,
+        "timestampMs": 1793341894000
+      },
+      {
+        "id": "m6_sub_6",
+        "name": "유지선",
+        "teamName": "JA Korea",
+        "teamId": 3,
+        "jisooAns": "안경, 옷",
+        "yechanAns": "안경, 옷",
+        "submittedTime": "18:11:48",
+        "correctCount": 0,
+        "timestampMs": 1793341908000
+      },
+      {
+        "id": "m6_sub_8",
+        "name": "이송희",
+        "teamName": "JA Korea",
+        "teamId": 2,
+        "jisooAns": "아침보다 더 빛나요 예뻐요",
+        "yechanAns": "아침보다 더 멋져요 최고예요",
+        "submittedTime": "18:12:21",
+        "correctCount": 0,
+        "timestampMs": 1793341941000
+      },
+      {
+        "id": "m6_sub_9",
+        "name": "류혁선",
+        "teamName": "JA Korea",
+        "teamId": 3,
+        "jisooAns": "안경, 귀걸이",
+        "yechanAns": "수염, 안경",
+        "submittedTime": "18:12:28",
+        "correctCount": 1,
+        "timestampMs": 1793341948000
+      },
+      {
+        "id": "m6_sub_10",
+        "name": "이선아",
+        "teamName": "JA Korea",
+        "teamId": 1,
+        "jisooAns": "아침도 예쁘고 지금은 더 예뻐짐",
+        "yechanAns": "아침에는 잘 생겼는데 저녁은 핸섬함",
+        "submittedTime": "18:13:14",
+        "correctCount": 0,
+        "timestampMs": 1793341994000
+      },
+      {
+        "id": "m6_sub_11",
+        "name": "이소율",
+        "teamName": "JA Korea",
+        "teamId": 2,
+        "jisooAns": "상의,",
+        "yechanAns": "위치",
+        "submittedTime": "18:18:31",
+        "correctCount": 1,
+        "timestampMs": 1793342311000
+      },
+      {
+        "id": "m6_sub_12",
+        "name": "이은형",
+        "teamName": "JA Korea",
+        "teamId": 3,
+        "jisooAns": "안경 귀걸이",
+        "yechanAns": "안경 모자",
+        "submittedTime": "19:19:07",
+        "correctCount": 1,
+        "timestampMs": 1793345947000
+      }
+    ]
+  },
+  "teams": {
+    "1": {
+      "id": 1,
+      "name": "도전하JA",
+      "m1": {
+        "score": 25,
+        "status": "valid",
+        "graded": true,
+        "reason": "",
+        "oneLineReview": "제주의 바람과 함께하는 활기찬 팀의 에너지가 최고예요!",
+        "subScores": {
+          "vibe": 8,
+          "poster": 8,
+          "chemistry": 9
+        }
+      },
+      "m2": {
+        "score": 20,
+        "graded": true,
+        "verifiedCommon": ["sea", "palm", "stone"],
+        "verifiedHidden": "haenyeo",
+        "oneLineReview": "제주의 아름다움과 전통이 잘 담긴 멋진 사진들이네요!",
+        "itemResults": {
+          "sea": { "status": "valid", "accepted": true, "recognizedItem": "제주 바다" },
+          "palm": { "status": "valid", "accepted": true, "recognizedItem": "야자수" },
+          "stone": { "status": "valid", "accepted": true, "recognizedItem": "현무암 돌담" },
+          "haenyeo": { "status": "valid", "accepted": true, "recognizedItem": "해녀 조형물" }
+        }
+      },
+      "m3": {
+        "kakaoSubmitted": true,
+        "submittedAt": "15:15",
+        "votedForTeamId": 2,
+        "score": 30
+      },
+      "m4": {
+        "score": 27,
+        "status": "valid",
+        "graded": true,
+        "heroName": "해먹 속 주인공",
+        "oneLineReview": "해먹 속 주인공과 팀원들의 유쾌한 호흡이 돋보이는 순간!",
+        "subScores": {
+          "teamwork": 9,
+          "heroFocus": 11,
+          "creativity": 7
+        }
+      },
+      "m5": {
+        "score": 9,
+        "status": "valid",
+        "graded": true,
+        "reason": "신체 그림자로 J와 A 글자 연출 시도가 확인되어 유효 판정",
+        "oneLineReview": "벽면 그림자를 활용한 재치 있는 J와 A 연출이 인상적입니다!",
+        "subScores": {
+          "base": 4,
+          "jaShape": 3,
+          "teamwork": 2
+        }
+      },
+      "totalScore": 111
+    },
+    "2": {
+      "id": 2,
+      "name": "1등즈",
+      "m1": {
+        "score": 25,
+        "status": "valid",
+        "graded": true,
+        "reason": "",
+        "oneLineReview": "제주의 바람을 느끼며 활짝 웃는 모습이 정말 인상적입니다!",
+        "subScores": {
+          "vibe": 8,
+          "poster": 8,
+          "chemistry": 9
+        }
+      },
+      "m2": {
+        "score": 20,
+        "graded": true,
+        "verifiedCommon": ["palm", "stone", "tangerine"],
+        "verifiedHidden": "jeongnang",
+        "oneLineReview": "제주의 매력을 잘 담아낸 멋진 사진들입니다!",
+        "itemResults": {
+          "palm": { "status": "valid", "accepted": true, "recognizedItem": "야자수" },
+          "stone": { "status": "valid", "accepted": true, "recognizedItem": "현무암 돌담" },
+          "jeongnang": { "status": "valid", "accepted": true, "recognizedItem": "정낭" },
+          "tangerine": { "status": "valid", "accepted": true, "recognizedItem": "귤나무" }
+        }
+      },
+      "m3": {
+        "kakaoSubmitted": true,
+        "submittedAt": "",
+        "votedForTeamId": 1,
+        "score": 25
+      },
+      "m4": {
+        "score": 29,
+        "status": "valid",
+        "graded": true,
+        "heroName": "최고의 주인공",
+        "oneLineReview": "주인공을 향한 팀원들의 경의가 돋보이는 유쾌한 연출!",
+        "subScores": {
+          "teamwork": 10,
+          "heroFocus": 11,
+          "creativity": 8
+        }
+      },
+      "m5": {
+        "score": 7,
+        "status": "valid",
+        "graded": true,
+        "reason": "신체 그림자를 다각도(옆으로 누운 각도)에서 보았을 때 팔과 다리를 활용한 J 및 A 알파벳 연출 시도가 확인되어 유효 인정",
+        "oneLineReview": "각도를 기울여 발견한 재치 있는 JA 그림자! 1등즈의 창의적인 도전을 인정합니다! (7점)",
+        "subScores": {
+          "base": 4,
+          "jaShape": 2,
+          "teamwork": 1
+        },
+        "manualReview": {
+          "reviewer": "TF 심사위원",
+          "reviewedAt": "2026. 10. 30 18:30",
+          "reason": "옆으로 누운 각도에서 J/A 글자 연출 의도 인정 (도전 4 + 형태 2 + 협동 1)",
+          "action": "approved",
+          "assignedScore": 7
+        }
+      },
+      "totalScore": 106
+    },
+    "3": {
+      "id": 3,
+      "name": "퓨처",
+      "m1": {
+        "score": 22,
+        "status": "valid",
+        "graded": true,
+        "reason": "",
+        "oneLineReview": "팀원들의 밝은 에너지가 배 안을 가득 채우네요!",
+        "subScores": {
+          "vibe": 6,
+          "poster": 7,
+          "chemistry": 9
+        }
+      },
+      "m2": {
+        "score": 20,
+        "graded": true,
+        "verifiedCommon": ["sea", "stone", "tangerine"],
+        "verifiedHidden": "harubang",
+        "oneLineReview": "제주의 매력을 가득 담은 사진들이네요. 모두 훌륭합니다!",
+        "itemResults": {
+          "sea": { "status": "valid", "accepted": true, "recognizedItem": "제주 바다" },
+          "stone": { "status": "valid", "accepted": true, "recognizedItem": "현무암 돌담" },
+          "harubang": { "status": "valid", "accepted": true, "recognizedItem": "돌하르방" },
+          "tangerine": { "status": "valid", "accepted": true, "recognizedItem": "귤나무" }
+        }
+      },
+      "m3": {
+        "kakaoSubmitted": false,
+        "submittedAt": "17:06",
+        "votedForTeamId": 1,
+        "score": 15
+      },
+      "m4": {
+        "score": 22,
+        "status": "valid",
+        "graded": true,
+        "heroName": "빛나는 주인공",
+        "oneLineReview": "바다를 배경으로 한 활기찬 포즈가 인상적입니다!",
+        "subScores": {
+          "teamwork": 8,
+          "heroFocus": 8,
+          "creativity": 6
+        }
+      },
+      "m5": {
+        "score": 0,
+        "status": "invalid",
+        "graded": true,
+        "reason": "그림자가 평범하게 서 있는 형태로, 'JA' 글자 연출 시도가 없음.",
+        "oneLineReview": "그림자들이 평범하게 서 있어 글자 연출 시도가 보이지 않습니다.",
+        "subScores": null
+      },
+      "totalScore": 79
+    }
+  }
+}

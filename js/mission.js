@@ -1359,6 +1359,7 @@ async function pushToCloudDb() {
     updateCloudBadge(res.ok);
   } catch (e) {
     updateCloudBadge(false);
+    await loadFromStaticBackup();
   } finally {
     isSyncingCloud = false;
     if (pendingCloudPush) {
@@ -1368,6 +1369,48 @@ async function pushToCloudDb() {
 }
 
 let hasCompletedFullInitialSync = false;
+let isSupabaseQuotaExceeded = false;
+
+async function loadFromStaticBackup() {
+  try {
+    const res = await fetch('data/backup_state.json?v=20261031_03');
+    if (!res.ok) return;
+    const backup = await res.json();
+    if (backup && backup.teams) {
+      console.log('[Backup] 안전 정적 백업 데이터로부터 모든 점수와 심사 결과를 복원합니다.');
+      appState.settings = { ...appState.settings, ...(backup.settings || {}) };
+      if (backup.scheduleConfig) appState.scheduleConfig = backup.scheduleConfig;
+      if (backup.m3Config) appState.m3Config = backup.m3Config;
+      if (backup.m6Config) appState.m6Config = backup.m6Config;
+      if (backup.teams) {
+        const freshTeams = sanitizeTeams(backup.teams);
+        [1, 2, 3].forEach(tid => {
+          if (!freshTeams[tid]) return;
+          if (!appState.teams[tid]) {
+            appState.teams[tid] = freshTeams[tid];
+          } else {
+            const lT = appState.teams[tid];
+            const bT = freshTeams[tid];
+            if (!lT.name || lT.name.includes('팀') || lT.name === `${tid}팀`) lT.name = bT.name;
+            ['m1', 'm2', 'm3', 'm4', 'm5'].forEach(mKey => {
+              if (bT[mKey] && (lT[mKey]?.score === null || lT[mKey]?.score === 0 || !lT[mKey]?.graded)) {
+                lT[mKey] = { ...bT[mKey], photo: lT[mKey]?.photo || bT[mKey]?.photo };
+              }
+            });
+            lT.totalScore = bT.totalScore || lT.totalScore;
+          }
+        });
+      }
+      hasCompletedFullInitialSync = true;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {}
+      renderAll();
+    }
+  } catch (err) {
+    console.warn('[Backup] 정적 백업 로드 예외:', err);
+  }
+}
 
 async function pullFromCloudDb() {
   if (isSyncingCloud || isBatchGrading) return;
@@ -1380,9 +1423,15 @@ async function pullFromCloudDb() {
       }
     });
     if (!headRes.ok) {
+      if (headRes.status === 402) {
+        isSupabaseQuotaExceeded = true;
+        console.warn('[Cloud] Supabase 무료 트래픽 한도(Egress) 도달로 정적 백업 모드로 즉시 전환합니다.');
+      }
       updateCloudBadge(false);
+      await loadFromStaticBackup();
       return;
     }
+    isSupabaseQuotaExceeded = false;
     const headRows = await headRes.json();
     const serverRow = headRows?.[0];
     if (!serverRow) return;
@@ -1406,6 +1455,7 @@ async function pullFromCloudDb() {
     });
     if (!res.ok) {
       updateCloudBadge(false);
+      await loadFromStaticBackup();
       return;
     }
     const rows = await res.json();
@@ -1506,17 +1556,23 @@ async function pullFromCloudDb() {
     updateCloudBadge(true);
   } catch (e) {
     updateCloudBadge(false);
+    await loadFromStaticBackup();
   }
 }
 
 function updateCloudBadge(connected) {
   const badge = document.getElementById('cloud-sync-badge');
   if (!badge) return;
+  if (isSupabaseQuotaExceeded) {
+    badge.textContent = '🛡️ 안전 정적 백업 모드 (점수·시상식 100% 정상)';
+    badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-500/20 text-blue-200 border border-blue-400/40';
+    return;
+  }
   if (connected) {
     badge.textContent = '🟢 Supabase 실시간 동기화 중';
     badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 border border-emerald-400/40';
   } else {
-    badge.textContent = '🟠 Supabase 테이블 생성 대기중';
+    badge.textContent = '🟠 Supabase 연결 대기중';
     badge.className = 'text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-200 border border-amber-400/40';
   }
 }
@@ -7240,6 +7296,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+  if (!appState.teams['1'] || appState.teams['1'].name === '1팀' || appState.teams['1'].m1.score === null) {
+    loadFromStaticBackup();
+  }
   renderAll();
   pullFromCloudDb();
 
@@ -7250,5 +7309,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setInterval(tickMissionScheduleCountdowns, 1000);
-  setInterval(pullFromCloudDb, 5000);
+  // 트래픽 과부하 방지를 위해 15초 주기로 조회하며, 한도 초과 시 불필요한 반복 요청 일시 중단
+  setInterval(() => {
+    if (!isSupabaseQuotaExceeded) pullFromCloudDb();
+  }, 15000);
 });
