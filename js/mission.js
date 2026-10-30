@@ -2948,13 +2948,17 @@ function renderParticipantPhotoStatusBox(m, missionName = '사진') {
 }
 
 function renderTeamSharedPhotoGallery(team, tid) {
-  const m1Photo = team.m1?.photo;
-  const m2Photos = Object.entries(team.m2?.itemPhotos || {}).filter(([k, v]) => Boolean(v));
-  const m4Photo = team.m4?.photo;
-  const m5Photo = team.m5?.photo;
-  const m3Done = Boolean(team.m3?.kakaoSubmitted);
+  const m1Open = isMissionOpen(1);
+  const m2Open = isMissionOpen(2);
+  const m4Open = isMissionOpen(4);
+  const m5Open = isMissionOpen(5);
 
-  const totalCount = (m1Photo ? 1 : 0) + m2Photos.length + (m3Done ? 1 : 0) + (m4Photo ? 1 : 0) + (m5Photo ? 1 : 0);
+  const m1Photo = m1Open ? team.m1?.photo : null;
+  const m2Photos = m2Open ? Object.entries(team.m2?.itemPhotos || {}).filter(([k, v]) => Boolean(v)) : [];
+  const m4Photo = m4Open ? team.m4?.photo : null;
+  const m5Photo = m5Open ? team.m5?.photo : null;
+
+  const totalPhotos = (m1Photo ? 1 : 0) + m2Photos.length + (m4Photo ? 1 : 0) + (m5Photo ? 1 : 0);
 
   return `
     <div class="mb-5 p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-[#1D3C34] via-[#244A41] to-[#142B25] text-white shadow-md border border-[#1D3C34]/40">
@@ -2964,8 +2968,8 @@ function renderTeamSharedPhotoGallery(team, tid) {
           <div>
             <div class="text-sm sm:text-base font-black flex items-center gap-2">
               <span>${getTeamIcon(tid)} ${team.name} 실시간 제출 사진</span>
-              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${totalCount > 0 ? 'bg-emerald-400/25 text-emerald-300 border border-emerald-400/40' : 'bg-white/10 text-white/70'}">
-                ${totalCount > 0 ? `현재 ${totalCount}건 등록됨` : '등록 대기'}
+              <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${totalPhotos > 0 ? 'bg-emerald-400/25 text-emerald-300 border border-emerald-400/40' : 'bg-white/10 text-white/70'}">
+                ${totalPhotos > 0 ? `현재 ${totalPhotos}장 등록됨` : '등록 대기'}
               </span>
             </div>
             <p class="text-[11px] text-emerald-100/75 mt-0.5">
@@ -3027,7 +3031,8 @@ function renderTeamSharedPhotoGallery(team, tid) {
           `}
         </div>
 
-        <!-- M4 Hero -->
+        <!-- M4 Hero (비공개 시 제목 스포일러 완벽 방지) -->
+        ${m4Open ? `
         <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div class="flex items-center justify-between text-[11px] font-bold text-amber-200 mb-1.5">
             <span>미션 4 · 주인공</span>
@@ -3047,8 +3052,16 @@ function renderTeamSharedPhotoGallery(team, tid) {
             </a>
           `}
         </div>
+        ` : `
+        <div class="p-2.5 rounded-2xl bg-white/5 border border-dashed border-white/15 flex flex-col items-center justify-center text-center h-full min-h-[120px]">
+          <span class="text-xl mb-1 opacity-50">🔒</span>
+          <span class="text-[11px] font-bold text-white/70">미션 4 (비공개)</span>
+          <span class="text-[10px] text-amber-300 font-extrabold mt-1" data-countdown-mission="4">15:30 오픈 예정</span>
+        </div>
+        `}
 
-        <!-- M5 Shadow JA -->
+        <!-- M5 Shadow JA (비공개 시 제목 스포일러 완벽 방지) -->
+        ${m5Open ? `
         <div class="p-2.5 rounded-2xl bg-white/10 backdrop-blur-xs flex flex-col justify-between">
           <div class="flex items-center justify-between text-[11px] font-bold text-orange-200 mb-1.5">
             <span>미션 5 · 그림자JA</span>
@@ -3068,6 +3081,13 @@ function renderTeamSharedPhotoGallery(team, tid) {
             </a>
           `}
         </div>
+        ` : `
+        <div class="p-2.5 rounded-2xl bg-white/5 border border-dashed border-white/15 flex flex-col items-center justify-center text-center h-full min-h-[120px]">
+          <span class="text-xl mb-1 opacity-50">🔒</span>
+          <span class="text-[11px] font-bold text-white/70">미션 5 (비공개)</span>
+          <span class="text-[10px] text-amber-300 font-extrabold mt-1" data-countdown-mission="5">16:00 오픈 예정</span>
+        </div>
+        `}
       </div>
     </div>
   `;
