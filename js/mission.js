@@ -936,11 +936,78 @@ async function pushToCloudDb() {
     const myTeamId = Number(appState.selectedTeamId || 1);
 
     if (isTf) {
-      // TF 운영진은 전 팀 채점/점수/설정의 최신 권한을 가짐
+      // TF 운영진은 전 팀 채점/점수/심사 결과 권한을 가짐
+      // 단, 참가자가 올린 사진(photo, itemPhotos), 커스텀 팀명(name), N행시 등 제출물은 절대 지우지 않고 100% 보존
       [1, 2, 3].forEach(tid => {
         const localT = appState.teams?.[tid];
-        if (!localT) return;
-        mergedTeams[tid] = JSON.parse(JSON.stringify(localT));
+        const serverT = mergedTeams[tid];
+        if (!localT || !serverT) return;
+
+        // 1) 팀명: 서버에 참가자가 설정한 팀명이 있다면 보존 (TF 로컬이 'X팀' 기본값이면 서버 이름 우선 반영)
+        if (serverT.name && serverT.name !== `${tid}팀` && localT.name === `${tid}팀`) {
+          localT.name = serverT.name;
+        } else if (localT.name && localT.name !== `${tid}팀`) {
+          serverT.name = localT.name;
+        }
+
+        // 2) 미션 1, 4, 5: 참가자의 사진은 서버 최신본을 항상 보존 & TF 로컬로 동기화
+        [1, 4, 5].forEach(mNum => {
+          const mKey = `m${mNum}`;
+          const sM = serverT[mKey];
+          const lM = localT[mKey];
+          if (!sM || !lM) return;
+
+          if (sM.photo && !lM.photo) {
+            lM.photo = sM.photo;
+            lM.photoVersion = sM.photoVersion;
+            lM.submittedAt = sM.submittedAt;
+          }
+          if (lM.graded || lM.manualReview !== null) {
+            sM.score = lM.score;
+            sM.subScores = lM.subScores;
+            sM.graded = lM.graded;
+            sM.status = lM.status;
+            sM.reason = lM.reason;
+            sM.observations = lM.observations;
+            sM.oneLineReview = lM.oneLineReview;
+            sM.manualReview = lM.manualReview;
+            sM.evaluatedVersion = lM.evaluatedVersion;
+          }
+        });
+
+        // 3) 미션 2: 참가자가 등록한 아이템 사진들 서버본 100% 보존
+        if (serverT.m2 && localT.m2) {
+          syncM2State(serverT);
+          syncM2State(localT);
+          const sM2 = serverT.m2;
+          const lM2 = localT.m2;
+
+          Object.keys(sM2.itemPhotos || {}).forEach(k => {
+            if (sM2.itemPhotos[k] && !lM2.itemPhotos[k]) {
+              lM2.itemPhotos[k] = sM2.itemPhotos[k];
+              lM2.itemPhotoVersions[k] = sM2.itemPhotoVersions[k];
+            }
+          });
+          if (lM2.graded) {
+            sM2.score = lM2.score;
+            sM2.graded = lM2.graded;
+            sM2.oneLineReview = lM2.oneLineReview;
+            sM2.verifiedCommon = lM2.verifiedCommon || [];
+            sM2.verifiedHidden = lM2.verifiedHidden || null;
+            sM2.itemResults = lM2.itemResults || {};
+          }
+          syncM2State(serverT);
+          syncM2State(localT);
+        }
+
+        // 4) 미션 3: N행시, 카톡 영상 제출, 투표 보존
+        if (serverT.m3 && localT.m3) {
+          if (serverT.m3.kakaoSubmitted) localT.m3.kakaoSubmitted = true;
+          if (serverT.m3.poemText && !localT.m3.poemText) localT.m3.poemText = serverT.m3.poemText;
+          if (serverT.m3.votedForTeamId && !localT.m3.votedForTeamId) localT.m3.votedForTeamId = serverT.m3.votedForTeamId;
+        }
+
+        serverT.totalScore = localT.totalScore ?? serverT.totalScore;
       });
     } else {
       // 일반 참가자는 본인 팀(myTeamId)의 데이터만 서버에 업데이트
@@ -948,7 +1015,14 @@ async function pushToCloudDb() {
       const myLocalTeam = appState.teams?.[myTeamId];
       if (myLocalTeam && mergedTeams[myTeamId]) {
         const serverMyTeam = mergedTeams[myTeamId];
-        serverMyTeam.name = myLocalTeam.name || serverMyTeam.name;
+
+        // 팀명 병합: 참가자가 설정한 커스텀 팀명 보호
+        if (myLocalTeam.name && myLocalTeam.name !== `${myTeamId}팀`) {
+          serverMyTeam.name = myLocalTeam.name;
+        } else if (serverMyTeam.name && serverMyTeam.name !== `${myTeamId}팀`) {
+          myLocalTeam.name = serverMyTeam.name;
+        }
+
         if (myLocalTeam.pin) serverMyTeam.pin = myLocalTeam.pin;
 
         // 미션 1, 4, 5: 팀원 간 동시 업로드 보호 및 다중 기기 스마트 병합
@@ -3873,7 +3947,10 @@ function renderTfLeaderboard() {
           <span class="text-xs text-slate-300">정규 ${s.regularTotal} + 보너스 ${s.bonusTotal}</span>
         </div>
         <div class="flex items-baseline justify-between">
-          <h3 class="text-lg font-extrabold text-white">${getTeamIcon(item.id)} ${item.name}</h3>
+          <div class="flex items-center gap-2">
+            <h3 class="text-lg font-extrabold text-white">${getTeamIcon(item.id)} ${item.name}</h3>
+            <button type="button" onclick="promptTfEditTeamName(${item.id})" class="px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] text-amber-200 font-bold border border-white/20 transition" title="팀명 수정">✏️ 팀명 수정</button>
+          </div>
           <div class="text-2xl font-black text-amber-300">${s.grandTotal}<span class="text-xs font-normal text-slate-300 ml-0.5">/ 115점</span></div>
         </div>
 
@@ -3919,6 +3996,17 @@ function renderTfLeaderboard() {
         ⚙️ 비번 직접 수정/초기화
       </button>
     `;
+  }
+}
+
+function promptTfEditTeamName(teamId) {
+  const current = appState.teams[teamId]?.name || `${teamId}팀`;
+  const next = prompt(`[${teamId}팀] 변경할 팀명을 입력하세요:`, current);
+  if (next && next.trim() && next.trim() !== current) {
+    appState.teams[teamId].name = next.trim();
+    saveState();
+    renderAll();
+    showToast(`${teamId}팀 이름이 '${next.trim()}'(으)로 변경되었습니다.`, 'success');
   }
 }
 
