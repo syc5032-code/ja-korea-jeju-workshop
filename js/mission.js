@@ -5573,107 +5573,620 @@ function renderTfDashboardView() {
 }
 
 /* ==========================================================================
-   CEREMONY VIEW, MODALS, EXPORT & INITIALIZATION
+   CEREMONY VIEW, PRESENTATION SLIDESHOW & INITIALIZATION
    ========================================================================== */
 
+const CEREMONY_SLIDES = [
+  { id: 'm1', label: '1. 여행 포스터', icon: '📸', num: 1, title: '미션 1 · 제주 여행 포스터', maxScore: 25 },
+  { id: 'm2', label: '2. 제주 발견', icon: '🔍', num: 2, title: '미션 2 · 동선 속 제주 발견', maxScore: 20 },
+  { id: 'm3', label: '3. 깜짝 N행시', icon: '🎬', num: 3, title: '미션 3 · 깜짝 릴레이 N행시 & 상호 투표', maxScore: 30 },
+  { id: 'm4', label: '4. 팀별 주인공', icon: '👑', num: 4, title: '미션 4 · 팀별 주인공 사진', maxScore: 30 },
+  { id: 'm5', label: '5. 그림자 JA', icon: '👥', num: 5, title: "미션 5 · 보너스 그림자 'JA'", maxScore: 10 },
+  { id: 'm6', label: '6. 개인 MVP', icon: '🎯', num: 6, title: '미션 6 · 저녁 개인미션 MVP 발표', maxScore: '-' },
+  { id: 'podium', label: '🏆 최종 순위', icon: '🏆', num: 7, title: '🏆 최종 종합 순위 발표', maxScore: 115 }
+];
+
 function setCeremonySlide(slideName) {
+  if (slideName === 'missions') slideName = 'm1';
+  if (slideName === 'individual') slideName = 'm6';
   appState.ceremonySlide = slideName;
   renderCeremonyView();
+  if (slideName === 'podium') {
+    try { triggerConfetti(); } catch (_) {}
+  }
+}
+
+function nextCeremonySlide() {
+  const current = appState.ceremonySlide || 'm1';
+  const idx = CEREMONY_SLIDES.findIndex(s => s.id === current);
+  if (idx >= 0 && idx < CEREMONY_SLIDES.length - 1) {
+    setCeremonySlide(CEREMONY_SLIDES[idx + 1].id);
+  }
+}
+
+function prevCeremonySlide() {
+  const current = appState.ceremonySlide || 'm1';
+  const idx = CEREMONY_SLIDES.findIndex(s => s.id === current);
+  if (idx > 0) {
+    setCeremonySlide(CEREMONY_SLIDES[idx - 1].id);
+  }
+}
+
+function toggleCeremonyFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
 }
 
 function renderCeremonyView() {
   const area = document.getElementById('ceremony-content-area');
   if (!area) return;
-  const slide = appState.ceremonySlide || 'missions';
 
-  if (slide === 'missions') {
-    area.innerHTML = `
-      <div class="space-y-6">
-        ${[
-          { num: 1, key: 'm1', title: '미션 1 · 제주 여행 포스터 (25점 만점)' },
-          { num: 4, key: 'm4', title: '미션 4 · 팀별 주인공 사진 (30점 만점)' },
-          { num: 5, key: 'm5', title: "미션 5 · 보너스 그림자 'JA' (+10점)" }
-        ].map(mInfo => `
-          <div class="glass-card rounded-3xl p-6 border border-slate-200">
-            <h2 class="text-lg sm:text-xl font-extrabold text-[#1D5266] mb-4">${mInfo.title}</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-              ${[1, 2, 3].map(tid => {
-                const t = appState.teams[tid];
-                const m = t[mInfo.key];
-                return `
-                  <div class="rounded-2xl bg-white border border-slate-200 overflow-hidden shadow-sm flex flex-col">
-                    <div class="h-52 bg-slate-100 flex items-center justify-center overflow-hidden">
-                      ${m.photo ? `<img src="${m.photo}" onclick="openLightbox('${m.photo}')" class="w-full h-full object-cover cursor-zoom-in" />` : `<span class="text-xs text-slate-400">사진 미제출 / 패스</span>`}
-                    </div>
-                    <div class="p-4 flex-1 flex flex-col justify-between space-y-2">
-                      <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-base text-[#1D5266]">${getTeamIcon(tid)} ${t.name}</span>
-                        <span class="font-black text-lg text-[#0097A7]">${m.score || 0}점</span>
-                      </div>
-                      <p class="text-xs sm:text-sm text-slate-700 bg-[#F0F9FA] p-3 rounded-xl border border-[#0097A7]/20">
-                        💬 ${m.oneLineReview || '심사평이 아직 입력되지 않았습니다.'}
-                      </p>
-                    </div>
+  const currentSlideId = appState.ceremonySlide || 'm1';
+  const currentSlide = CEREMONY_SLIDES.find(s => s.id === currentSlideId) || CEREMONY_SLIDES[0];
+  const currentIndex = CEREMONY_SLIDES.findIndex(s => s.id === currentSlide.id);
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === CEREMONY_SLIDES.length - 1;
+
+  // Header & Presentation Nav Toolbar
+  const navHtml = `
+    <!-- Ceremony Presentation Navigation Header -->
+    <div class="mb-6 p-4 rounded-3xl bg-white/90 border border-slate-200/90 shadow-md backdrop-blur-md">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🌅</span>
+          <span class="text-xs sm:text-sm font-black text-[#1D3C34] tracking-tight">시상식 프레젠테이션 모드</span>
+          <span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFF3E8] text-[#F27A24] border border-[#F27A24]/30">
+            슬라이드 ${currentIndex + 1} / ${CEREMONY_SLIDES.length}
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="toggleCeremonyFullscreen()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+            <span>⛶</span><span>전체화면</span>
+          </button>
+          <button type="button" onclick="switchMode('tf')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
+            <span>←</span><span>TF 대시보드</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Slide Tabs -->
+      <div class="flex gap-1.5 overflow-x-auto pt-3 pb-1" style="scrollbar-width: thin;">
+        ${CEREMONY_SLIDES.map((s, idx) => {
+          const isActive = s.id === currentSlide.id;
+          return `
+            <button type="button" onclick="setCeremonySlide('${s.id}')" class="shrink-0 px-3 sm:px-4 py-2 rounded-2xl text-xs font-extrabold transition flex items-center gap-1.5 ${
+              isActive
+                ? 'bg-[#F27A24] text-white shadow-md scale-105'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/70'
+            }">
+              <span>${s.icon}</span><span>${s.label}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // Slide Body
+  let slideBody = '';
+
+  // 1. Mission 1 Slide
+  if (currentSlide.id === 'm1') {
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-100 text-[#1D3C34]">MISSION 01</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[관광지 사진] 우리 팀의 제주 여행 포스터</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            AI 루브릭 채점: ① 제주 분위기(8점) + ② 팀원 케미(9점) + ③ 포스터 구도(8점) · 25점 만점
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(tid => {
+            const t = appState.teams[tid];
+            const m = t.m1 || {};
+            const sub = m.subScores || { vibe: '-', chemistry: '-', poster: '-' };
+            return `
+              <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md flex flex-col justify-between bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">${getTeamIcon(tid)}</span>
+                    <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
                   </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `).join('')}
+                  <div class="text-2xl sm:text-3xl font-black text-[#F27A24]">${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 25점</span></div>
+                </div>
+
+                <div class="my-4 h-72 sm:h-80 md:h-96 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center">
+                  ${m.photo ? `
+                    <img src="${m.photo}" onclick="openLightbox('${m.photo}')" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition duration-300" title="클릭하여 원본 크게보기" />
+                  ` : `
+                    <div class="text-center text-slate-400 p-6">
+                      <span class="text-4xl block mb-2">📷</span>
+                      <span class="text-xs font-semibold">사진 미제출</span>
+                    </div>
+                  `}
+                </div>
+
+                <div class="space-y-3">
+                  <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-slate-600">
+                    <div>분위기: <b class="text-[#1D3C34]">${sub.vibe ?? '-'}점</b></div>
+                    <div>케미: <b class="text-[#1D3C34]">${sub.chemistry ?? '-'}점</b></div>
+                    <div>구도: <b class="text-[#1D3C34]">${sub.poster ?? '-'}점</b></div>
+                  </div>
+                  <div class="p-4 rounded-2xl bg-[#FFF8EE] border border-[#F27A24]/30 text-xs sm:text-sm text-[#1D3C34] leading-relaxed shadow-2xs">
+                    <div class="font-extrabold text-[#F27A24] text-xs mb-1 flex items-center gap-1">
+                      <span>💬</span><span>AI 심사위원 한줄평</span>
+                    </div>
+                    <p class="font-medium text-slate-700 italic">"${m.oneLineReview || '심사평이 아직 등록되지 않았습니다.'}"</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
-    return;
   }
 
-  if (slide === 'individual') {
+  // 2. Mission 2 Slide (제주 발견)
+  else if (currentSlide.id === 'm2') {
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-sky-100 text-[#00838F]">MISSION 02</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[동선 속 보물찾기] 제주 발견 미션</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            1:1 사진 AI 정밀 검증: 흔한 제주 5종(최대 3종×5점) + 히든 미션(최대 1종×5점) = 20점 만점
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(tid => {
+            const t = appState.teams[tid];
+            const m = t.m2 || {};
+            const itemPhotos = m.itemPhotos || {};
+            const photoEntries = Object.entries(itemPhotos).filter(([k, v]) => Boolean(v));
+            const verifiedCommon = m.verifiedCommon || [];
+            const verifiedHidden = m.verifiedHidden;
+            const verifiedTotal = verifiedCommon.length + (verifiedHidden ? 1 : 0);
+
+            return `
+              <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md flex flex-col justify-between bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">${getTeamIcon(tid)}</span>
+                    <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
+                  </div>
+                  <div class="text-2xl sm:text-3xl font-black text-[#0097A7]">${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 20점</span></div>
+                </div>
+
+                <div class="my-3 flex items-center justify-between">
+                  <span class="text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300">
+                    ✅ 총 ${verifiedTotal}종 인증 완료 (일반 ${verifiedCommon.length} + 히든 ${verifiedHidden ? 1 : 0})
+                  </span>
+                </div>
+
+                <!-- Photos Showcase -->
+                <div class="my-2 grid grid-cols-2 gap-2.5 min-h-[260px] sm:min-h-[300px]">
+                  ${photoEntries.length > 0 ? photoEntries.map(([itemId, src]) => {
+                    const isHidden = JEJU_HIDDEN_ITEMS.some(x => x.id === itemId);
+                    const meta = (isHidden ? JEJU_HIDDEN_ITEMS : JEJU_COMMON_ITEMS).find(x => x.id === itemId);
+                    const isVerified = isHidden ? (verifiedHidden === itemId) : verifiedCommon.includes(itemId);
+                    return `
+                      <div class="relative rounded-2xl bg-slate-100 overflow-hidden shadow-sm group border ${isVerified ? 'border-emerald-400 ring-2 ring-emerald-400/20' : 'border-slate-200'}">
+                        <img src="${src}" onclick="openLightbox('${src}')" class="w-full h-32 sm:h-36 object-cover cursor-zoom-in group-hover:scale-105 transition duration-200" />
+                        <div class="absolute bottom-0 inset-x-0 p-1.5 bg-gradient-to-t from-black/85 via-black/50 to-transparent flex items-center justify-between text-white text-[10px]">
+                          <span class="font-extrabold truncate">${meta?.icon || '📍'} ${meta?.label || itemId}</span>
+                          <span class="px-1.5 py-0.5 rounded-full font-bold ${isVerified ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300'}">
+                            ${isVerified ? '+5점 인증' : '대기/검토'}
+                          </span>
+                        </div>
+                      </div>
+                    `;
+                  }).join('') : `
+                    <div class="col-span-2 h-52 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                      <span class="text-3xl mb-2">🔍</span>
+                      <span class="text-xs font-semibold">등록된 아이템 사진 없음</span>
+                    </div>
+                  `}
+                </div>
+
+                <div class="p-4 rounded-2xl bg-[#E0F7FA]/70 border border-[#0097A7]/30 text-xs sm:text-sm text-[#1D3C34] leading-relaxed shadow-2xs mt-3">
+                  <div class="font-extrabold text-[#00838F] text-xs mb-1 flex items-center gap-1">
+                    <span>💬</span><span>AI 심사위원 총평</span>
+                  </div>
+                  <p class="font-medium text-slate-700 italic">"${m.oneLineReview || '심사평이 아직 등록되지 않았습니다.'}"</p>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 3. Mission 3 Slide (깜짝 N행시)
+  else if (currentSlide.id === 'm3') {
+    const word = appState.m3Config?.selectedWord || '제이에이';
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-100 text-amber-900">MISSION 03</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[릴레이 N행시] 영상 배틀 & 상호 투표 결과</h2>
+          <div class="mt-2 inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-sm shadow">
+            <span>제시어:</span><span class="tracking-widest text-base font-serif">${word}</span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-600 mt-2">
+            단톡방 영상 제출 및 팀원 상호 투표 집계: 1위(30점) / 2위(25점) / 3위(20점)
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(tid => {
+            const t = appState.teams[tid];
+            const m = t.m3 || {};
+            const votesReceived = [1, 2, 3].filter(oid => appState.teams[oid]?.m3?.votedForTeamId === tid).length;
+            const votedFor = m.votedForTeamId ? appState.teams[m.votedForTeamId]?.name : null;
+
+            return `
+              <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md flex flex-col justify-between bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">${getTeamIcon(tid)}</span>
+                    <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
+                  </div>
+                  <div class="text-2xl sm:text-3xl font-black text-amber-500">${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 30점</span></div>
+                </div>
+
+                <div class="my-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold px-3 py-1 rounded-full ${m.kakaoSubmitted ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
+                      ${m.kakaoSubmitted ? '🎬 단톡방 영상 제출 완료' : '동영상 제출 확인 중'}
+                    </span>
+                    <span class="text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                      🗳️ 득표: ${votesReceived}표
+                    </span>
+                  </div>
+
+                  <!-- N행시 Poem Presentation -->
+                  <div class="p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 via-[#FFF9EE] to-orange-50/60 border border-amber-200/80 shadow-xs min-h-[180px] flex flex-col justify-center">
+                    <div class="text-xs font-extrabold text-amber-900 mb-2 flex items-center gap-1.5">
+                      <span>📜</span><span>우리 팀 릴레이 N행시</span>
+                    </div>
+                    ${m.poemText ? `
+                      <div class="font-serif text-sm sm:text-base leading-relaxed text-amber-950 whitespace-pre-line font-medium pl-3 border-l-2 border-amber-400">
+                        ${escapeHtml(m.poemText)}
+                      </div>
+                    ` : `
+                      <div class="text-center py-6 text-slate-400 text-xs">
+                        <span class="text-3xl block mb-1">🎥</span>
+                        <span>단톡방에 공유된 현장 릴레이 영상 감상!</span>
+                      </div>
+                    `}
+                  </div>
+
+                  <div class="text-[11px] text-slate-500 text-right">
+                    ${votedFor ? `투표 선택: <span class="font-bold text-slate-700">${votedFor}</span>에 투표` : '투표 내역 없음'}
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600">
+                  <span class="font-bold text-[#1D3C34]">💡 채점 배점:</span> 투표 득표 순위에 따라 1위(30점), 2위(25점), 3위(20점) 부여
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 4. Mission 4 Slide (주인공 사진)
+  else if (currentSlide.id === 'm4') {
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-100 text-amber-900">MISSION 04</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[창의 단체사진] 한 사람을 여행의 주인공으로!</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            AI 루브릭 채점: ① 원탑 주인공 연출(12점) + ② 팀원 몰아주기 리액션(10점) + ③ 재치·스토리(8점) · 30점 만점
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(tid => {
+            const t = appState.teams[tid];
+            const m = t.m4 || {};
+            const sub = m.subScores || { heroFocus: '-', teamwork: '-', creativity: '-' };
+
+            return `
+              <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md flex flex-col justify-between bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">${getTeamIcon(tid)}</span>
+                    <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
+                  </div>
+                  <div class="text-2xl sm:text-3xl font-black text-amber-500">${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 30점</span></div>
+                </div>
+
+                <div class="my-2">
+                  <span class="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
+                    <span>👑 오늘의 주인공:</span> <span class="font-black">${m.heroName || '팀 전원'}</span>
+                  </span>
+                </div>
+
+                <div class="my-3 h-72 sm:h-80 md:h-96 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center">
+                  ${m.photo ? `
+                    <img src="${m.photo}" onclick="openLightbox('${m.photo}')" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition duration-300" title="클릭하여 원본 크게보기" />
+                  ` : `
+                    <div class="text-center text-slate-400 p-6">
+                      <span class="text-4xl block mb-2">👑</span>
+                      <span class="text-xs font-semibold">사진 미제출</span>
+                    </div>
+                  `}
+                </div>
+
+                <div class="space-y-3">
+                  <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-slate-600">
+                    <div>주인공: <b class="text-[#1D3C34]">${sub.heroFocus ?? '-'}점</b></div>
+                    <div>리액션: <b class="text-[#1D3C34]">${sub.teamwork ?? '-'}점</b></div>
+                    <div>재치: <b class="text-[#1D3C34]">${sub.creativity ?? '-'}점</b></div>
+                  </div>
+                  <div class="p-4 rounded-2xl bg-[#FFF8EE] border border-[#F27A24]/30 text-xs sm:text-sm text-[#1D3C34] leading-relaxed shadow-2xs">
+                    <div class="font-extrabold text-[#F27A24] text-xs mb-1 flex items-center gap-1">
+                      <span>💬</span><span>AI 심사위원 한줄평</span>
+                    </div>
+                    <p class="font-medium text-slate-700 italic">"${m.oneLineReview || '심사평이 아직 등록되지 않았습니다.'}"</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 5. Mission 5 Slide (그림자 JA)
+  else if (currentSlide.id === 'm5') {
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-100 text-emerald-900">MISSION 05</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[보너스 미션] 팀원 그림자로 ‘JA’ 만들기</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            AI 루브릭 채점: ① 글자 연출 시도 기본(4점) + ② 'JA' 가독성(2~4점) + ③ 복합 신체 협동(1~2점) · +10점 보너스
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(tid => {
+            const t = appState.teams[tid];
+            const m = t.m5 || {};
+            const sub = m.subScores || { base: '-', jaShape: '-', teamwork: '-' };
+
+            return `
+              <div class="glass-card rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md flex flex-col justify-between bg-white">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2">
+                    <span class="text-2xl">${getTeamIcon(tid)}</span>
+                    <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
+                  </div>
+                  <div class="text-2xl sm:text-3xl font-black text-emerald-600">+${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 10점</span></div>
+                </div>
+
+                <div class="my-2">
+                  <span class="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full ${m.passed ? 'bg-slate-100 text-slate-600 border border-slate-300' : m.photo ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-slate-50 text-slate-400'}">
+                    ${m.passed ? '🌥️ 미션 패스 (감점 없음)' : m.photo ? '✅ JA 그림자 사진 제출' : '미제출'}
+                  </span>
+                </div>
+
+                <div class="my-3 h-72 sm:h-80 md:h-96 rounded-2xl bg-slate-100 overflow-hidden shadow-inner flex items-center justify-center">
+                  ${m.photo ? `
+                    <img src="${m.photo}" onclick="openLightbox('${m.photo}')" class="w-full h-full object-cover cursor-zoom-in hover:scale-105 transition duration-300" title="클릭하여 원본 크게보기" />
+                  ` : m.passed ? `
+                    <div class="text-center text-slate-500 p-6">
+                      <span class="text-4xl block mb-2">🌥️</span>
+                      <span class="text-sm font-bold">안전하게 패스 선택</span>
+                      <span class="text-xs text-slate-400 block mt-1">(감점 없이 0점 처리)</span>
+                    </div>
+                  ` : `
+                    <div class="text-center text-slate-400 p-6">
+                      <span class="text-4xl block mb-2">👥</span>
+                      <span class="text-xs font-semibold">사진 미제출</span>
+                    </div>
+                  `}
+                </div>
+
+                <div class="space-y-3">
+                  <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] font-bold bg-slate-50 p-2.5 rounded-xl border border-slate-200/60 text-slate-600">
+                    <div>시도 기본: <b class="text-[#1D3C34]">${sub.base ?? '-'}점</b></div>
+                    <div>가독성: <b class="text-[#1D3C34]">${sub.jaShape ?? '-'}점</b></div>
+                    <div>협동: <b class="text-[#1D3C34]">${sub.teamwork ?? '-'}점</b></div>
+                  </div>
+                  <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-300 text-xs sm:text-sm text-[#1D3C34] leading-relaxed shadow-2xs">
+                    <div class="font-extrabold text-emerald-800 text-xs mb-1 flex items-center gap-1">
+                      <span>💬</span><span>AI 심사위원 한줄평</span>
+                    </div>
+                    <p class="font-medium text-slate-700 italic">"${m.oneLineReview || (m.passed ? '패스 선택으로 감점 없이 0점 처리되었습니다.' : '심사평 준비 중')}"</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 6. Mission 6 Slide (개인 MVP)
+  else if (currentSlide.id === 'm6') {
     const sorted = getSortedM6Submissions();
     const winner = sorted.find(s => s.id === appState.m6Config.winnerId) || sorted[0];
-    area.innerHTML = `
-      <div class="glass-card rounded-3xl p-8 text-center max-w-2xl mx-auto border-2 border-amber-400">
-        <div class="text-4xl mb-2">🎁</div>
-        <div class="text-xs font-extrabold uppercase tracking-widest text-amber-700 mb-1">Mission 6 · 저녁 개인미션 최다 정답 MVP</div>
-        <h2 class="text-2xl sm:text-3xl font-black text-[#1D5266] mb-4">지수님·예찬님 달라진 아이템 찾기 우승자</h2>
-        ${winner ? `
-          <div class="p-6 rounded-2xl winner-glow my-4">
-            <div class="text-3xl font-black text-[#1D5266]">👑 ${winner.name} 님 <span class="text-base font-bold text-slate-600">(${winner.teamName})</span></div>
-            <div class="text-lg font-extrabold text-amber-700 mt-2">총 ${winner.correctCount}개 정답 · 제출 시각 ${winner.submittedTime}</div>
-            <div class="text-xs text-slate-600 mt-3 space-y-1">
-              <div>• 지수님 답안: ${winner.jisooAns || '-'}</div>
-              <div>• 예찬님 답안: ${winner.yechanAns || '-'}</div>
+    slideBody = `
+      <div class="space-y-4">
+        <div class="text-center max-w-2xl mx-auto mb-6">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-rose-100 text-rose-900">MISSION 06</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[저녁 현장 개인미션] 달라진 아이템 찾기 MVP</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            헤르멘하우스 만찬장 3분 현장 관찰 퀴즈 (지수님 & 예찬님 변경 아이템 최다 정답자)
+          </p>
+        </div>
+
+        <div class="glass-card rounded-3xl p-8 sm:p-10 text-center max-w-3xl mx-auto border-2 border-amber-400 bg-white shadow-xl">
+          <div class="text-5xl mb-3 animate-bounce">🎁</div>
+          <div class="text-xs font-extrabold uppercase tracking-widest text-amber-700 mb-1">Mission 6 · 현장 스피드 퀴즈 단독 우승자</div>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mb-6">스페셜 개인 선물 수상자</h2>
+
+          ${winner ? `
+            <div class="p-8 rounded-3xl winner-glow my-4 bg-gradient-to-br from-amber-50 via-white to-orange-50 border border-amber-300">
+              <div class="text-3xl sm:text-4xl font-black text-[#1D3C34]">👑 ${winner.name} 님 <span class="text-lg font-bold text-slate-600">(${winner.teamName})</span></div>
+              <div class="text-xl font-black text-amber-700 mt-3">총 ${winner.correctCount}개 정답 달성!</div>
+              <div class="text-xs text-slate-500 mt-1">제출 완료 시각: ${winner.submittedTime}</div>
+              <div class="mt-6 pt-4 border-t border-amber-200/60 max-w-md mx-auto text-xs text-slate-600 space-y-1.5 text-left bg-white/80 p-4 rounded-2xl">
+                <div>• <b>지수님 답안:</b> ${winner.jisooAns || '-'}</div>
+                <div>• <b>예찬님 답안:</b> ${winner.yechanAns || '-'}</div>
+              </div>
             </div>
-          </div>
-        ` : `<p class="text-sm text-slate-500 py-6">아직 선정된 1등 당첨자가 없습니다.</p>`}
+          ` : `
+            <div class="py-12 text-slate-400">
+              <span class="text-4xl block mb-2">⏳</span>
+              <p class="text-sm">아직 미션 6 우승자가 확정되지 않았습니다. (TF 대시보드에서 정답자 확인 가능)</p>
+            </div>
+          `}
+        </div>
       </div>
     `;
-    return;
   }
 
-  const ranked = [1, 2, 3].map(id => ({
-    id,
-    name: appState.teams[id].name,
-    summary: getTeamScoreSummary(id)
-  })).sort((a, b) => b.summary.grandTotal - a.summary.grandTotal);
+  // 7. Podium Slide (최종 우승 시상식)
+  else if (currentSlide.id === 'podium') {
+    const ranked = [1, 2, 3].map(id => ({
+      id,
+      name: appState.teams[id].name,
+      summary: getTeamScoreSummary(id)
+    })).sort((a, b) => b.summary.grandTotal - a.summary.grandTotal);
 
-  const badges = ['🥇 최종 우승 (1위)', '🥈 준우승 (2위)', '🥉 3위'];
-  area.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      ${ranked.map((r, i) => `
-        <div class="glass-card rounded-3xl p-6 text-center border-2 ${i === 0 ? 'border-amber-400 winner-glow scale-105' : 'border-slate-200'}">
-          <div class="text-sm font-black text-amber-700 mb-1">${badges[i]}</div>
-          <h3 class="text-2xl font-black text-[#1D5266] mb-2">${r.name}</h3>
-          <div class="text-4xl font-black text-[#0097A7] mb-4">${r.summary.grandTotal}<span class="text-sm font-bold text-slate-500 ml-1">점</span></div>
-          <div class="text-xs text-slate-600 space-y-1 text-left bg-white/80 p-3.5 rounded-2xl border border-slate-200/80">
-            <div class="flex justify-between"><span>1. 여행 포스터 (AI)</span><strong>${r.summary.m1}점</strong></div>
-            <div class="flex justify-between"><span>2. 제주 발견 (체크+히든)</span><strong>${r.summary.m2}점</strong></div>
-            <div class="flex justify-between"><span>3. 깜짝 N행시 (투표)</span><strong>${r.summary.m3}점</strong></div>
-            <div class="flex justify-between"><span>4. 팀별 주인공 (AI)</span><strong>${r.summary.m4}점</strong></div>
-            <div class="flex justify-between text-amber-700"><span>5. 그림자 JA (보너스)</span><strong>+${r.summary.m5}점</strong></div>
+    const podiumOrder = [ranked[1] || ranked[0], ranked[0], ranked[2] || ranked[0]]; // 2nd, 1st, 3rd layout
+    const podiumRanks = [2, 1, 3];
+    const podiumBadges = ['🥈 준우승 (2위)', '🥇 최종 우승 (1위)', '🥉 3위'];
+
+    slideBody = `
+      <div class="space-y-6">
+        <div class="text-center max-w-2xl mx-auto mb-4">
+          <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-amber-100 text-amber-900">GRAND FINALE</span>
+          <h2 class="text-3xl sm:text-4xl font-black text-[#1D3C34] mt-2">🏆 최종 우승 시상식 (종합 순위)</h2>
+          <p class="text-xs sm:text-sm text-slate-600 mt-1">
+            이틀간 함께 땀 흘리고 웃으며 완성한 2026 JA Korea 제주 리트릿 최종 결과
+          </p>
+          <div class="mt-4">
+            <button type="button" onclick="triggerConfetti()" class="px-5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-extrabold text-xs shadow-lg hover:scale-105 active:scale-95 transition flex items-center gap-2 mx-auto">
+              <span>🎉</span><span>축하 폭죽(콘페티) 다시 터뜨리기!</span>
+            </button>
           </div>
         </div>
-      `).join('')}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-4">
+          ${podiumOrder.map((r, i) => {
+            const rankNum = podiumRanks[i];
+            const isFirstPlace = rankNum === 1;
+            const badge = podiumBadges[i];
+
+            return `
+              <div class="glass-card rounded-3xl p-6 sm:p-7 text-center border-2 transition duration-300 ${
+                isFirstPlace
+                  ? 'border-amber-400 winner-glow md:-translate-y-4 bg-gradient-to-b from-amber-50/80 via-white to-amber-50/40 shadow-2xl z-10'
+                  : 'border-slate-200/90 bg-white shadow-md'
+              }">
+                <div class="text-3xl sm:text-4xl mb-2">${isFirstPlace ? '🏆' : rankNum === 2 ? '🥈' : '🥉'}</div>
+                <div class="text-xs font-black ${isFirstPlace ? 'text-amber-700' : 'text-slate-500'} mb-1">${badge}</div>
+                <h3 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mb-3">${getTeamIcon(r.id)} ${r.name}</h3>
+
+                <div class="text-4xl sm:text-5xl font-black ${isFirstPlace ? 'text-[#F27A24]' : 'text-[#0097A7]'} mb-5">
+                  ${r.summary.grandTotal}<span class="text-sm font-bold text-slate-400 ml-1">/ 115점</span>
+                </div>
+
+                <div class="text-xs text-slate-600 space-y-2 text-left bg-white/90 p-4 rounded-2xl border border-slate-200/80 shadow-2xs">
+                  <div class="flex justify-between pb-1 border-b border-slate-100">
+                    <span>1. 여행 포스터 (AI)</span><strong class="font-extrabold">${r.summary.m1}점</strong>
+                  </div>
+                  <div class="flex justify-between pb-1 border-b border-slate-100">
+                    <span>2. 제주 발견 (보물찾기)</span><strong class="font-extrabold">${r.summary.m2}점</strong>
+                  </div>
+                  <div class="flex justify-between pb-1 border-b border-slate-100">
+                    <span>3. 깜짝 N행시 (상호투표)</span><strong class="font-extrabold">${r.summary.m3}점</strong>
+                  </div>
+                  <div class="flex justify-between pb-1 border-b border-slate-100">
+                    <span>4. 팀별 주인공 (AI)</span><strong class="font-extrabold">${r.summary.m4}점</strong>
+                  </div>
+                  <div class="flex justify-between text-amber-700 font-bold">
+                    <span>5. 그림자 JA (보너스)</span><strong>+${r.summary.m5}점</strong>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Bottom Pagination Controls Toolbar
+  const paginationToolbar = `
+    <!-- Sticky / Bottom Slide Pagination Toolbar -->
+    <div class="mt-8 pt-5 border-t border-slate-200/80 flex items-center justify-between gap-3">
+      <button type="button" onclick="prevCeremonySlide()" ${isFirst ? 'disabled' : ''} class="px-4 sm:px-6 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+        isFirst
+          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+          : 'bg-[#1D3C34] hover:bg-[#142B25] text-white shadow-md active:scale-95'
+      }">
+        <span>◀</span><span>이전 미션</span>
+      </button>
+
+      <div class="text-center">
+        <div class="text-sm sm:text-base font-black text-[#1D3C34]">
+          ${currentSlide.icon} ${currentSlide.title}
+        </div>
+        <div class="text-[11px] text-slate-500 font-semibold mt-0.5">
+          슬라이드 ${currentIndex + 1} / ${CEREMONY_SLIDES.length} · 키보드 좌우 방향키(← / →) 지원
+        </div>
+      </div>
+
+      <button type="button" onclick="nextCeremonySlide()" ${isLast ? 'disabled' : ''} class="px-4 sm:px-6 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition flex items-center gap-2 ${
+        isLast
+          ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+          : 'bg-[#F27A24] hover:bg-[#d96514] text-white shadow-md active:scale-95'
+      }">
+        <span>다음 미션</span><span>▶</span>
+      </button>
+    </div>
+  `;
+
+  area.innerHTML = `
+    <div class="ceremony-presentation-slide">
+      ${navHtml}
+      ${slideBody}
+      ${paginationToolbar}
     </div>
   `;
 }
+
+// 키보드 좌우 화살표 및 스페이스바로 시상식 슬라이드 넘기기
+document.addEventListener('keydown', (e) => {
+  if (appState.mode !== 'ceremony') return;
+  if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+  if (e.key === 'ArrowRight' || e.key === ' ') {
+    e.preventDefault();
+    nextCeremonySlide();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    prevCeremonySlide();
+  }
+});
 
 function switchMode(newMode) {
   if (newMode === 'participant') {

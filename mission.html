@@ -319,9 +319,10 @@
           </p>
 
           <div class="flex flex-wrap justify-center gap-2 mt-6">
-            <button onclick="setCeremonySlide('missions')" id="ceremony-btn-missions" class="px-4 py-2 rounded-xl text-xs font-bold bg-white text-[#1D3C34] shadow">📸 1~5번 미션별 작품 & AI 한줄평</button>
-            <button onclick="setCeremonySlide('individual')" id="ceremony-btn-individual" class="px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white">🎯 6번 저녁 개인미션 MVP 발표</button>
-            <button onclick="setCeremonySlide('podium')" id="ceremony-btn-podium" class="px-4 py-2 rounded-xl text-xs font-bold bg-[#F27A24] hover:bg-[#d96514] text-white shadow-lg">🏆 최종 종합 순위 발표</button>
+            <button onclick="setCeremonySlide('m1')" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-[#F27A24] hover:bg-[#d96514] text-white shadow-md">🎬 1~5번 미션 슬라이드 시작</button>
+            <button onclick="setCeremonySlide('m6')" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-white/20 hover:bg-white/30 text-white shadow-sm">🎯 6번 개인미션 MVP</button>
+            <button onclick="setCeremonySlide('podium')" class="px-4 py-2 rounded-xl text-xs font-extrabold bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-900 shadow-md">🏆 최종 종합 순위 발표</button>
+            <button onclick="toggleCeremonyFullscreen()" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-900/80 hover:bg-slate-900 text-white shadow-sm">⛶ 전체화면</button>
             <button onclick="switchMode('tf')" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-emerald-100">← TF 대시보드로 돌아가기</button>
           </div>
         </div>
@@ -659,6 +660,6 @@
   <!-- Toast Notification -->
   <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <script src="js/mission.js?v=20261030_04"></script>
+  <script src="js/mission.js?v=20261030_05"></script>
 </body>
 </html>
