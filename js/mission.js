@@ -1388,21 +1388,41 @@ function getMission3VotesAndScores() {
   const anySubmittedOrVoted = totalVotesCast > 0 || [1, 2, 3].some(id => appState.teams[id].m3.kakaoSubmitted);
 
   if (anySubmittedOrVoted) {
-    if (isThreeWayTie) {
-      if (tfPick) {
-        [1, 2, 3].forEach(id => { scores[id] = (id === tfPick) ? 30 : 25; });
+    const isSubmitted = (id) => Boolean(appState.teams[id]?.m3?.kakaoSubmitted);
+    const submittedTeams = [1, 2, 3].filter(isSubmitted);
+    const unsubmittedTeams = [1, 2, 3].filter(id => !isSubmitted(id));
+
+    // 1) 동영상 미제출 팀은 15점 부여 (미제출 페널티 감점 + 참가 격려 점수)
+    unsubmittedTeams.forEach(id => {
+      scores[id] = 15;
+    });
+
+    // 2) 동영상 제출 완료 팀들 간 득표 순위에 따라 순위 점수 부여 (1위 30점, 2위 25점, 3위 20점)
+    if (submittedTeams.length > 0) {
+      if (isThreeWayTie && submittedTeams.length === 3) {
+        if (tfPick) {
+          submittedTeams.forEach(id => { scores[id] = (id === tfPick) ? 30 : 25; });
+        } else {
+          submittedTeams.forEach(id => { scores[id] = 25; });
+        }
       } else {
-        [1, 2, 3].forEach(id => { scores[id] = 25; });
+        const subVotesUnique = [...new Set(submittedTeams.map(id => finalVotes[id]))].sort((a, b) => b - a);
+        const rankPoints = [30, 25, 20];
+
+        submittedTeams.forEach(id => {
+          const rankIdx = subVotesUnique.indexOf(finalVotes[id]);
+          scores[id] = rankPoints[rankIdx] !== undefined ? rankPoints[rankIdx] : 20;
+        });
       }
-    } else if (totalVotesCast > 0) {
-      const sortedUnique = [...new Set([finalVotes[1], finalVotes[2], finalVotes[3]])].sort((a, b) => b - a);
-      const rankPoints = [30, 25, 20];
-      [1, 2, 3].forEach(id => {
-        const rankIdx = sortedUnique.indexOf(finalVotes[id]);
-        scores[id] = rankPoints[rankIdx] || 20;
-      });
     }
   }
+
+  // 각 팀 객체에 m3.score 반영
+  [1, 2, 3].forEach(id => {
+    if (appState.teams[id]?.m3) {
+      appState.teams[id].m3.score = scores[id];
+    }
+  });
 
   return { teamVotes: votes, finalVotes, isThreeWayTie, tfPick, totalVotesCast, scores };
 }
@@ -5392,7 +5412,7 @@ function renderTfDashboardView() {
               <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">[깜짝 N행시] 카톡 동영상 제출 & 팀별 상호 투표 (30점 만점)</h2>
               ${renderMissionScheduleToggleBadge(3)}
             </div>
-            <p class="text-xs text-slate-500 mt-1">10/30(금) 14:30 오픈 ~ 15:15 마감 · 최다 득표 1위(30점) / 2위(25점) / 3위(20점) · 동점 시 TF 캐스팅보트 1표</p>
+            <p class="text-xs text-slate-500 mt-1">10/30(금) 14:30 오픈 ~ 15:15 마감 · 최다 득표 1위(30점) / 2위(25점) / 3위(20점) · 미제출 팀 15점 · 동점 시 TF 캐스팅보트 1표</p>
           </div>
           <div class="flex items-center gap-1.5 flex-wrap">
             ${N_POEM_WORDS.map(w => `
@@ -5811,6 +5831,7 @@ function renderCeremonyView() {
 
   // 3. Mission 3 Slide (깜짝 N행시)
   else if (currentSlide.id === 'm3') {
+    const vInfo = getMission3VotesAndScores();
     const word = appState.m3Config?.selectedWord || '제이에이';
     slideBody = `
       <div class="space-y-4">
@@ -5821,7 +5842,7 @@ function renderCeremonyView() {
             <span>제시어:</span><span class="tracking-widest text-base font-serif">${word}</span>
           </div>
           <p class="text-xs sm:text-sm text-slate-600 mt-2">
-            단톡방 영상 제출 및 팀원 상호 투표 집계: 1위(30점) / 2위(25점) / 3위(20점)
+            단톡방 영상 제출 및 팀원 상호 투표 집계: 1위(30점) / 2위(25점) / 3위(20점) · 미제출 팀(15점)
           </p>
         </div>
 
@@ -5829,7 +5850,8 @@ function renderCeremonyView() {
           ${[1, 2, 3].map(tid => {
             const t = appState.teams[tid];
             const m = t.m3 || {};
-            const votesReceived = [1, 2, 3].filter(oid => appState.teams[oid]?.m3?.votedForTeamId === tid).length;
+            const scoreVal = vInfo.scores[tid] !== undefined ? vInfo.scores[tid] : (m.score ?? 0);
+            const votesReceived = vInfo.finalVotes[tid] !== undefined ? vInfo.finalVotes[tid] : 0;
             const votedFor = m.votedForTeamId ? appState.teams[m.votedForTeamId]?.name : null;
 
             return `
@@ -5839,13 +5861,13 @@ function renderCeremonyView() {
                     <span class="text-2xl">${getTeamIcon(tid)}</span>
                     <span class="text-lg sm:text-xl font-black text-[#1D3C34]">${t.name}</span>
                   </div>
-                  <div class="text-2xl sm:text-3xl font-black text-amber-500">${m.score ?? 0}<span class="text-sm font-bold text-slate-400 ml-1">/ 30점</span></div>
+                  <div class="text-2xl sm:text-3xl font-black text-amber-500">${scoreVal}<span class="text-sm font-bold text-slate-400 ml-1">/ 30점</span></div>
                 </div>
 
                 <div class="my-4 space-y-3">
                   <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold px-3 py-1 rounded-full ${m.kakaoSubmitted ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-500'}">
-                      ${m.kakaoSubmitted ? '🎬 단톡방 영상 제출 완료' : '동영상 제출 확인 중'}
+                    <span class="text-xs font-bold px-3 py-1 rounded-full ${m.kakaoSubmitted ? 'bg-emerald-50 text-emerald-700 border border-emerald-300' : 'bg-rose-50 text-rose-700 border border-rose-300'}">
+                      ${m.kakaoSubmitted ? '🎬 단톡방 영상 제출 완료' : '⏳ 동영상 미제출 (15점)'}
                     </span>
                     <span class="text-xs font-black px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-300">
                       🗳️ 득표: ${votesReceived}표
@@ -5875,7 +5897,7 @@ function renderCeremonyView() {
                 </div>
 
                 <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs text-slate-600">
-                  <span class="font-bold text-[#1D3C34]">💡 채점 배점:</span> 투표 득표 순위에 따라 1위(30점), 2위(25점), 3위(20점) 부여
+                  <span class="font-bold text-[#1D3C34]">💡 채점 배점:</span> 투표 득표 순위에 따라 1위(30점), 2위(25점), 3위(20점) 부여 · 미제출 팀 15점
                 </div>
               </div>
             `;
@@ -5884,7 +5906,6 @@ function renderCeremonyView() {
       </div>
     `;
   }
-
   // 4. Mission 4 Slide (주인공 사진)
   else if (currentSlide.id === 'm4') {
     slideBody = `
