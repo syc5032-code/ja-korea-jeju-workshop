@@ -130,7 +130,7 @@ const DEFAULT_KATALK_MESSAGES = [
     scheduledDate: "2026-09-22",
     scheduledTime: "09:20",
     badge: "📸 미션 1",
-    title: "📸 [09:20] 미션 1 오픈 안내 (마감 12:30)",
+    title: "📸 [09:20] 미션 1 오픈 안내 (마감 17:00 연장)",
     notes: "정각 단톡방 발송",
     status: "draft",
     reservedBy: null,
@@ -148,18 +148,18 @@ const DEFAULT_KATALK_MESSAGES = [
 지금 미션 웹앱에 첫 번째 미션인 <미션 1>이 오픈되었습니다!
 어떤 미션인지 지금 바로 웹앱에 접속하여 확인하고 도전해 보세요! 
 
-⏰ 제출 마감: 오늘 12:30까지
+⏰ 제출 마감: 오늘 17:00까지 (연장)
 🔗 미션 확인하기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
 
 ※ 웹앱 카드 상단에 [💡 AI 심사위원이 보는 3대 핵심 채점 기준]이 안내되어 있으니 꼭 확인 후 촬영해 주세요! 📸✨`
   },
   {
     id: 4,
-    time: "12:00",
+    time: "16:30",
     scheduledDate: "2026-09-22",
-    scheduledTime: "12:00",
+    scheduledTime: "16:30",
     badge: "⏰ 마감임박",
-    title: "⏰ [12:00] 미션 1 마감 30분 전 리마인드",
+    title: "⏰ [16:30] 미션 1 마감 30분 전 리마인드 (마감 17:00)",
     notes: "정각 단톡방 발송",
     status: "draft",
     reservedBy: null,
@@ -175,12 +175,10 @@ const DEFAULT_KATALK_MESSAGES = [
     content: `[미션 1 마감 30분 전 안내 ⏰]
 
 <미션 1> 제출 마감이 30분 남았습니다!
-점심 식사 전, 촬영하신 사진을 미션 웹앱에 꼭 업로드해 주세요!
+촬영하신 사진을 미션 웹앱에 꼭 업로드해 주세요!
 
-• 마감 시각: 12:30 칼마감 (이후 AI 심사 돌입!)
-🔗 미션 웹앱 바로가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission
-
-맛있는 점심 식사 되세요! 🍱😋`
+• 마감 시각: 17:00 마감 (이후 AI 심사 돌입!)
+🔗 미션 웹앱 바로가기: https://ja-korea-jeju-workshop-hxcf.vercel.app/mission`
   },
   {
     id: 5,
@@ -3187,10 +3185,10 @@ function renderParticipantView() {
             <span class="mission-num-badge text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">미션 1 · 09:20 오픈</span>
             <h2 class="text-base sm:text-lg font-extrabold text-[#1D5266]">[관광지 사진] 우리 팀의 제주 여행 포스터</h2>
           </div>
-          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200">⏰ 12:30 제출 마감 · AI 채점</span>
+          <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-rose-50 text-rose-600 border border-rose-200">⏰ 17:00 제출 마감 · AI 채점</span>
         </div>
         <p class="text-xs sm:text-sm text-slate-600 mb-4 leading-relaxed">
-          팀원들이 함께 나오고 관광지 분위기가 느껴지는 사진 1장을 체험 전후 안전한 곳에서 촬영해 <strong>12:30까지</strong> 제출해 주세요.
+          팀원들이 함께 나오고 관광지 분위기가 느껴지는 사진 1장을 체험 전후 안전한 곳에서 촬영해 <strong>17:00까지</strong> 제출해 주세요.
         </p>
 
         <!-- 💡 AI 심사위원이 보는 3대 핵심 채점 기준 -->
@@ -5137,7 +5135,7 @@ function renderTfDashboardView() {
   if (f === 'all' || f === 1) {
     blocks.push(renderAiMissionPanel(
       1,
-      '[관광지 사진] 우리 팀의 제주 여행 포스터 (09:20 오픈 ~ 12:30 마감)',
+      '[관광지 사진] 우리 팀의 제주 여행 포스터 (09:20 오픈 ~ 17:00 마감)',
       25,
       '루브릭 심사 기준: ① 제주 랜드마크 분위기(최대 8점) + ② 팀원 에너지·표정 케미(최대 9점) + ③ 포스터 완성도 구도(최대 8점) · 촬영자 인원수 감점 배제'
     ));
