@@ -978,9 +978,9 @@ async function pushToCloudDb() {
           if (!sM || !lM) return;
 
           // TF 대시보드나 로컬에서 새 사진을 등록/교체한 경우 -> 서버로 즉시 반영!
-          if (lM.photo && lM.photo !== sM.photo && String(lM.photoVersion).startsWith('v_')) {
+          if (lM.photo && lM.photo !== sM.photo) {
             sM.photo = lM.photo;
-            sM.photoVersion = lM.photoVersion;
+            sM.photoVersion = lM.photoVersion || ('v_' + Date.now());
             sM.submittedAt = lM.submittedAt || formatNowTime(false);
             sM.status = lM.status || 'pending';
           }
@@ -991,7 +991,7 @@ async function pushToCloudDb() {
             lM.submittedAt = sM.submittedAt;
           }
 
-          if (lM.graded || lM.manualReview !== null) {
+          if (lM.graded || lM.manualReview !== null || lM.score !== null) {
             sM.score = lM.score;
             sM.subScores = lM.subScores;
             sM.graded = lM.graded;
@@ -1006,6 +1006,8 @@ async function pushToCloudDb() {
 
         // 3) 미션 2: 참가자 및 TF가 등록한 아이템 사진들 양방향 100% 보존
         if (serverT.m2 && localT.m2) {
+          if (Array.isArray(serverT.m2.photos)) serverT.m2.photos = [];
+          if (Array.isArray(localT.m2.photos)) localT.m2.photos = [];
           syncM2State(serverT);
           syncM2State(localT);
           const sM2 = serverT.m2;
@@ -1048,7 +1050,12 @@ async function pushToCloudDb() {
         serverT.totalScore = localT.totalScore ?? serverT.totalScore;
       });
     } else {
-      // 일반 참가자 모드: 인증된 내 팀 식별자 복원
+      // 일반 참가자 모드: 서버 최신 데이터를 못 가져왔으면(500 등) 타 팀 덮어쓰기 방지를 위해 안전하게 보류
+      if (!remoteTeams) {
+        console.warn('[CloudSync] 서버 최신 데이터를 가져오지 못해 병합을 보류하고 재시도합니다.');
+        return;
+      }
+      // 인증된 내 팀 식별자 복원
       const authedTeamId = Number(localStorage.getItem(MY_TEAM_ID_KEY) || appState.selectedTeamId || 1);
       const myLocalTeam = appState.teams?.[authedTeamId] || appState.teams?.[myTeamId];
       const targetTeamId = myLocalTeam?.id || authedTeamId || myTeamId;
@@ -1273,6 +1280,32 @@ async function pushToCloudDb() {
 async function pullFromCloudDb() {
   if (isSyncingCloud || isBatchGrading) return;
   try {
+    // 1단계: 초경량 50바이트 타임스탬프 헤더 체크 (전체 본문 불필요한 반복 다운로드 원천 차단)
+    const headRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=id,updated_at`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+    if (!headRes.ok) {
+      updateCloudBadge(false);
+      return;
+    }
+    const headRows = await headRes.json();
+    const serverRow = headRows?.[0];
+    if (!serverRow) return;
+
+    const serverUpdatedAt = Number(serverRow.updated_at) || 0;
+    const isServerChanged = serverUpdatedAt && (serverUpdatedAt !== appState.lastServerSyncTime);
+    const isInitialSync = !appState.lastServerSyncTime;
+
+    // 서버에 새 변경사항이 없다면 무거운 본문 조회를 생략하여 DB 과부하 및 레이스 컨디션을 완전히 방지!
+    if (!isServerChanged && !isInitialSync) {
+      updateCloudBadge(true);
+      return;
+    }
+
+    // 2단계: 변경사항이 감지된 경우에만 전체 본문 데이터 조회
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=*`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -1291,53 +1324,80 @@ async function pullFromCloudDb() {
       const localResetId = appState.resetId || '';
 
       const isResetDetected = remoteResetId && (remoteResetId !== localResetId);
-      const isServerChanged = row.updated_at && (row.updated_at !== appState.lastServerSyncTime);
-      const isInitialSync = !appState.lastServerSyncTime;
 
-      if (isResetDetected || isServerChanged || isInitialSync) {
-        if (isResetDetected) {
-          console.warn('[Sync] 서버 데이터 초기화가 감지되어 기기 인증 및 캐시를 초기화합니다.');
-          localStorage.removeItem(MY_TEAM_AUTH_KEY);
-          localStorage.removeItem(MY_TEAM_ID_KEY);
-        }
-        appState.resetId = remoteResetId || CURRENT_RESET_ID;
-        appState.lastServerSyncTime = row.updated_at;
-        appState.updatedAt = row.updated_at;
-        if (remote.settings) {
-          appState.settings = { ...appState.settings, ...remote.settings };
-          delete appState.settings.apiKey;
-        }
-        if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
-        if (remote.m3Config) appState.m3Config = remote.m3Config;
-        if (remote.m6Config) appState.m6Config = remote.m6Config;
-        if (remote.teams) {
-          const freshRemoteTeams = sanitizeTeams(remote.teams);
-          // [핵심 버그 수정]: 로컬 기기에서 방금 업로드한 새 사진이 서버 통신 지연으로 아직 서버에 반영되기 전인 경우,
-          // pullFromCloudDb가 빈 서버 데이터로 로컬 사진을 덮어써서 삭제시키는 현상을 원천 방지!
-          [1, 2, 3].forEach(tid => {
-            const localT = appState.teams?.[tid];
-            const netT = freshRemoteTeams[tid];
-            if (!localT || !netT) return;
+      if (isResetDetected) {
+        console.warn('[Sync] 서버 데이터 초기화가 감지되어 기기 인증 및 캐시를 초기화합니다.');
+        localStorage.removeItem(MY_TEAM_AUTH_KEY);
+        localStorage.removeItem(MY_TEAM_ID_KEY);
+      }
+      appState.resetId = remoteResetId || CURRENT_RESET_ID;
+      appState.lastServerSyncTime = row.updated_at;
+      appState.updatedAt = row.updated_at;
+      if (remote.settings) {
+        appState.settings = { ...appState.settings, ...remote.settings };
+        delete appState.settings.apiKey;
+      }
+      if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
+      if (remote.m3Config) appState.m3Config = remote.m3Config;
+      if (remote.m6Config) appState.m6Config = remote.m6Config;
+      if (remote.teams) {
+        const freshRemoteTeams = sanitizeTeams(remote.teams);
+        const isTf = Boolean(appState.tfUnlocked);
 
-            [1, 4, 5].forEach(mNum => {
-              const mKey = 'm' + mNum;
-              if (localT[mKey]?.photo && !netT[mKey]?.photo && String(localT[mKey]?.photoVersion).startsWith('v_')) {
-                netT[mKey] = { ...localT[mKey] };
-              }
-            });
+        // [핵심 심사 및 사진 보호 로직]
+        [1, 2, 3].forEach(tid => {
+          const localT = appState.teams?.[tid];
+          const netT = freshRemoteTeams[tid];
+          if (!localT || !netT) return;
 
-            if (localT.m2?.itemPhotos && netT.m2?.itemPhotos) {
-              Object.keys(localT.m2.itemPhotos).forEach(k => {
-                if (localT.m2.itemPhotos[k] && !netT.m2.itemPhotos[k] && String(localT.m2.itemPhotoVersions?.[k]).startsWith('v_')) {
-                  netT.m2.itemPhotos[k] = localT.m2.itemPhotos[k];
-                  netT.m2.itemPhotoVersions[k] = localT.m2.itemPhotoVersions[k];
-                  netT.m2.itemResults[k] = localT.m2.itemResults?.[k] || { status: 'pending', accepted: false };
+          [1, 4, 5].forEach(mNum => {
+            const mKey = 'm' + mNum;
+
+            // A) TF 관리자 심사 점수 보호: 관리자가 방금 확정한 점수/심사 결과가 서버 구버전 데이터(0점/null)로 덮어써져서 날아가는 현상 원천 차단!
+            if (isTf) {
+              if (localT[mKey]?.manualReview || (localT[mKey]?.graded && localT[mKey]?.score !== null)) {
+                if (!netT[mKey]?.manualReview || netT[mKey]?.score === null) {
+                  netT[mKey].score = localT[mKey].score;
+                  netT[mKey].subScores = localT[mKey].subScores;
+                  netT[mKey].status = localT[mKey].status;
+                  netT[mKey].graded = localT[mKey].graded;
+                  netT[mKey].reason = localT[mKey].reason;
+                  netT[mKey].observations = localT[mKey].observations;
+                  netT[mKey].oneLineReview = localT[mKey].oneLineReview;
+                  netT[mKey].manualReview = localT[mKey].manualReview;
+                  netT[mKey].evaluatedVersion = localT[mKey].evaluatedVersion;
                 }
-              });
+              }
+            }
+
+            // B) 로컬 신규 사진 보호: 로컬 기기에서 등록/교체한 사진이 서버 통신 지연 시 빈 데이터로 덮어써지지 않도록 보존
+            if (localT[mKey]?.photo && !netT[mKey]?.photo) {
+              netT[mKey].photo = localT[mKey].photo;
+              netT[mKey].photoVersion = localT[mKey].photoVersion;
+              netT[mKey].submittedAt = localT[mKey].submittedAt;
+              netT[mKey].status = localT[mKey].status;
             }
           });
-          appState.teams = freshRemoteTeams;
-        }
+
+          if (localT.m2?.itemPhotos && netT.m2?.itemPhotos) {
+            Object.keys(localT.m2.itemPhotos).forEach(k => {
+              if (localT.m2.itemPhotos[k] && !netT.m2.itemPhotos[k]) {
+                netT.m2.itemPhotos[k] = localT.m2.itemPhotos[k];
+                netT.m2.itemPhotoVersions[k] = localT.m2.itemPhotoVersions[k];
+                netT.m2.itemResults[k] = localT.m2.itemResults?.[k] || { status: 'pending', accepted: false };
+              }
+            });
+            if (isTf && localT.m2?.graded && !netT.m2?.graded) {
+              netT.m2.score = localT.m2.score;
+              netT.m2.graded = localT.m2.graded;
+              netT.m2.verifiedCommon = localT.m2.verifiedCommon;
+              netT.m2.verifiedHidden = localT.m2.verifiedHidden;
+              netT.m2.oneLineReview = localT.m2.oneLineReview;
+            }
+          }
+        });
+        appState.teams = freshRemoteTeams;
+      }
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         } catch (storageErr) {
@@ -1358,7 +1418,6 @@ async function pullFromCloudDb() {
         }
         renderAll();
       }
-    }
     updateCloudBadge(true);
   } catch (e) {
     updateCloudBadge(false);
@@ -2717,7 +2776,7 @@ async function handlePhotoUpload(teamId, missionNum, inputEl) {
   const file = inputEl.files?.[0];
   if (!file) return;
   try {
-    const dataUrl = await compressImageFile(file, 800, 0.75);
+    const dataUrl = await compressImageFile(file, 720, 0.7);
     const team = appState.teams[teamId];
     if (missionNum === 2) {
       showToast('2번 미션은 각 항목별 [사진 올리기] 버튼을 이용해 주세요.', 'info');
@@ -7010,5 +7069,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   setInterval(tickMissionScheduleCountdowns, 1000);
-  setInterval(pullFromCloudDb, 4000);
+  setInterval(pullFromCloudDb, 5000);
 });
