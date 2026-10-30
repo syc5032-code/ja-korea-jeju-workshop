@@ -166,7 +166,6 @@ function buildPromptM5(teamName, persona) {
   "totalScore": 7,
   "oneLineReview": "격려와 칭찬을 담은 60자 내외의 따뜻하고 유쾌한 심사평"
 }`;
-}`;
 }
 
 function buildPromptM2(teamName, persona, photoCount) {
