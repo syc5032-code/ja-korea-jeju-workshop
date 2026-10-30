@@ -6549,8 +6549,8 @@ function renderCeremonyView() {
               </div>
               <div class="p-2 rounded-2xl bg-rose-50/60 border border-rose-200">
                 <span class="text-[10px] font-black text-rose-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200 cursor-pointer group" onclick="openLightbox('${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg'}')" title="클릭하여 원본 크게 보기">
-                  <img src="${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg'}" class="w-full h-full object-contain p-0.5 group-hover:scale-105 transition duration-300" alt="지수님 After" />
+                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200 cursor-pointer group" onclick="openLightbox('${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg?v=20261031_02'}')" title="클릭하여 원본 크게 보기">
+                  <img src="${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg?v=20261031_02'}" class="w-full h-full object-contain p-0.5 group-hover:scale-105 transition duration-300" alt="지수님 After" />
                 </div>
               </div>
             </div>
@@ -6580,8 +6580,8 @@ function renderCeremonyView() {
               </div>
               <div class="p-2 rounded-2xl bg-teal-50/60 border border-teal-200">
                 <span class="text-[10px] font-black text-teal-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200 cursor-pointer group" onclick="openLightbox('${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg'}')" title="클릭하여 원본 크게 보기">
-                  <img src="${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg'}" class="w-full h-full object-contain p-0.5 group-hover:scale-105 transition duration-300" alt="예찬님 After" />
+                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200 cursor-pointer group" onclick="openLightbox('${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg?v=20261031_02'}')" title="클릭하여 원본 크게 보기">
+                  <img src="${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg?v=20261031_02'}" class="w-full h-full object-contain p-0.5 group-hover:scale-105 transition duration-300" alt="예찬님 After" />
                 </div>
               </div>
             </div>
