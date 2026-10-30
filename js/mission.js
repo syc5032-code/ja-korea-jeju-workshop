@@ -970,18 +970,27 @@ async function pushToCloudDb() {
           serverT.name = localT.name;
         }
 
-        // 2) 미션 1, 4, 5: 참가자의 사진은 서버 최신본을 항상 보존 & TF 로컬로 동기화
+        // 2) 미션 1, 4, 5: 참가자 및 TF가 등록/교체한 사진 양방향 완전 보존 및 서버 전송
         [1, 4, 5].forEach(mNum => {
           const mKey = `m${mNum}`;
           const sM = serverT[mKey];
           const lM = localT[mKey];
           if (!sM || !lM) return;
 
-          if (sM.photo && !lM.photo) {
+          // TF 대시보드나 로컬에서 새 사진을 등록/교체한 경우 -> 서버로 즉시 반영!
+          if (lM.photo && lM.photo !== sM.photo && String(lM.photoVersion).startsWith('v_')) {
+            sM.photo = lM.photo;
+            sM.photoVersion = lM.photoVersion;
+            sM.submittedAt = lM.submittedAt || formatNowTime(false);
+            sM.status = lM.status || 'pending';
+          }
+          // 서버에 사진이 있고 로컬에 없는 경우 -> 로컬로 동기화
+          else if (sM.photo && !lM.photo) {
             lM.photo = sM.photo;
             lM.photoVersion = sM.photoVersion;
             lM.submittedAt = sM.submittedAt;
           }
+
           if (lM.graded || lM.manualReview !== null) {
             sM.score = lM.score;
             sM.subScores = lM.subScores;
@@ -995,13 +1004,22 @@ async function pushToCloudDb() {
           }
         });
 
-        // 3) 미션 2: 참가자가 등록한 아이템 사진들 서버본 100% 보존
+        // 3) 미션 2: 참가자 및 TF가 등록한 아이템 사진들 양방향 100% 보존
         if (serverT.m2 && localT.m2) {
           syncM2State(serverT);
           syncM2State(localT);
           const sM2 = serverT.m2;
           const lM2 = localT.m2;
 
+          // TF/로컬에서 새 아이템 사진을 올린 경우 -> 서버 반영!
+          Object.keys(lM2.itemPhotos || {}).forEach(k => {
+            if (lM2.itemPhotos[k] && lM2.itemPhotos[k] !== sM2.itemPhotos[k] && String(lM2.itemPhotoVersions?.[k]).startsWith('v_')) {
+              sM2.itemPhotos[k] = lM2.itemPhotos[k];
+              sM2.itemPhotoVersions[k] = lM2.itemPhotoVersions[k];
+              if (!sM2.itemResults[k]) sM2.itemResults[k] = { status: 'pending', accepted: false };
+            }
+          });
+          // 서버의 기존 아이템 사진 -> 로컬로 동기화
           Object.keys(sM2.itemPhotos || {}).forEach(k => {
             if (sM2.itemPhotos[k] && !lM2.itemPhotos[k]) {
               lM2.itemPhotos[k] = sM2.itemPhotos[k];
@@ -1030,11 +1048,13 @@ async function pushToCloudDb() {
         serverT.totalScore = localT.totalScore ?? serverT.totalScore;
       });
     } else {
-      // 일반 참가자는 본인 팀(myTeamId)의 데이터만 서버에 업데이트
-      // 타 팀(1~3 중 내 팀 제외)은 서버 최신본(채점 결과 포함)을 100% 그대로 보존!
-      const myLocalTeam = appState.teams?.[myTeamId];
-      if (myLocalTeam && mergedTeams[myTeamId]) {
-        const serverMyTeam = mergedTeams[myTeamId];
+      // 일반 참가자 모드: 인증된 내 팀 식별자 복원
+      const authedTeamId = Number(localStorage.getItem(MY_TEAM_ID_KEY) || appState.selectedTeamId || 1);
+      const myLocalTeam = appState.teams?.[authedTeamId] || appState.teams?.[myTeamId];
+      const targetTeamId = myLocalTeam?.id || authedTeamId || myTeamId;
+
+      if (myLocalTeam && mergedTeams[targetTeamId]) {
+        const serverMyTeam = mergedTeams[targetTeamId];
 
         // 팀명 병합: 참가자가 설정한 커스텀 팀명 보호
         if (myLocalTeam.name && myLocalTeam.name !== `${myTeamId}팀`) {
@@ -1290,7 +1310,34 @@ async function pullFromCloudDb() {
         if (remote.scheduleConfig) appState.scheduleConfig = remote.scheduleConfig;
         if (remote.m3Config) appState.m3Config = remote.m3Config;
         if (remote.m6Config) appState.m6Config = remote.m6Config;
-        if (remote.teams) appState.teams = sanitizeTeams(remote.teams);
+        if (remote.teams) {
+          const freshRemoteTeams = sanitizeTeams(remote.teams);
+          // [핵심 버그 수정]: 로컬 기기에서 방금 업로드한 새 사진이 서버 통신 지연으로 아직 서버에 반영되기 전인 경우,
+          // pullFromCloudDb가 빈 서버 데이터로 로컬 사진을 덮어써서 삭제시키는 현상을 원천 방지!
+          [1, 2, 3].forEach(tid => {
+            const localT = appState.teams?.[tid];
+            const netT = freshRemoteTeams[tid];
+            if (!localT || !netT) return;
+
+            [1, 4, 5].forEach(mNum => {
+              const mKey = 'm' + mNum;
+              if (localT[mKey]?.photo && !netT[mKey]?.photo && String(localT[mKey]?.photoVersion).startsWith('v_')) {
+                netT[mKey] = { ...localT[mKey] };
+              }
+            });
+
+            if (localT.m2?.itemPhotos && netT.m2?.itemPhotos) {
+              Object.keys(localT.m2.itemPhotos).forEach(k => {
+                if (localT.m2.itemPhotos[k] && !netT.m2.itemPhotos[k] && String(localT.m2.itemPhotoVersions?.[k]).startsWith('v_')) {
+                  netT.m2.itemPhotos[k] = localT.m2.itemPhotos[k];
+                  netT.m2.itemPhotoVersions[k] = localT.m2.itemPhotoVersions[k];
+                  netT.m2.itemResults[k] = localT.m2.itemResults?.[k] || { status: 'pending', accepted: false };
+                }
+              });
+            }
+          });
+          appState.teams = freshRemoteTeams;
+        }
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         } catch (storageErr) {
@@ -1512,7 +1559,7 @@ function getSortedM6Submissions() {
    IMAGE UPLOAD & RESIZE HELPER
    ========================================================================== */
 
-function compressImageFile(file, maxDimension = 800, quality = 0.75) {
+function compressImageFile(file, maxDimension = 720, quality = 0.7) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = e => {
