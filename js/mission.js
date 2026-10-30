@@ -775,7 +775,7 @@ function loadState() {
       ...base,
       ...parsed,
       resetId: CURRENT_RESET_ID,
-      lastServerSyncTime: parsed.lastServerSyncTime || 0,
+      lastServerSyncTime: 0, // 페이지 새로고침 시 1회 완전 동기화 보장
       mode: 'participant',
       tfUnlocked: false,
       tfGuideOpen: { 1: false, 2: false, 4: false, 5: false, ...(parsed.tfGuideOpen || {}) },
@@ -798,25 +798,7 @@ function saveState(skipCloudPush = false) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
   } catch (storageErr) {
-    console.warn('[Storage] 브라우저 localStorage 한도 도달. 로컬 캐시를 최적화하여 저장을 재시도합니다.', storageErr);
-    try {
-      // 로컬 기기 저장소 용량 초과 시: 내 팀 외 타 팀 사진을 로컬 캐시에서만 가볍게 정리하여 저장
-      const lightState = JSON.parse(JSON.stringify(appState));
-      const myTeamId = Number(appState.selectedTeamId || 1);
-      [1, 2, 3].forEach(tid => {
-        if (tid !== myTeamId && lightState.teams?.[tid]) {
-          const t = lightState.teams[tid];
-          if (t.m1) t.m1.photo = '';
-          if (t.m4) t.m4.photo = '';
-          if (t.m5) t.m5.photo = '';
-          if (t.m2?.itemPhotos) t.m2.itemPhotos = {};
-          if (t.m2?.photos) t.m2.photos = [];
-        }
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
-    } catch (_) {
-      console.warn('[Storage] 로컬 캐시 저장 생략, 클라우드 동기화로 직접 진행합니다.');
-    }
+    console.warn('[Storage] 브라우저 localStorage 한도 도달. 메모리 상태 및 클라우드 동기화로 정상 진행합니다.');
   }
 
   // 로컬 기기 용량과 무관하게 서버 클라우드(Supabase) 저장은 무조건 정상 실행
@@ -1277,10 +1259,12 @@ async function pushToCloudDb() {
   }
 }
 
+let hasCompletedFullInitialSync = false;
+
 async function pullFromCloudDb() {
   if (isSyncingCloud || isBatchGrading) return;
   try {
-    // 1단계: 초경량 50바이트 타임스탬프 헤더 체크 (전체 본문 불필요한 반복 다운로드 원천 차단)
+    // 1단계: 초경량 50바이트 타임스탬프 헤더 체크
     const headRes = await fetch(`${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.main_board&select=id,updated_at`, {
       headers: {
         'apikey': SUPABASE_KEY,
@@ -1297,10 +1281,10 @@ async function pullFromCloudDb() {
 
     const serverUpdatedAt = Number(serverRow.updated_at) || 0;
     const isServerChanged = serverUpdatedAt && (serverUpdatedAt !== appState.lastServerSyncTime);
-    const isInitialSync = !appState.lastServerSyncTime;
 
-    // 서버에 새 변경사항이 없다면 무거운 본문 조회를 생략하여 DB 과부하 및 레이스 컨디션을 완전히 방지!
-    if (!isServerChanged && !isInitialSync) {
+    // [핵심 버그 수정]: 최초 접속이거나 페이지 새로고침 직후에는 서버의 모든 팀 사진을 100% 무조건 로드!
+    // 최초 1회 로드가 완료되고 서버 타임스탬프가 일치할 때만 불필요한 반복 조회를 스킵!
+    if (hasCompletedFullInitialSync && !isServerChanged) {
       updateCloudBadge(true);
       return;
     }
@@ -1331,6 +1315,7 @@ async function pullFromCloudDb() {
         localStorage.removeItem(MY_TEAM_ID_KEY);
       }
       appState.resetId = remoteResetId || CURRENT_RESET_ID;
+      hasCompletedFullInitialSync = true;
       appState.lastServerSyncTime = row.updated_at;
       appState.updatedAt = row.updated_at;
       if (remote.settings) {
@@ -1402,19 +1387,7 @@ async function pullFromCloudDb() {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
         } catch (storageErr) {
           console.warn('[Storage] pullFromCloudDb localStorage 한도 초과, 경량 캐시로 저장합니다.');
-          try {
-            const lightState = JSON.parse(JSON.stringify(appState));
-            const myTid = Number(appState.selectedTeamId || 1);
-            [1, 2, 3].forEach(t => {
-              if (t !== myTid && lightState.teams?.[t]) {
-                if (lightState.teams[t].m1) lightState.teams[t].m1.photo = '';
-                if (lightState.teams[t].m4) lightState.teams[t].m4.photo = '';
-                if (lightState.teams[t].m5) lightState.teams[t].m5.photo = '';
-                if (lightState.teams[t].m2) { lightState.teams[t].m2.itemPhotos = {}; lightState.teams[t].m2.photos = []; }
-              }
-            });
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(lightState));
-          } catch (_) {}
+          console.warn('[Storage] pullFromCloudDb 로컬 캐시 저장 한도 도달, 메모리 상태는 완전 보존됩니다.');
         }
         renderAll();
       }
