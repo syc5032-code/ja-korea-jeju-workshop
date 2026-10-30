@@ -662,6 +662,18 @@ function sanitizeTeams(teamsObj) {
       syncM2State(result[id]);
     }
   });
+
+  // [미션 3 투표 안전망]: 카톡 영상을 제출하지 않은 팀(kakaoSubmitted: false)에게 된 투표는 전 기기에서 원천 무효(null) 처리
+  [1, 2, 3].forEach(id => {
+    const t = result[id];
+    if (t?.m3?.votedForTeamId) {
+      const targetT = result[t.m3.votedForTeamId];
+      if (!targetT || !targetT.m3?.kakaoSubmitted) {
+        t.m3.votedForTeamId = null;
+      }
+    }
+  });
+
   return result;
 }
 
@@ -1429,9 +1441,6 @@ async function pullFromCloudDb() {
               netT.m2.verifiedHidden = localT.m2.verifiedHidden;
               netT.m2.oneLineReview = localT.m2.oneLineReview;
             }
-            if (isTf && localT.m3?.votedForTeamId) {
-              netT.m3.votedForTeamId = localT.m3.votedForTeamId;
-            }
           }
         });
         appState.teams = freshRemoteTeams;
@@ -1524,7 +1533,8 @@ function getMission3VotesAndScores() {
   const votes = { 1: 0, 2: 0, 3: 0 };
   [1, 2, 3].forEach(tid => {
     const target = appState.teams[tid]?.m3?.votedForTeamId;
-    if (target && target !== tid && votes[target] !== undefined) {
+    // 투표 대상 팀이 존재하고, 자기 자신이 아니며, 실제로 카톡 영상을 제출한 팀이어야만 득표로 인정!
+    if (target && target !== tid && votes[target] !== undefined && appState.teams[target]?.m3?.kakaoSubmitted) {
       votes[target] += 1;
     }
   });
@@ -2986,6 +2996,13 @@ function toggleM3KakaoSubmitted(teamId) {
   const team = appState.teams[teamId];
   team.m3.kakaoSubmitted = !team.m3.kakaoSubmitted;
   team.m3.submittedAt = team.m3.kakaoSubmitted ? formatNowTime(false) : '';
+  if (!team.m3.kakaoSubmitted) {
+    [1, 2, 3].forEach(id => {
+      if (appState.teams[id]?.m3?.votedForTeamId === teamId) {
+        appState.teams[id].m3.votedForTeamId = null;
+      }
+    });
+  }
   saveState();
   renderAll();
   if (team.m3.kakaoSubmitted) {
@@ -3000,13 +3017,13 @@ function castM3TeamVote(voterTeamId, targetTeamId) {
   }
   const targetTeam = appState.teams[targetTeamId];
   if (!targetTeam?.m3?.kakaoSubmitted) {
-    showToast(`${targetTeam.name}은(는) 카톡 영상을 제출하지 않아 투표 대상이 아닙니다!`, 'error');
+    showToast(`${targetTeam?.name || '해당 팀'}은(는) 카톡 영상을 미제출하여 투표할 수 없습니다!`, 'error');
     return;
   }
   appState.teams[voterTeamId].m3.votedForTeamId = targetTeamId;
   saveState();
   renderAll();
-  showToast(`${appState.teams[voterTeamId].name}의 투표가 반영되었습니다!`, 'success');
+  showToast(`${appState.teams[voterTeamId].name}의 투표(→ ${targetTeam.name})가 저장되었습니다!`, 'success');
 }
 
 function toggleM5Pass(teamId) {
@@ -5667,14 +5684,14 @@ function renderTfDashboardView() {
                       const canVote = Boolean(otherT?.m3?.kakaoSubmitted);
                       const isVoted = team.m3.votedForTeamId === oid;
                       return `
-                        <button onclick="castM3TeamVote(${tid}, ${oid})" ${canVote ? '' : 'disabled title="카톡 영상 미제출 팀으로 투표 불가"'} class="py-1.5 rounded-lg text-xs font-bold border transition ${
+                        <button type="button" onclick="castM3TeamVote(${tid}, ${oid})" ${canVote ? '' : 'disabled title="카톡 영상 미제출 팀으로 투표 불가"'} class="py-2 px-2 rounded-lg text-xs font-bold border transition flex items-center justify-center gap-1 ${
                           isVoted
-                            ? 'bg-[#1D5266] text-white border-[#1D5266] shadow-xs'
+                            ? 'bg-[#1D5266] text-white border-[#1D5266] shadow-sm ring-2 ring-[#1D5266]/30'
                             : canVote
-                              ? 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                              : 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed opacity-50'
+                              ? 'bg-white hover:bg-slate-50 text-slate-700 border-slate-300'
+                              : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
                         }">
-                          → ${getTeamIcon(oid)} ${otherT.name} ${isVoted ? '투표(선택됨)' : canVote ? '투표' : '(미제출)'}
+                          ${isVoted ? '✔ ' : canVote ? '👉 ' : '🚫 '}${getTeamIcon(oid)} ${otherT.name} ${isVoted ? '투표(선택됨)' : canVote ? '투표' : '(미제출·불가)'}
                         </button>
                       `;
                     }).join('')}

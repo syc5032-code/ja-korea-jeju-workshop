@@ -260,39 +260,16 @@ function sanitizeGradingResponse(missionNum, parsed) {
   } : {};
 
   if (missionNum === 5) {
-    // 1. 모순 방지 검증: 글자 연출 시도 부재 감지 (일반 사람 그림자 -> invalid 0점)
-    const noAttemptKeywords = [
-      '시도 없음', '연출 없음', '일반 그림자', '평범한 그림자', '글자 연출 없음',
-      '서 있는 그림자', '걷는 그림자', '일상 그림자', '시도 확인 불가', '글자 형태 없음'
-    ];
-    const textCorpus = `${attemptEvidence} ${observations} ${reason}`.toLowerCase();
-    const hasExplicitNoAttempt = noAttemptKeywords.some(kw => textCorpus.includes(kw));
-
-    if (hasExplicitNoAttempt && status === 'valid') {
-      return {
-        status: 'invalid',
-        observations,
-        reason: reason || '신체 그림자는 확인되나 글자(JA)를 만들려는 연출 자세나 시도가 확인되지 않아 불인정(0점) 처리되었습니다.',
-        subScores: null,
-        totalScore: 0,
-        oneLineReview: '글자 연출 시도가 없는 일반 사람 그림자로서 미션 기준에 부합하지 않습니다.',
-        ...m5EvidenceObj
-      };
-    }
-
-    // 2. 모순 방지 검증: 글자 연출 시도 판정 모호 (needs_review 전환)
-    const ambiguousKeywords = ['시도인지 불분명', '판단 곤란', '자세인지 애매', '판별이 모호', '판별 불가', '유추하기 어려움'];
-    const isAmbiguousAttempt = ambiguousKeywords.some(kw => textCorpus.includes(kw));
-    if (isAmbiguousAttempt && status === 'valid') {
-      return {
-        status: 'needs_review',
-        observations,
-        reason: reason || '글자 연출 시도인지 일반 자세인지 사진만으로 판별이 모호하여 TF 운영진 육안 검토 대기로 전환합니다.',
-        subScores: null,
-        totalScore: null,
-        oneLineReview: '글자 연출 시도 여부 판독이 모호하여 TF 운영진의 육안 검토가 필요합니다.',
-        ...m5EvidenceObj
-      };
+    // [운영진 특별 채점 완화 가이드라인]
+    // 참가자들의 그림자에서 'J' 또는 'A' 글자 형태, 선, 곡선, 각도, 손/팔/다리 포즈 연출 노력이
+    // 조금이라도 확인되면 무조건 valid로 적극 인정하고 7~10점(기본 4점 + 가독성 2~4점 + 협동 1~2점)을 부여합니다.
+    // 오직 사람 신체 그림자가 전혀 없는 무관한 사진일 때만 invalid(0점) 처리합니다.
+    if (status === 'invalid') {
+      const hasHumanShadow = shadowEvidence && !shadowEvidence.includes('없음') && !shadowEvidence.includes('확인 불가');
+      const hasAnyLetterEffort = (attemptEvidence && !attemptEvidence.includes('없음')) || (jEvidence && !jEvidence.includes('없음')) || (aEvidence && !aEvidence.includes('없음'));
+      if (hasHumanShadow || hasAnyLetterEffort) {
+        status = 'valid';
+      }
     }
   }
 
