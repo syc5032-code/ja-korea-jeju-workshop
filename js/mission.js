@@ -6520,9 +6520,12 @@ function renderCeremonyView() {
         </div>
 
         <!-- Before & After 정답 공개 섹션 -->
-        <div class="mb-2 text-center">
-          <button type="button" onclick="openLightbox('assets/images/m6_before_full.jpg')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow transition">
-            <span>🔍</span><span>사전(Before) 두 분 전신 모습 크게 보기</span>
+        <div class="mb-2 flex items-center justify-center gap-2 flex-wrap">
+          <button type="button" onclick="openLightbox('assets/images/m6_before_full.jpg')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-extrabold shadow transition">
+            <span>📷</span><span>사전(Before) 전신 보기</span>
+          </button>
+          <button type="button" onclick="openLightbox('assets/images/m6_after_full.jpg')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#0097A7] hover:bg-[#00838F] text-white text-xs font-extrabold shadow transition">
+            <span>✨</span><span>사후(After) 전신 보기</span>
           </button>
         </div>
 
@@ -6543,16 +6546,17 @@ function renderCeremonyView() {
               </div>
               <div class="p-2 rounded-2xl bg-rose-50/60 border border-rose-200">
                 <span class="text-[10px] font-black text-rose-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200 ${m6.jisooAfterPhoto ? 'cursor-pointer' : ''}" ${m6.jisooAfterPhoto ? `onclick="openLightbox('${m6.jisooAfterPhoto}')"` : ''}>
-                  ${m6.jisooAfterPhoto ? `<img src="${m6.jisooAfterPhoto}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="지수님 After" />` : `<span class="text-rose-400 text-xs font-bold">✨ 사후 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200 cursor-pointer" onclick="openLightbox('${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg'}')">
+                  <img src="${m6.jisooAfterPhoto || 'assets/images/m6_jisoo_after.jpg'}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="지수님 After" />
                 </div>
               </div>
             </div>
 
-            <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 text-left space-y-1">
+            <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 text-left space-y-1.5">
               <div class="text-[11px] font-extrabold text-rose-900">🎯 실제 달라진 정답:</div>
-              <div class="text-xs font-black text-[#1D3C34] leading-relaxed">
-                ① <span class="text-rose-600 underline">귀걸이 제거</span> &nbsp; ② <span class="text-rose-600 underline">목걸이 제거</span>
+              <div class="text-xs font-black text-[#1D3C34] leading-relaxed space-y-0.5">
+                <div>① <span class="text-rose-600 underline">귀걸이 제거</span> <span class="text-[11px] font-normal text-slate-500">(있었다가 사라짐)</span></div>
+                <div>② <span class="text-rose-600 underline">목걸이 제거</span> <span class="text-[11px] font-normal text-slate-500">(진주 목걸이 있었다가 사라짐)</span></div>
               </div>
             </div>
           </div>
@@ -6573,16 +6577,17 @@ function renderCeremonyView() {
               </div>
               <div class="p-2 rounded-2xl bg-teal-50/60 border border-teal-200">
                 <span class="text-[10px] font-black text-teal-600 uppercase block mb-1">After (사후)</span>
-                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200 ${m6.yechanAfterPhoto ? 'cursor-pointer' : ''}" ${m6.yechanAfterPhoto ? `onclick="openLightbox('${m6.yechanAfterPhoto}')"` : ''}>
-                  ${m6.yechanAfterPhoto ? `<img src="${m6.yechanAfterPhoto}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="예찬님 After" />` : `<span class="text-teal-400 text-xs font-bold">✨ 사후 사진 대기</span>`}
+                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200 cursor-pointer" onclick="openLightbox('${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg'}')">
+                  <img src="${m6.yechanAfterPhoto || 'assets/images/m6_yechan_after.jpg'}" class="w-full h-full object-cover hover:scale-105 transition duration-300" alt="예찬님 After" />
                 </div>
               </div>
             </div>
 
-            <div class="p-3 rounded-2xl bg-teal-50 border border-teal-200/80 text-left space-y-1">
+            <div class="p-3 rounded-2xl bg-teal-50 border border-teal-200/80 text-left space-y-1.5">
               <div class="text-[11px] font-extrabold text-teal-900">🎯 실제 달라진 정답:</div>
-              <div class="text-xs font-black text-[#1D3C34] leading-relaxed">
-                ① <span class="text-teal-700 underline">시계 제거 (시계 없음)</span> &nbsp; ② <span class="text-teal-700 underline">서 있는 위치 변경</span>
+              <div class="text-xs font-black text-[#1D3C34] leading-relaxed space-y-0.5">
+                <div>① <span class="text-teal-700 underline">갤럭시워치(시계) 제거</span> <span class="text-[11px] font-normal text-slate-500">(왼쪽 손목에 차고 있다가 사라짐)</span></div>
+                <div>② <span class="text-teal-700 underline">반지 위치 변경</span> <span class="text-[11px] font-normal text-slate-500">(왼손 검지 ➔ 중지로 바뀜)</span></div>
               </div>
             </div>
           </div>
