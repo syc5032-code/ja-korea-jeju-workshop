@@ -6503,48 +6503,105 @@ function renderCeremonyView() {
     `;
   }
 
-  // 6. Mission 6 Slide (개인 MVP)
+  // 6. Mission 6 Slide (개인 MVP & 정답 Before/After 공개)
   else if (currentSlide.id === 'm6') {
     const sorted = getSortedM6Submissions();
     const winner = sorted.find(s => s.id === appState.m6Config.winnerId) || sorted[0];
+    const m6 = appState.m6Config || {};
+
     slideBody = `
-      <div class="space-y-4">
-        <div class="text-center max-w-2xl mx-auto mb-6">
+      <div class="space-y-6 max-w-4xl mx-auto">
+        <div class="text-center mb-4">
           <span class="text-xs font-extrabold uppercase tracking-widest px-3 py-1 rounded-full bg-rose-100 text-rose-900">MISSION 06</span>
-          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[저녁 현장 개인미션] 달라진 아이템 찾기 MVP</h2>
+          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mt-2">[저녁 현장 개인미션] 달라진 아이템 찾기 정답 & MVP</h2>
           <p class="text-xs sm:text-sm text-slate-600 mt-1">
-            헤르멘하우스 만찬장 3분 현장 관찰 퀴즈 (지수님 & 예찬님 변경 아이템 최다 정답자)
+            헤르멘하우스 만찬장 3분 현장 관찰 퀴즈 (지수님 & 예찬님 달라진 점 정답 공개)
           </p>
         </div>
 
-        <div class="glass-card rounded-3xl p-8 sm:p-10 text-center max-w-3xl mx-auto border-2 border-amber-400 bg-white shadow-xl">
-          <div class="text-5xl mb-3 animate-bounce">🎁</div>
-          <div class="text-xs font-extrabold uppercase tracking-widest text-amber-700 mb-1">Mission 6 · 현장 스피드 퀴즈 단독 우승자</div>
-          <h2 class="text-2xl sm:text-3xl font-black text-[#1D3C34] mb-4">스페셜 개인 선물 수상자</h2>
-          <!-- Banquet QR Code Display Bar -->
-          <div class="mb-6 flex flex-wrap justify-center items-center gap-2">
-            <button type="button" onclick="openLightbox('assets/images/m6_form_qr.png')" class="px-4 py-2 rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs shadow-md transition flex items-center gap-1.5">
-              <span>📷</span><span>현장 참가용 구글 폼 QR코드 대화면 띄우기</span>
-            </button>
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSeqXCM8ch5Qy2MW4pALczLDokOBQq13lzcF_sKRnRjNR2nuaA/viewform" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition flex items-center gap-1.5">
-              <span>📝</span><span>구글 폼 바로가기</span><span>↗</span>
-            </a>
+        <!-- Before & After 정답 공개 섹션 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+          <!-- 지수님 카드 -->
+          <div class="glass-card rounded-3xl p-5 border-2 border-rose-200 bg-white shadow-lg space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-rose-100">
+              <span class="text-xs font-black text-rose-700 uppercase tracking-wider">Target 01</span>
+              <span class="text-sm font-extrabold text-[#1D3C34]">지수님 달라진 점 (2가지)</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="p-2 rounded-2xl bg-slate-50 border border-slate-200">
+                <span class="text-[10px] font-black text-slate-500 uppercase block mb-1">Before (사전)</span>
+                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                  ${m6.jisooBeforePhoto ? `<img src="${m6.jisooBeforePhoto}" class="w-full h-full object-cover" />` : `<span class="text-slate-400 text-xs">📷 사전 사진 대기</span>`}
+                </div>
+              </div>
+              <div class="p-2 rounded-2xl bg-rose-50/60 border border-rose-200">
+                <span class="text-[10px] font-black text-rose-600 uppercase block mb-1">After (사후)</span>
+                <div class="aspect-4/3 rounded-xl bg-rose-100/50 flex items-center justify-center overflow-hidden border border-rose-200">
+                  ${m6.jisooAfterPhoto ? `<img src="${m6.jisooAfterPhoto}" class="w-full h-full object-cover" />` : `<span class="text-rose-400 text-xs">✨ 사후 사진 대기</span>`}
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 text-left space-y-1">
+              <div class="text-[11px] font-extrabold text-rose-900">🎯 실제 달라진 정답:</div>
+              <div class="text-xs font-black text-[#1D3C34] leading-relaxed">
+                ① <span class="text-rose-600 underline">귀걸이 제거</span> &nbsp; ② <span class="text-rose-600 underline">목걸이 제거</span>
+              </div>
+            </div>
           </div>
 
+          <!-- 예찬님 카드 -->
+          <div class="glass-card rounded-3xl p-5 border-2 border-teal-200 bg-white shadow-lg space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-teal-100">
+              <span class="text-xs font-black text-teal-700 uppercase tracking-wider">Target 02</span>
+              <span class="text-sm font-extrabold text-[#1D3C34]">예찬님 달라진 점 (2가지)</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-center text-xs">
+              <div class="p-2 rounded-2xl bg-slate-50 border border-slate-200">
+                <span class="text-[10px] font-black text-slate-500 uppercase block mb-1">Before (사전)</span>
+                <div class="aspect-4/3 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                  ${m6.yechanBeforePhoto ? `<img src="${m6.yechanBeforePhoto}" class="w-full h-full object-cover" />` : `<span class="text-slate-400 text-xs">📷 사전 사진 대기</span>`}
+                </div>
+              </div>
+              <div class="p-2 rounded-2xl bg-teal-50/60 border border-teal-200">
+                <span class="text-[10px] font-black text-teal-600 uppercase block mb-1">After (사후)</span>
+                <div class="aspect-4/3 rounded-xl bg-teal-100/50 flex items-center justify-center overflow-hidden border border-teal-200">
+                  ${m6.yechanAfterPhoto ? `<img src="${m6.yechanAfterPhoto}" class="w-full h-full object-cover" />` : `<span class="text-teal-400 text-xs">✨ 사후 사진 대기</span>`}
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-teal-50 border border-teal-200/80 text-left space-y-1">
+              <div class="text-[11px] font-extrabold text-teal-900">🎯 실제 달라진 정답:</div>
+              <div class="text-xs font-black text-[#1D3C34] leading-relaxed">
+                ① <span class="text-teal-700 underline">시계 제거 (시계 없음)</span> &nbsp; ② <span class="text-teal-700 underline">서 있는 위치 변경</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1등 우승자 발표 카드 -->
+        <div class="glass-card rounded-3xl p-6 sm:p-8 text-center border-2 border-amber-400 bg-gradient-to-br from-amber-50 via-white to-orange-50 shadow-xl">
+          <div class="text-4xl mb-2 animate-bounce">🎁</div>
+          <div class="text-xs font-extrabold uppercase tracking-widest text-amber-800 mb-1">Mission 06 · 현장 관찰 퀴즈 단독 우승</div>
+          
           ${winner ? `
-            <div class="p-8 rounded-3xl winner-glow my-4 bg-gradient-to-br from-amber-50 via-white to-orange-50 border border-amber-300">
-              <div class="text-3xl sm:text-4xl font-black text-[#1D3C34]">👑 ${winner.name} 님 <span class="text-lg font-bold text-slate-600">(${winner.teamName})</span></div>
-              <div class="text-xl font-black text-amber-700 mt-3">총 ${winner.correctCount}개 정답 달성!</div>
-              <div class="text-xs text-slate-500 mt-1">제출 완료 시각: ${winner.submittedTime}</div>
-              <div class="mt-6 pt-4 border-t border-amber-200/60 max-w-md mx-auto text-xs text-slate-600 space-y-1.5 text-left bg-white/80 p-4 rounded-2xl">
-                <div>• <b>지수님 답안:</b> ${winner.jisooAns || '-'}</div>
-                <div>• <b>예찬님 답안:</b> ${winner.yechanAns || '-'}</div>
+            <div class="p-6 rounded-3xl winner-glow my-3 bg-white/90 border border-amber-300">
+              <div class="text-3xl sm:text-4xl font-black text-[#1D3C34]">👑 ${winner.name} 님 <span class="text-base font-bold text-slate-500">(${winner.teamName})</span></div>
+              <div class="text-xl font-black text-amber-700 mt-2">지수님 달라진 점 2가지 완벽 적중! 🎯</div>
+              <div class="text-xs text-slate-500 mt-1">제출 시각: ${winner.submittedTime}</div>
+              
+              <div class="mt-4 pt-4 border-t border-amber-200/60 max-w-lg mx-auto text-xs text-slate-700 space-y-2 text-left bg-amber-50/60 p-4 rounded-2xl">
+                <div>• <b class="text-[#1D3C34]">지수님 작성 답안:</b> <span class="font-bold text-rose-700">${winner.jisooAns || '-'}</span></div>
+                <div>• <b class="text-[#1D3C34]">예찬님 작성 답안:</b> <span>${winner.yechanAns || '-'}</span></div>
               </div>
             </div>
           ` : `
-            <div class="py-12 text-slate-400">
-              <span class="text-4xl block mb-2">⏳</span>
-              <p class="text-sm">아직 미션 6 우승자가 확정되지 않았습니다. (TF 대시보드에서 정답자 확인 가능)</p>
+            <div class="py-6 text-slate-400">
+              <span class="text-3xl block mb-2">⏳</span>
+              <p class="text-xs">우승자가 선택되지 않았습니다.</p>
             </div>
           `}
         </div>
